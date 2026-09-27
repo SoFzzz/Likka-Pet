@@ -1,0 +1,10 @@
+root = true
+
+[*.{kt,kts}]
+# Composable functions are PascalCase by Compose convention.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# Theme files keep the names from documentación §10.2 (Spacing.kt, SpriteSize.kt...) even when
+# they hold a single LikkaXxx object.
+[**/presentation/theme/*.kt]
+ktlint_standard_filename = disabled
