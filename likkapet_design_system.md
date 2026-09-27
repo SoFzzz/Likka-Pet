@@ -1,0 +1,1511 @@
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.18
+
+> Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
+> *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
+
+---
+
+## Tabla de Contenidos
+
+0. [Principios de Diseño](#0-principios-de-diseño)
+1. [Design (Fundamentos Visuales)](#1-design-fundamentos-visuales)
+   - [1.1 Color](#11-color)
+   - [1.2 Tipografía](#12-tipografía)
+   - [1.3 Espaciado y Retícula](#13-espaciado-y-retícula)
+   - [1.4 Forma, Bordes y Elevación](#14-forma-bordes-y-elevación)
+   - [1.5 Iconografía](#15-iconografía)
+   - [1.6 Movimiento](#16-movimiento)
+   - [1.7 Personaje: Likka, el Escarabajo Ciervo Nocturno (Sprites)](#17-personaje-likka-el-escarabajo-ciervo-nocturno-sprites)
+   - [1.8 Componentes](#18-componentes)
+   - [1.9 Voz y Microcopy](#19-voz-y-microcopy)
+2. [Jerarquía](#2-jerarquía)
+3. [Navegación](#3-navegación)
+4. [Accesibilidad](#4-accesibilidad)
+5. [Tokens en Compose](#5-tokens-en-compose)
+6. [Registro de Cambios](#6-registro-de-cambios)
+
+---
+
+## 0. Principios de Diseño
+
+| Principio | Qué significa en la práctica |
+| :--- | :--- |
+| **Likka es la interfaz** | El personaje comunica el estado antes que el texto. Si Likka está tranquilo, todo va bien; no hace falta leer nada. |
+| **Molestar con cariño** | Los overlays estorban a propósito, pero nunca humillan ni atrapan: siempre hay una salida visible. |
+| **Estorba con cariño y se mueve, pero nunca atrapa** | Desde el Nivel 1, Likka cambia de lugar; en el Nivel 2, camina y persigue. El movimiento es parte de la travesura, no un obstáculo real: nunca tapa la barra de estado/navegación, nunca bloquea los toques fuera de su silueta, y siempre se puede alejar de un arrastre o detener del todo con *Quitar animaciones* (`likkapet_documentacion.md` §9.6). |
+| **Cero fricción fuera del overlay** | La app se abre poco. Cuando se abre, responde en 3 segundos: *¿estoy protegido? ¿cómo voy hoy?* |
+| **Cálido y oscuro** | El tema oscuro (fondo cacao) es el de marca y el que usa el overlay siempre: no deslumbra al usuario, que suele estar en redes de noche. En Ajustes existe además un tema claro opcional (§1.1 "Paleta clara"), pero conserva la misma identidad: el cacao sigue siendo el color de texto principal y el ámbar el del botón primario. El ámbar y la frambuesa son acentos, no fondos, en ambos temas. |
+
+---
+
+## 1. Design (Fundamentos Visuales)
+
+### 1.1 Color
+
+#### Paleta Bosque (colores de marca)
+
+Los cinco colores vienen de la paleta de referencia de la autora y **coinciden con los colores del diseño de Likka** (capucha ciruela y frambuesa, élitros y ojos ámbar, cuernos crema), así que **el personaje no necesita recolorearse**.
+
+| Token | Hex | Nombre | Rol |
+| :--- | :--- | :--- | :--- |
+| `brand.amber` | `#FCA30B` | Ámbar | **Marca y acción.** Botón primario, estado "protegiendo", racha, Nivel 1. |
+| `brand.ochre` | `#D17B0F` | Ocre | **Advertencia.** Nivel 2, avisos, barras de progreso. |
+| `brand.raspberry` | `#A2315D` | Frambuesa | **Alerta.** Nivel 3, errores, botón "Me rindo". Solo como **relleno** (ver contraste). |
+| `brand.plum` | `#4B1C33` | Ciruela | **Superficie** de tarjetas, hojas y burbujas. |
+| `brand.cocoa` | `#3D1B1C` | Cacao | **Fondo** de todas las pantallas y del panel del Nivel 3. |
+
+#### Colores de soporte (derivados)
+
+La paleta no trae un color claro para texto ni un tono de frambuesa legible sobre fondos oscuros, así que se agregan estos:
+
+| Token | Hex | Rol |
+| :--- | :--- | :--- |
+| `neutral.cream` | `#FFF4E6` | **Texto principal** y relleno del "escenario" de Likka. |
+| `neutral.creamMuted` | `#E3C9C4` | Texto secundario, etiquetas, descripciones. |
+| `bg.surfaceHigh` | `#5E2A45` | Tarjetas elevadas, estados *pressed*, campos. |
+| `bg.switchTrackInactive` | `#8A6B78` | Pista de los interruptores en estado inactivo (ver nota de contraste abajo; `bg.surfaceHigh` no llegaba a 3:1). |
+| `outline` | `#9C7488` | Bordes de 1dp para separar superficies (cacao y ciruela son muy parecidos) y límites de componente (WCAG 1.4.11). |
+| `raspberry.light` | `#F07AA0` | **Texto, íconos y bordes** "frambuesa" sobre fondos oscuros. |
+
+> **Corrección de contraste (v3):** en v2, `outline` (`#6B3552`) medía **1.64:1** sobre cacao y **1.49:1** sobre ciruela — WCAG 1.4.11 exige **3:1** para límites de componentes no decorativos (bordes de tarjetas, pista de interruptores inactiva), y ninguno de los dos llegaba. Se aclaró `outline` a `#9C7488`: contraste relativo a `#3D1B1C` (cacao) = **(0.208 + 0.05) / (0.032 + 0.05) = 3.15:1** ✅, y relativo a `#4B1C33` (ciruela) = **(0.208 + 0.05) / (0.028 + 0.05) = 3.31:1** ✅ (luminancias relativas WCAG: cacao 0.032, ciruela 0.028, `#9C7488` 0.208). La pista inactiva de los interruptores usa el mismo criterio con `bg.switchTrackInactive` (`#8A6B78`: **3.25:1 sobre cacao** y **2.94:1 sobre ciruela**, no "≈3.0 sobre ambos fondos" como decía v3.8; ver la fila de la tabla de contraste y la regla de dónde puede ir un interruptor) en vez de `bg.surfaceHigh` (que se queda como color de superficie elevada, sin ninguna obligación de contraste de "límite").
+
+#### Contraste verificado (WCAG 2.1)
+
+AA exige **4.5:1** para texto normal, y **3:1** para texto grande — la definición exacta de WCAG es **18pt regular o 14pt en negrita**, que en `sp` (a la densidad de referencia de la especificación) equivale a **≈24sp regular o ≈18.7sp en negrita/peso 700**, no "18sp / 14sp" como decía la v2.
+
+| Combinación | Ratio | Uso permitido |
+| :--- | :---: | :--- |
+| Crema sobre Cacao | **14.1** | ✅ Cualquier texto |
+| Crema sobre Ciruela | **12.8** | ✅ Cualquier texto |
+| Crema sobre Superficie alta | **10.2** | ✅ Cualquier texto |
+| Crema apagado sobre Cacao / Ciruela | **9.8 / 8.9** | ✅ Cualquier texto |
+| Ámbar sobre Cacao / Ciruela | **7.6 / 6.9** | ✅ Cualquier texto |
+| **Cacao sobre Ámbar** (botón primario) | **7.6** | ✅ Cualquier texto |
+| Ocre sobre Cacao | **4.8** | ✅ Texto normal |
+| Ocre sobre Ciruela | **4.3** | ⚠️ No llega a 4.5:1: **solo texto ≥24sp regular o ≥18.7sp en peso 700** (`display`, `headline`, o `title`/`label` si se usan en negrita a ese tamaño). No usar en `bodyMedium`, `label` (14sp) ni `caption` (12sp) sobre ciruela. |
+| **Cacao sobre Ocre** (botón de advertencia) | **4.8** | ✅ Cualquier texto |
+| **Crema sobre Frambuesa** (botón de peligro) | **6.2** | ✅ Cualquier texto |
+| Frambuesa claro sobre Cacao / Ciruela | **5.8 / 5.3** | ✅ Cualquier texto |
+| **Frambuesa sobre Cacao / Ciruela** | **2.3 / 2.1** | ❌ **Ni texto ni bordes**: usar `raspberry.light` |
+| Cacao vs. Ciruela (entre superficies) | **1.1** | ⚠️ No se distinguen solas: usar borde `outline` |
+| `outline` sobre Cacao / Ciruela (límite de componente) | **3.15 / 3.31** | ✅ Cumple WCAG 1.4.11 (≥3:1); corregido en v3, ver nota debajo de la paleta |
+| `bg.switchTrackInactive` sobre Cacao / Ciruela (pista inactiva de interruptor) | **3.25 / 2.94** | ✅ Solo sobre el fondo cacao, donde van los interruptores (filas de Ajustes). ❌ Sobre ciruela no llega a 3:1 (2.94): **nunca un interruptor sobre una tarjeta ciruela** (`ColorContrastTest`). En claro, sobre el fondo crema, mide 4.34:1. |
+
+#### Reglas de uso
+
+1. **60 / 30 / 10**: 60% cacao, 30% ciruela, 10% acentos (ámbar, ocre, frambuesa).
+2. **Un color = un significado.** Ámbar significa "Likka te habla / acción", ocre significa "cuidado" y frambuesa significa "alerta". La frambuesa nunca es decoración.
+3. **El color nunca va solo**: todo estado se refuerza con un ícono, texto o la pose de Likka (daltonismo: ámbar y ocre se parecen para algunas personas).
+4. **Frambuesa sobre oscuro = `raspberry.light`.** La frambuesa pura solo se usa como relleno con texto crema encima.
+5. Degradados permitidos únicamente en el aura del Nivel 3 (`brand.raspberry → raspberry.light`).
+
+#### Colores por nivel de escalamiento
+
+Como el sprite conserva sus colores originales, **el nivel se comunica con el halo de Likka (overlay de los Niveles 1–2), el borde de la burbuja y el aura (Nivel 3)**, no recoloreando al personaje. En el dashboard, el onboarding y el panel del Nivel 3, donde Likka va sobre un círculo crema, ese círculo lleva un borde de 3dp del color del nivel.
+
+| Nivel | Halo de Likka (overlay N1–N2) / borde del escenario (3dp, círculo) | Borde de la burbuja | Sensación |
+| :--- | :--- | :--- | :--- |
+| Reposo / Feliz | `neutral.cream` | — | Calma |
+| 1 — Susurro | `brand.amber` | `brand.amber` | Aviso amable |
+| 2 — Molesto | `brand.ochre` | `brand.ochre` | Cuidado |
+| 3 — Furia | `raspberry.light` + aura pulsante | `raspberry.light` | Alerta |
+
+La progresión **claro → oscuro → rojo** (ámbar → ocre → frambuesa) comunica el escalamiento sin leer texto.
+
+#### Paleta clara
+
+Tema opcional (COULD), elegible en Ajustes (§2.5). Se aplica **solo a las pantallas de la app** (onboarding, dashboard, hoja de pausa, ajustes y sus subpantallas): el overlay (Niveles 1–3, burbuja, panel de Nivel 3) **no cambia**, siempre usa la paleta oscura de arriba, porque flota sobre apps ajenas y su escenario crema (§1.7) ya está pensado para verse sobre cualquier fondo. La notificación persistente tampoco depende de este ajuste, pero por otra razón: la dibuja el sistema (`NotificationCompat`), no un Composable de la app.
+
+| Rol | Hex | Ratio esperado |
+| :--- | :--- | :--- |
+| Fondo de pantalla | `#FFF4E6` | — |
+| Tarjeta / superficie | `#FFFFFF` | — |
+| Superficie secundaria (chips) | `#F7E6DC` | — |
+| Texto principal | `#3D1B1C` | 14.09 sobre fondo |
+| Texto secundario | `#6B4A55` | 7.07 sobre fondo / 6.33 sobre chip |
+| Borde `outline` | `#9C7488` | 3.67 sobre fondo / 3.99 sobre tarjeta |
+| Acento de texto "ámbar" (también `colorScheme.primary` en claro, ver más abajo) | `#8F5600` | 5.53 sobre fondo / 4.95 sobre chip / 6.00 sobre tarjeta |
+| Acento de texto "ocre" (también `colorScheme.secondary` en claro, ver más abajo) | `#9A4A00` | 5.77 sobre fondo / 5.16 sobre chip / 6.26 sobre tarjeta |
+| Frambuesa (texto y borde) | `#A2315D` | 6.17 sobre fondo / 6.70 sobre tarjeta / 5.52 sobre chip |
+| Botón primario (relleno, sin cambios en ningún tema) | `#FCA30B` + texto `#3D1B1C` | 7.57 |
+| Botón de advertencia (relleno, sin cambios en ningún tema) | `#D17B0F` + texto `#3D1B1C` | 4.78 |
+| Botón de peligro (relleno, sin cambios en ningún tema) | `#A2315D` + texto `#FFF4E6` | 6.17 |
+
+Contraste verificado (WCAG 2.1, luminancia relativa con linealización sRGB): todas las combinaciones de arriba cumplen **4.5:1** para texto normal y **3:1** para bordes; ninguna necesita la excepción de "texto grande" que sí hace falta en el tema oscuro (§1.1 arriba, fila del ocre sobre ciruela).
+
+| Combinación | Ratio | Uso permitido |
+| :--- | :---: | :--- |
+| Cacao sobre Fondo / Tarjeta | **14.1 / 15.3** | ✅ Cualquier texto |
+| Texto secundario sobre Fondo / Chip | **7.1 / 6.3** | ✅ Cualquier texto |
+| `outline` sobre Fondo / Tarjeta | **3.7 / 4.0** | ✅ Cumple WCAG 1.4.11 (≥3:1) para bordes |
+| Ámbar de texto (`#8F5600`) sobre Fondo / Chip / Tarjeta | **5.5 / 4.9 / 6.0** | ✅ Cualquier texto |
+| Ocre de texto (`#9A4A00`) sobre Fondo / Chip / Tarjeta | **5.8 / 5.2 / 6.3** | ✅ Cualquier texto |
+| Frambuesa (`#A2315D`) sobre Fondo / Tarjeta / Chip | **6.2 / 6.7 / 5.5** | ✅ Cualquier texto y bordes (a diferencia del tema oscuro, en claro la frambuesa pura sí cumple AA) |
+| Cacao sobre Ámbar / Ocre (botones primario/advertencia) | **7.6 / 4.8** | ✅ Cualquier texto |
+| Crema sobre Frambuesa (botón de peligro) | **6.2** | ✅ Cualquier texto |
+| `#FCA30B` como texto o borde sobre Fondo / Tarjeta | **1.86 / 2.02** | ❌ **Nunca como texto ni como borde**: no llegan a 3:1. Solo como relleno de botón con texto cacao. |
+| `#D17B0F` como texto o borde sobre Fondo / Tarjeta | **2.95 / 3.21** | ❌ **Nunca como texto ni como borde**: 2.95 no llega a 3:1 sobre fondo (y 3.21 sobre tarjeta no llega a 4.5:1 de texto normal). Solo como relleno de botón con texto cacao. |
+
+Reglas de uso en claro:
+1. `brand.amber` (`#FCA30B`) y `brand.ochre` (`#D17B0F`) **nunca** se usan como texto ni como borde en el tema claro. Solo como relleno de botón, siempre con texto cacao encima. Esto incluye `colorScheme.primary` **y** `colorScheme.secondary`: Material usa `primary` como texto de `TextButton`/`OutlinedButton`, pista de `Switch` activo, casillas y borde de campo con foco, y `secondary` en otros componentes, así que en claro `primary = AmberDark (#8F5600)` y `secondary = OchreDark (#9A4A00)` (no `#FCA30B`/`#D17B0F`) — ver "Botones" en §1.8 y las filas de "Ámbar/Ocre de texto... sobre Tarjeta" arriba (6.00:1 / 6.26:1). Los botones de relleno Primario/Advertencia/Peligro siguen siendo ámbar/ocre/frambuesa + texto cacao (o crema) en **ambos** temas, pero a través de `LikkaButtonColors` (§5), no de `colorScheme.primary`/`secondary`.
+2. Donde el tema oscuro usa `neutral.cream`/`raspberry.light` como color de texto o acento, el tema claro usa los tonos oscurecidos de esta tabla (`#8F5600`, `#9A4A00`, `#A2315D`) para mantener el mismo contraste AA sobre un fondo claro.
+3. El círculo de escenario de Likka (§1.7; dashboard y onboarding) usa relleno `#FFFFFF` en claro en vez de `neutral.cream`, con el mismo borde de 3dp del color de nivel.
+4. En claro, los iconos de la barra de estado del sistema pasan a oscuros (`isAppearanceLightStatusBars = isLight`) — sobre el fondo crema, los iconos claros por defecto no se verían.
+
+**Colores de nivel en claro** (borde del escenario y de la burbuja, solo en pantallas de la app — por ejemplo, las tarjetas de "Cómo funciona" del onboarding; el overlay siempre usa la tabla oscura de arriba):
+
+| Nivel | Borde del escenario (3dp) / burbuja | Sensación |
+| :--- | :--- | :--- |
+| Reposo / Feliz | `outline` `#9C7488` (el borde crema del tema oscuro sería invisible sobre fondo crema) | Calma |
+| 1 — Susurro | `#8F5600` | Aviso amable |
+| 2 — Molesto | `#9A4A00` | Cuidado |
+| 3 — Furia | `#A2315D` | Alerta |
+
+Los colores de Nivel 1 (`#8F5600`) y Nivel 2 (`#9A4A00`) se parecen entre sí en claro (como ya pasa con ámbar/ocre en oscuro): el nivel se refuerza con tamaño y pose, nunca solo con el color, siguiendo la regla "el color nunca va solo" de más arriba.
+
+---
+
+### 1.2 Tipografía
+
+Dos familias de **Google Fonts (licencia OFL, gratuitas y con soporte completo de español)**, redondeadas para suavizar el pixel art:
+
+- **Baloo 2**: títulos, números grandes y texto de Likka (tiene personalidad).
+- **Nunito**: cuerpo, botones y etiquetas (muy legible en tamaños chicos).
+
+| Estilo | Familia | Tamaño / Interlínea | Peso | Uso |
+| :--- | :--- | :--- | :--- | :--- |
+| `display` | Baloo 2 | 40 / 48sp | ExtraBold 800 | Número héroe del dashboard (minutos hoy) |
+| `headline` | Baloo 2 | 28 / 36sp | Bold 700 | Título de pantalla |
+| `title` | Baloo 2 | 20 / 28sp | SemiBold 600 | Título de tarjeta, texto del roast en Nivel 3 |
+| `bodyLarge` | Nunito | 16 / 24sp | Regular 400 | Texto principal, roast en Nivel 1–2 |
+| `bodyMedium` | Nunito | 14 / 20sp | Regular 400 | Descripciones |
+| `label` | Nunito | 14 / 20sp | Bold 700 | Botones, chips |
+| `caption` | Nunito | 12 / 16sp | SemiBold 600 | Metadatos, unidades ("min", "°") |
+
+Reglas:
+- Máximo **4 tamaños por pantalla** (el dashboard, la pantalla más densa, ya usa `display` + `headline`/`title` + `bodyMedium` + `caption`: ver §2.4). En el resto de las pantallas, 3 alcanza.
+- Nunca texto en mayúsculas sostenidas: se lee como un grito. Dos excepciones, ambas cortas a propósito: el Nivel 3 (intencional, refuerza la alerta) y los **encabezados de grupo de Ajustes** (`caption`, 1–2 palabras, §2.5) — un uso tipográfico convencional para separar secciones, no para gritar.
+- Siempre `sp`, para respetar el tamaño de fuente del sistema.
+
+**Implementación (`presentation/theme/Type.kt`):** Baloo 2 y Nunito se usan como **fuentes variables** (`res/font/baloo2_variable.ttf`, `res/font/nunito_variable.ttf`), descargadas de Google Fonts bajo licencia SIL OFL 1.1 (textos de licencia en `assets/licenses/baloo2_OFL.txt` y `assets/licenses/nunito_OFL.txt`, créditos en la pantalla "Acerca de y créditos", RF-S07). Un archivo variable se renderiza en su peso por defecto salvo que cada `Font` fije el eje `wght` explícitamente, así que `Type.kt` declara cada peso usado (`FontVariation.Settings(FontVariation.weight(...))`) para `SemiBold`/`Bold`/`ExtraBold` de Baloo 2 y `Normal`/`SemiBold`/`Bold` de Nunito; ese `Font(...variationSettings = ...)` sigue marcado `@ExperimentalTextApi` en Compose 1.11, así que la función que las construye lleva `@OptIn(ExperimentalTextApi::class)`. Nunito no solo cubre cuerpo/botones/etiquetas: `Type.kt` también la usa como familia base del texto que no es de Likka (ver la tabla de arriba).
+
+---
+
+### 1.3 Espaciado y Retícula
+
+Retícula base de **4dp**. Escala permitida:
+
+| Token | Valor | Uso típico |
+| :--- | :---: | :--- |
+| `space.xs` | 4dp | Separación ícono–texto |
+| `space.s` | 8dp | Entre elementos relacionados |
+| `space.m` | 16dp | Padding interno de tarjetas, **margen lateral de pantalla** |
+| `space.l` | 24dp | Entre secciones |
+| `space.xl` | 32dp | Separación de bloques mayores |
+| `space.xxl` | 48dp | Aire alrededor de Likka en pantallas héroe |
+
+- Área táctil mínima: **48 × 48dp** (incluso si el ícono mide 24dp).
+- Ancho de diseño de referencia: **360dp** (el Redmi 9 reporta ~393dp de ancho).
+
+---
+
+### 1.4 Forma, Bordes y Elevación
+
+La UI es redondeada; solo Likka es pixelado. Ese contraste entre personaje pixel art y UI suave es intencional.
+
+| Token | Radio | Uso |
+| :--- | :---: | :--- |
+| `shape.s` | 12dp | Chips, campos |
+| `shape.m` | 20dp | Tarjetas, burbujas de diálogo |
+| `shape.l` | 28dp | Hojas inferiores, overlay Nivel 3 |
+| `shape.full` | 50% | Botones tipo píldora, escenario de Likka |
+
+**Elevación:** cacao y ciruela casi no se distinguen (1.1:1), así que la profundidad se expresa con un **borde `outline` de 1dp** y, en los niveles altos, con `bg.surfaceHigh`. Solo el overlay usa sombra real, porque el fondo es una app ajena.
+
+---
+
+### 1.5 Iconografía
+
+- **Material Icons Extended** (`androidx.compose.material:material-icons-extended`), estilo **Rounded**. Compose no incluye *Material Symbols* como fuente/paquete propio — eso es lo que trae la librería, y es la referencia correcta para "íconos redondeados de Material" en este proyecto. Si más adelante se necesita un ícono que solo exista en el catálogo de *Material Symbols* (symbols.google.com) y no en `material-icons-extended`, se importa como **vector SVG propio** (`ImageVector`/`res/drawable`), no como fuente de íconos.
+- Tamaños: 24dp estándar, 20dp dentro de chips y 32dp en la checklist de permisos.
+- Grosor 400, con relleno solo en estado activo o seleccionado (los íconos `Rounded` de `material-icons-extended` ya cubren ambas variantes, outlined y filled).
+- Los íconos nunca reemplazan a Likka para comunicar emoción.
+
+#### Ícono de la app y de la notificación
+
+- **Ícono de la app (launcher)**: **adaptativo** (`ic_launcher` e `ic_launcher_round`, en `res/mipmap-anydpi`, con el primer plano en `mipmap-xxhdpi` y `mipmap-xxxhdpi`). Fondo: color sólido cacao `#3D1B1C` (`brand.cocoa`, `values/ic_launcher_background.xml`). Primer plano: **la cara de Likka**, sin cuerpo, alas ni patas.
+  - **Cómo se genera (v3.16)**: ningún recurso se dibuja ni se recorta a mano; los produce `likka_sprites/tools/icons.py` (`python likka_sprites/tools/icons.py apply`) desde el cuadro 0 de `idle` (vista 3/4) de `sprites/likka.png`. El script toma un recorte de **48 × 48 px** (esquina (18, 7) del cuadro de 96 × 96, el que deja la parte opaca más cercana a un círculo), **borra todo lo que queda desde la fila 48 del cuadro hacia abajo** (capa, ala y bufanda) y deja solo la cabeza (capucha y ojos ámbar) y los cuernos. Lo amplía con **escala entera y vecino más cercano** y lo centra en una capa de **108dp** (324 px en xxhdpi, 432 px en xxxhdpi). Las demás densidades las reescala Android; el Redmi 9 usa xxhdpi. Sin ícono monocromo temático en el MVP.
+  - **Variante aplicada: `fit`, 3× en xxhdpi y 4× en xxxhdpi.** La regla es que las **partes opacas** (cara y cuernos) caben dentro del **círculo de la zona segura de 66dp** (radio de 99 px en xxhdpi y de 132 px en xxxhdpi). La parte opaca llega a 25,5 px del centro del recorte: con `fit` queda a 76,6 px (xxhdpi) y 102,2 px (xxxhdpi), dentro; la variante `spec` de v3.7 (4× y 5×) daba 102,2 px en xxhdpi, unos **3 px fuera** del círculo, y se descartó.
+  - **Contraste**: la capucha casi no se separa del fondo cacao (`#4F1F33` contra `#3D1B1C`, **1,15:1**); el ícono se lee por los **cuernos** (`#C8916F`, **5,6:1**) y los **ojos ámbar**. Decisión de la autora: se mantiene el fondo cacao.
+  - **Vista previa**: `likka_sprites/review/icon_preview.png` (círculo, gota, *squircle* y cuadrado, para `spec` y `fit`).
+- **Ícono pequeño de la notificación**: `res/drawable/ic_notification_antlers.xml`, **vector monocromo de 24dp** (relleno blanco; Android lo pinta como silueta). Lo genera también `icons.py`: calca la silueta de los **cuernos** del cuadro 0 de `idle` (filas 7 a 31 del cuadro, hasta donde empieza la capucha) como un rectángulo de 1 px por cada tramo horizontal, en un viewport cuadrado de 42 × 42. Nunca un sprite a color. **Sin ícono grande** en la notificación en el MVP.
+
+---
+
+### 1.6 Movimiento
+
+| Token | Duración | Curva | Uso |
+| :--- | :---: | :--- | :--- |
+| `motion.fast` | 150ms | `FastOutSlowIn` | Pressed, toggles |
+| `motion.standard` | 300ms | `FastOutSlowIn` | Cambio de pantalla, expandir tarjeta |
+| `motion.enter` | 400ms | `spring(dampingRatio = 0.6)` | Likka aparece (rebote) |
+| `motion.fury` | 600ms | `spring(dampingRatio = 0.4)` | Crecimiento al Nivel 3 |
+| `motion.hop` | — (instantáneo, sin interpolación) | — | Nivel 1: Likka se esconde y reaparece en otra posición (§1.8); es solo movimiento de Compose, no hay animación de sprite `hop` |
+| `motion.walk` | continuo, paso a paso | 8–10 pasos/s | Nivel 2: desplazamiento al caminar/perseguir (§1.8) |
+
+Animaciones del personaje y extras de Compose:
+
+- **Frames del sprite**: la duración de cada cuadro es la `duration` de `sprites/likka.json`, que fija `build.py` (`TAGS`); el código no la calcula. Los ciclos de caminar van a 10 fps (100 ms por cuadro), `annoyed` y `fury` a 8 fps (125 ms), `sit` y `look_around` a 6 fps (167 ms) y `sleep` a 4 fps (250 ms). `idle` y `peek` no son uniformes: 4 cuadros de 750 / 250 / 250 / 250 ms (vuelta de 1,5 s), con el primero sostenido (tabla de §1.7).
+- **Nivel 1**: Likka entra deslizándose desde el borde con `motion.enter` y queda **medio asomado**; cada cierto tiempo se esconde y reaparece en otra posición con `motion.hop` (§1.8, detalle de tiempos en `likkapet_documentacion.md` §6 Módulo 3).
+- **Nivel 2**: sacudida horizontal de **1 píxel del sprite** al aparecer (`LikkaMotion.shakeSpritePx = listOf(1, -1, 1, -1, 0)`, sincronizada con la vibración de 250 ms) — no un valor fijo en dp, para que se mantenga alineada a la cuadrícula del pixel art sin importar la escala del nivel (§1.7). Además, camina por la pantalla con `motion.walk` en ciclos de caminar/detenerse (§1.8), en 4 direcciones rectas (arriba, abajo, izquierda, derecha; decisión de la dueña, sin diagonales), usando las animaciones del personaje (`walk_down`, `walk_up` y `walk_diag_down_right` con su espejo `walk_left`; §1.7).
+- **Nivel 3**: el aura (dibujada en Compose, degradado frambuesa → frambuesa claro) pulsa cada 1 s (`LikkaMotion.AURA_PULSE_MS = 1000L`), con la cuenta regresiva visible. Sin movimiento de posición.
+- **Cadencia y duración de los extras de Compose** (`SpriteExtras.kt`, a pasos de `LikkaMotion.EXTRAS_STEP_MS = 250L`):
+  - **Destellos (`sparkles`)**: dos parejas de destellos que se alternan cada 2 pasos de extras (500 ms).
+  - **Z de dormir (`z`)**: van apareciendo de una en una cada 2 pasos (1, 2, 3 z's), luego desaparecen y el ciclo reinicia.
+  - **Gota de sudor (`sweat_drop`)**: desciende 2 px del sprite (`SWEAT_DROP_FALL_PX = 2`), un píxel por paso, y reinicia.
+  - **Aura**: crece y encoge en radio `[2, 3, 4, 3]` píxeles del sprite a lo largo de 1 s (`AURA_PULSE_MS`).
+- Los movimientos del contenedor (deslizar, sacudir, crecer, caminar, cambiar de lugar) avanzan en **pasos de 1 píxel del sprite**, para no romper la estética pixel art. El movimiento de posición (`motion.hop`, `motion.walk`) va a **8–10 actualizaciones por segundo** (la cadencia de la animación), no a 60 fps: más barato en batería.
+
+> Respetar *Quitar animaciones* del sistema (`Settings.Global.ANIMATOR_DURATION_SCALE == 0`): se muestra solo el primer frame de cada pose, sin loops ni sacudidas, **y Likka deja de moverse de posición** (Nivel 1 no cambia de lugar, Nivel 2 no camina).
+
+---
+
+### 1.7 Personaje: Likka, el Escarabajo Ciervo Nocturno (Sprites)
+
+#### Qué hace Likka en cada momento
+
+Tabla única de referencia. Las reglas completas viven en las secciones enlazadas; aquí no se copian.
+
+| Momento | Pose | Posición | ¿Se mueve? | Referencia |
+| :--- | :--- | :--- | :--- | :--- |
+| Dashboard — Protegiendo | `idle` | Centro del dashboard, sobre el escenario | No (solo la animación del sprite) | §3.5 |
+| Dashboard — En pausa | `sit` | Igual que arriba | No | §3.5 |
+| Dashboard — Desactivado | `sleeping` (tag `sleep`, más el extra `z`) | Igual que arriba | No | §3.5 |
+| Dashboard — Falta permiso | `worried` (tag `look_around` + extra `sweat_drop`) | Igual que arriba | No | §3.5 |
+| Dashboard — Sin internet o sin saldo de IA | `idle` | Igual que arriba | No | §3.5 |
+| Onboarding — bienvenida | `idle` (cuadro 0, escala entera; no hay animación de saludo) | Centro de la pantalla | No | §1.7 "Reglas de renderizado del pixel art" |
+| Onboarding — completo | `happy` (tag `idle` + extra `sparkles`) | Centro de la pantalla | No | Tabla de poses (abajo) |
+| Nivel 1 — bordes laterales | `peek` | Asomado por el borde izquierdo o derecho | Sí — cambia de borde/altura cada `LEVEL_1_HOP_INTERVAL_SEC` (cambio de posición de Compose, `motion.hop`; sin animación de sprite) | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 1 — borde inferior | `perch` (tag `sit`) | Sentado sobre el borde inferior, justo encima de la barra de navegación (nunca dentro de los *insets*) | Sí — mismo ciclo de cambio de lugar | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 2 — caminando | `walk_right`, `walk_left`, `walk_down`, `walk_up` (cuatro direcciones rectas sobre tres tags, con espejo para izquierda; decisión de la dueña, sin diagonales) | Recorre toda el área segura llevando el globo en tramos de ≥3 s | Sí | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 2 — detenido | `annoyed` | Donde terminó el tramo de caminata (pausa de 5 s) | No (pausa del ciclo caminar/detenerse) | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 2 — arrastrado | `dragged` (tag `annoyed`) | Bajo el dedo de la persona | Lo mueve la persona; a los `LEVEL_2_RETURN_DELAY_SEC` vuelve en tramos rectos | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 3 | `fury` (tag `fury`) + aura (extra de Compose) | Panel a pantalla completa entre las barras del sistema (decisión de la dueña, 2026-10-05) | No (solo el pulso del aura) | §1.8 "Overlay por nivel" |
+| Perdonado (motivo resuelto) | `happy` al celebrar (tag `idle` + `sparkles`); despedida con `goodbye` (`walk_right`, tag `walk_diag_down_right`) | Donde estaba; se va al terminar la despedida | Sí — camina ~1 s y sale | `likkapet_documentacion.md` RF-O04 |
+| Reacción local: arrastrar | `dragged` (tag `annoyed`) | Bajo el dedo de la persona | Lo mueve la persona | §1.9 "Reacciones locales" |
+| Reacción local: tocar repetido | `annoyed` mientras dura la reacción; después vuelve a la pose del nivel | Donde esté | No cambia por la reacción | §1.9 "Reacciones locales" |
+
+En el overlay de los Niveles 1 y 2, Likka no lleva círculo de escenario: va con su halo del color del nivel (extra `halo`) y su sombra de pies. En el dashboard, el onboarding y el panel del Nivel 3 va sobre el círculo crema (§1.7 "Reglas de renderizado del pixel art").
+
+#### Concepto
+
+Likka es un **escarabajo ciervo nocturno**: un pequeño compañero del bosque con cuernos de ciervo, capucha, bufanda frambuesa, alas de élitro ámbar y patas de sátiro. Bajo la capucha solo se ven sus **dos ojos ámbar**. Sale de noche, que es justo cuando la gente se queda pegada al teléfono, y cuida tu cuello a su manera: burlándose de ti con cariño. *"Un pequeño compañero, gran personalidad."*
+
+#### Origen y derechos
+
+| Campo | Valor |
+| :--- | :--- |
+| Diseño | **Sirv**, creación original de la autora |
+| Derechos | Diseño propio (Sirv); arte generado con IA a partir de él; uso académico privado, no se publica |
+| Nombre en la app | **Likka** ("Sirv" es solo el nombre interno del diseño anterior) |
+| Referencia de diseño | `sprites/sirv.png` — **no** se usa en la app; solo guía de colores, capucha, cuernos y bufanda al preparar `likka.png` |
+| Hoja de sprites final | `sprites/likka.png` + `sprites/likka.json`, construidas por el script `likka_sprites/tools/build.py` a partir de los bocetos de IA de `sprites/drafts/2d-sprites-sheets/` (generados a partir de "Sirv") |
+| Mapa de poses | `sprites/likka_poses.json`, generado por el mismo `build.py` desde su tabla `POSES` |
+| Herramientas y revisión | `likka_sprites/` (`tools/build.py`, `tools/validate.py`, `tools/contact.py`, `review/`, `README.md`) |
+
+> **Origen del arte:** todo el arte de Likka se generó con herramientas de IA a partir del diseño propio "Sirv"; la hoja final la construye un script, no se limpia a mano (ver "Construir la hoja con `build.py`", más abajo). `sirv.png` se usa solo como referencia de diseño: nunca se recorta ni se reescala, y nunca va en el APK. El conjunto de animaciones es **definitivo** (ver "Asignación definitiva" más abajo): se construye con las hojas de `sprites/drafts/2d-sprites-sheets/` y no se generarán más. La app lee `likka.png`, `likka.json` y `likka_poses.json` de `sprites/`, **sin tocar código**.
+
+#### Formato del arte
+
+| Propiedad | Valor |
+| :--- | :--- |
+| Lienzo por cuadro | **96 × 96 px** |
+| Altura de Likka | **≈84–88 px** (88 px es la referencia de la escala; máximo **90 px**, con al menos **2 px** libres arriba; el resto es aire transparente para patas/cuernos en las poses más extremas). **Excepciones aceptadas** (no hay factor entero que las acerque al rango sin agrandar el arte): `walk_up` se usa sin escalar y mide **76–78 px** (se ve algo más pequeña al caminar hacia arriba); `walk_down` se usa sin escalar y mide **81–90 px** (la altura cambia a lo largo del ciclo de caminar); `walk_diag_down_right` mide **81–83 px** (÷3 es el único factor entero posible: con ÷2 mediría unos 123 px y no cabría en el lienzo); `sit` mide **63 px** (misma escala ÷2 que el resto, pero Likka sentado es más bajo). Alturas por tag en "Construir la hoja con `build.py`" |
+| Línea de pies | fija en **y = 92** en todos los cuadros, de todas las animaciones |
+| Fondo | transparente, **alfa binario** (0 o 255, sin semitransparencias) |
+| Paleta | fija, **12–16 colores**, basada en `sirv.png` y alineada con la paleta Bosque (§1.1); la hoja final usa **16** (ver "Paleta final", más abajo) |
+| Contorno | **1 px** oscuro alrededor de la silueta |
+
+La línea de pies fija es lo que permite que todas las animaciones se vean paradas en el mismo sitio al cambiar de cuadro o de tag, sin saltos verticales.
+
+#### Animaciones (tags de Aseprite)
+
+**El conjunto de animaciones es definitivo** (v3.10): no se generarán más. Cada fila es un **tag** de Aseprite; el nombre del tag es el identificador que usa el código (`likka_poses.json` los referencia). Los nombres de tag y las claves de `likka_poses.json` van en inglés, como cualquier identificador de código (`CLAUDE.md`, reglas de idioma). Los cuadros de cada tag los elige `build.py` entre los de la hoja de origen (tabla en "Construir la hoja con `build.py`"); `likka.json` es la fuente de verdad del número real.
+
+##### Tags de la hoja (10)
+
+| Tag | Cuadros | fps / duración | Origen (`sprites/drafts/2d-sprites-sheets/`) | Uso (nivel / pantalla / evento) |
+| :--- | :---: | :---: | :--- | :--- |
+| `idle` | 4 | 750 / 250 / 250 / 250 ms | `left-diagonal-down-idle.png` (vista 3/4, no de frente) | Reposo; dashboard, onboarding, estado "Protegiendo"; base de `talk` y `happy` |
+| `walk_down` | 8 | 10 | `front_front_walk_walk_down.png` | Movimiento del overlay (N1/N2) hacia abajo en pantalla |
+| `walk_up` | 8 | 10 | `walk_up.png` (sin escalar; 12 cuadros en la hoja, se eligen 8) | Movimiento del overlay hacia arriba; también cubre ambas diagonales hacia arriba (§9.6) |
+| `walk_diag_down_right` | 5 | 10 | `likka-walk-rigth-diagonal.png` (÷3) | Movimiento hacia la derecha y diagonal abajo-derecha del overlay; despedida (`goodbye`, RF-O04) |
+| `annoyed` | 4 | 8 | `Likka-a-angry.png` (÷2; ciclo de 4 cuadros) | Overlay Nivel 2 detenido; reacción de tocar repetido y de arrastrar (§1.9) |
+| `fury` | 6 | 8 | `Likka-a-angry.png` (÷2; los 6 cuadros más intensos, distintos de los de `annoyed`) | Overlay Nivel 3 (el aura pulsante es un extra de Compose) |
+| `peek` | 4 | 750 / 250 / 250 / 250 ms | derivado de los cuadros de `idle`, desplazados dentro del lienzo de 96×96 | Overlay Nivel 1, medio asomado por el borde (ver "Medio asomado", abajo) |
+| `sit` | 4 | 6 | `Likka-sit-sit-down.png` (÷2) | Estado "En pausa" (§3.5); Nivel 1 sentado sobre el borde inferior (`perch`) |
+| `sleep` | 4 | 4 | `Likka-sleepy.png` (÷2) | Estado "Desactivado" (§3.5) |
+| `look_around` | 4 | 6 | `Likka-c-curiosity.png` (÷2) | Estado "Falta permiso" (`worried`, §3.5) |
+
+##### Poses que reutilizan un tag
+
+Las poses son lo que pide el código (`OverlayMotionPlanner`, pantallas); cada una apunta en `likka_poses.json` a uno de los 10 tags de arriba. No hay tag nuevo por pose.
+
+| Pose | Tag | `mirror` | Extra de Compose | Uso |
+| :--- | :--- | :---: | :--- | :--- |
+| `idle` | `idle` | — | — | Reposo, bienvenida del onboarding |
+| `talk` | `idle` | — | — | Mientras el globo del roast está visible (Niveles 1–3); sin gesto propio |
+| `happy` | `idle` | — | `sparkles` | Perdonado, racha, onboarding completo |
+| `worried` | `look_around` | — | `sweat_drop` | Falta un permiso, error |
+| `sleeping` | `sleep` | — | `z` | Likka desactivado |
+| `sit` | `sit` | — | — | "En pausa" |
+| `perch` | `sit` | — | — | Nivel 1, borde inferior |
+| `peek` | `peek` | según el borde | — | Nivel 1, bordes laterales |
+| `annoyed` | `annoyed` | — | — | Nivel 2 detenido; tocar repetido |
+| `dragged` | `annoyed` | — | — | Mientras la persona arrastra a Likka (§1.9) |
+| `fury` | `fury` | — | `aura` | Nivel 3 |
+| `walk_right` | `walk_diag_down_right` | — | — | Caminar hacia la derecha |
+| `goodbye` | `walk_diag_down_right` | — | — | Despedida (RF-O04) |
+| `walk_left` | `walk_diag_down_right` | sí | — | Caminar hacia la izquierda |
+| `walk_diag_down_right` | `walk_diag_down_right` | — | — | Diagonal abajo-derecha |
+| `walk_diag_down_left` | `walk_diag_down_right` | sí | — | Diagonal abajo-izquierda |
+| `walk_down` | `walk_down` | — | — | Hacia abajo |
+| `walk_up` | `walk_up` | — | — | Hacia arriba y diagonales hacia arriba |
+
+**Animaciones que ya no existen como tag:** `blink` (`idle` se reproduce en loop, sin parpadeo), `hop` (el cambio de posición del Nivel 1 lo hace Compose con `motion.hop`, sin animación de sprite), `wave` (la bienvenida del onboarding usa `idle`), y, como tags propios, `talk`, `dragged`, `happy`, `worried` y `perch` (ahora son poses que reutilizan un tag). No hay tag de `attack`/`hurt` ni pose de muerte: es una app de bienestar, no un juego de combate.
+
+**Hojas de `drafts/` que no se usan:** `walk_side-left.png` y `side_left-idle.png` (Likka de solo 46–50 px, demasiado pequeña) y los `.jpg` sueltos de `drafts/` (JPG con fondo horneado).
+
+La prueba unitaria valida los **10 tags de la hoja**; las poses se validan contra ellos (ver "Prueba unitaria", abajo).
+
+#### Cuatro direcciones de movimiento en el Nivel 2
+
+El movimiento del overlay en Nivel 2 se rediseñó a **cuatro** direcciones rectas (`walk_down`, `walk_up`, `walk_right`, `walk_left`), **sin diagonales** (decisión de la dueña, 2026-10-05, para eliminar saltos erráticos de pose en recorridos cortos dentro de áreas reducidas). Estas cuatro direcciones se resuelven sobre **tres** tags: `walk_down`, `walk_up` y `walk_diag_down_right`. `walk_right` usa `walk_diag_down_right` tal cual, y `walk_left` lo usa reflejado en X (`mirror`). El tag `walk_diag_down_right` se conserva además para la despedida (`goodbye`, RF-O04). El planner (`OverlayMotionPlanner`, `domain`) elige tramos rectos en una de las cuatro direcciones con espacio suficiente (≥3 s de caminata) y mantiene la pose durante todo el tramo (`likkapet_documentacion.md` §9.6 y §12.1).
+
+#### Extras dibujados en Compose, nunca en la hoja
+
+Las "z" de dormir, la gota de sudor de `worried`, el aura pulsante de `fury`, los destellos de `happy`, la sombra de pies y el halo de nivel (`halo`) **no se dibujan dentro de `likka.png`**: son overlays de Compose dibujados a nivel de píxeles del sprite (`presentation/components/SpriteExtras.kt`), listados en `likka_poses.json` como `extras`. Mantener la hoja limpia de estos detalles hace más fácil re-dibujar o ajustar una animación sin tener que repetir el extra en cada cuadro.
+
+**Detalle de los extras (`SpriteExtras.kt`):**
+- **Extras puntuales y área segura:** los extras colocados alrededor del personaje (`sparkles`, `z`, `sweat_drop`) se mantienen dentro de un radio de `STAGE_SAFE_RADIUS_PX = 46` px del centro del cuadro de 96×96 px, para garantizar que el círculo del escenario del dashboard (que recorta su contenido) nunca los corte.
+- **Destellos (`sparkles`)**: estrella de 4 puntas (`SPARKLE`) con contorno oscuro de 1 px; dos parejas de posiciones (`SPARKLE_SPOTS`) que se alternan cada 500 ms (2 pasos de extras) para simular parpadeo.
+- **Z de dormir (`z`)**: glifos pixelados en 3 posiciones crecientes desde la cabeza (`SLEEP_Z_SPOTS`); aparecen de una en una cada 2 pasos y luego desaparecen.
+- **Gota de sudor (`sweat_drop`)**: gota pixelada junto a la capucha; desciende `SWEAT_DROP_FALL_PX = 2` px del sprite, avanzando 1 px por paso antes de reiniciar.
+- **Aura pulsante (`aura`)**: anillo redondeado sobre la silueta de Likka; su grosor cambia en radio `[2, 3, 4, 3]` px del sprite (`AURA_RADII`) a lo largo de 1 s (`LikkaMotion.AURA_PULSE_MS = 1000L`). Gradiente: `auraInner` (frambuesa) junto a Likka y `auraOuter` (frambuesa claro) hacia afuera.
+- **Sombra de pies (`footShadow`)**: **solo en el overlay** (no en pantallas con escenario circular). Se proyecta debajo de la línea fija de pies (y = 92) abarcando el ancho de los pies más márgenes laterales de `FOOT_SHADOW_MARGINS = listOf(2, 4, 4, 2)` px en 4 filas hacia abajo, formando una elipse pixelada en negro translúcido (`LikkaColors.FootShadow = Color(0x59000000)`).
+- **Colores de los extras (`LikkaExtrasColors`):** agrupados en `LikkaExtrasColors` y provistos por `LocalLikkaExtrasColors` (iguales en ambos temas, §5), usando `outline` (cacao), `sparkle` (ámbar), `sleepZ` (ciruela), `sweatDrop` (crema), `sweatDropShine` (blanco), `auraInner` (frambuesa), `auraOuter` (frambuesa claro) y `footShadow` (`LikkaColors.FootShadow`).
+
+`halo` (v3.7) es un halo del color del nivel (`levelColor`) alrededor de la silueta de Likka, solo en el overlay de los Niveles 1 y 2. Su grosor es de **2 píxeles del sprite** (`2 × escala` px físicos: 4 px ≈ 1.5dp en N1 y 8 px ≈ 2.9dp en N2 en el Redmi 9), así que sigue la rejilla del pixel art y crece con el tamaño. Se dibuja en Compose a partir de la silueta (alfa binaria) del cuadro actual: la silueta teñida del color del nivel se dibuja debajo del cuadro, desplazada a cada posición dentro del radio del halo, lo que da un anillo redondeado sobre la rejilla del sprite (v3.17). El grosor es la constante `SpriteMetrics.HALO_PX = 2` (en `presentation/components/LikkaSprite.kt`, junto a `FRAME_PX` y `FEET_LINE_Y`; §5), y `LikkaSprite` agranda su área de dibujo `HALO_PX` píxeles del sprite por lado cuando recibe `halo`. Como depende del nivel y no de la pose, el código lo aplica a toda pose mostrada en ese overlay y **no se lista por pose** en `likka_poses.json`.
+
+#### Asignación definitiva (sin provisionales)
+
+Desde v3.10 **no hay animaciones provisionales**: la asignación pose → tag de la tabla de arriba es definitiva y el proyecto se entrega con las hojas actuales (decisión de la dueña: no hay presupuesto para más animaciones). Ninguna pose apunta a `idle` "mientras llega el arte": las que usan `idle`, `sit`, `annoyed` o `look_around` lo hacen por diseño. Si algún día se agregara un tag nuevo, bastaría con sumarlo a las tablas `TAGS` y `POSES` de `build.py` y regenerar la hoja, sin tocar el código de la app.
+
+#### Construir la hoja con `build.py`
+
+Los bocetos generados con IA no se usan tal cual ni se limpian a mano: la hoja final la construye el script `likka_sprites/tools/build.py` a partir de las hojas de `sprites/drafts/2d-sprites-sheets/`, y el resultado es determinista (k-means con semilla fija). Para regenerarla, desde la raíz del proyecto (Python 3 con Pillow, numpy y scipy):
+
+```bash
+python likka_sprites/tools/build.py
+python likka_sprites/tools/validate.py
+python likka_sprites/tools/contact.py
+```
+
+`build.py` escribe `sprites/likka.png`, `sprites/likka.json` y `sprites/likka_poses.json`; `validate.py` comprueba la hoja con los criterios de la prueba unitaria (abajo) y los del "Formato del arte" (alfa binaria, 12–16 colores, pies en y = 92, alto máximo 90 px con 2 px libres arriba, número de cuadros y duración por tag), y termina con error si algo falla; `contact.py` regenera `likka_sprites/review/` (`contact_<tag>.png` ×4 sobre cacao y sobre crema, `anim_<tag>.gif`, `overview.png` con la hoja completa y `peek_options.png` con `peek` visible al 55 / 60 / 65 %). El detalle de cada herramienta está en `likka_sprites/README.md`.
+
+Lo que hace `build.py`:
+
+1. **Reducción por factor entero con vecino más cercano**, nunca con suavizado: **÷2** en las hojas de 1280×1280, **÷3** en la diagonal; `idle`, `walk_down` y `walk_up` van **sin escalar**. No se agranda nada para igualar alturas. Las hojas de IA no son escalados limpios (por el suavizado del remuestreo); el vecino más cercano y la paleta común absorben ese ruido.
+2. **Alfa binaria** (umbral 128) y eliminación de motas sueltas de menos de 6 px.
+3. **Paleta común de 16 colores** para toda la hoja: k-means en Lab con el **contorno** y el **ámbar de los ojos** fijados (ver "Paleta final").
+4. **Contorno de 1 px**: todo píxel opaco que toca transparencia pasa al color del contorno.
+5. **Pies en y = 92** en cada cuadro, de todas las animaciones: es lo que evita saltos verticales al cambiar de cuadro o de tag. Un solo desplazamiento en X por tag, que centra la caja de todos sus cuadros y así conserva el movimiento de la animación.
+6. **`peek`** se arma con cuadros de `idle`, desplazados para que quede visible el **60 %** del ancho de Likka, cortado por el **lado derecho** (ver "Medio asomado").
+7. **Sin espejos en la hoja**: `walk_left` y `walk_diag_down_left` los obtiene el código con `mirror` a partir de `walk_diag_down_right`.
+8. **Sin extras pintados**: destellos, sombras, halos, "z", gotas y aura van en Compose (ver arriba).
+
+Cuadros elegidos por tag (los índices son los de la hoja de origen, desde 0, fila por fila):
+
+| Tag | Origen (`sprites/drafts/2d-sprites-sheets/`) | Cuadros elegidos | fps / duración | Alto de Likka (px) |
+| :--- | :--- | :--- | :---: | :---: |
+| `idle` | `left-diagonal-down-idle.png` (sin escalar) | 0, 1, 6, 7 (reposo; sin el aleteo de los cuadros 2–5) | 750 / 250 / 250 / 250 ms | 86 |
+| `walk_down` | `front_front_walk_walk_down.png` (sin escalar) | 0–7 | 10 | 81–90 |
+| `walk_up` | `walk_up.png` (sin escalar) | 0, 1, 2, 5, 6, 7, 8, 11 (de 12) | 10 | 76–78 |
+| `walk_diag_down_right` | `likka-walk-rigth-diagonal.png` (÷3) | 0–4 | 10 | 81–83 |
+| `annoyed` | `Likka-a-angry.png` (÷2) | 0, 6, 17, 16 | 8 | 89–90 |
+| `fury` | `Likka-a-angry.png` (÷2) | 7–12 (los más intensos) | 8 | 85–88 |
+| `peek` | cuadros de `idle` | 0, 1, 6, 7 (60 % visible, cortado a la derecha) | 750 / 250 / 250 / 250 ms, igual que `idle` | 86 |
+| `sit` | `Likka-sit-sit-down.png` (÷2) | 0, 4, 16, 23 | 6 | 63 |
+| `sleep` | `Likka-sleepy.png` (÷2) | 15, 16, 23, 17 | 4 | 88 |
+| `look_around` | `Likka-c-curiosity.png` (÷2) | 0, 6, 11, 19 | 6 | 89–90 |
+
+`idle` usa solo los cuadros de reposo, con el 0 sostenido, porque pasar de reposo al aleteo de la hoja de origen cambia al menos 1456 px entre cuadros seguidos (`likka_sprites/README.md`, "Ritmo de idle"); `peek` se deriva de esos mismos cuadros.
+
+Las alturas fuera de ≈84–88 px (`walk_up`, `walk_down`, `walk_diag_down_right`, `sit`) son las excepciones aceptadas de "Formato del arte"; ninguna supera el máximo de 90 px.
+
+##### Paleta final (16 colores)
+
+| # | Color | Uso |
+| :---: | :--- | :--- |
+| 1 | `#140A0B` | Contorno (fijo) |
+| 2 | `#ECA142` | Ojos ámbar (fijo) |
+| 3 | `#1A0D18` | |
+| 4 | `#271222` | |
+| 5 | `#2F1318` | |
+| 6 | `#381B2B` | |
+| 7 | `#482527` | |
+| 8 | `#4F1F33` | |
+| 9 | `#5F272E` | |
+| 10 | `#782535` | Frambuesa (bufanda, capa de `sit`) |
+| 11 | `#633C39` | |
+| 12 | `#7A4437` | |
+| 13 | `#955B41` | |
+| 14 | `#B57546` | |
+| 15 | `#C8916F` | |
+| 16 | `#E7B27E` | Luz de cuernos y élitros |
+
+#### Formato de `likka.json` y `likka_poses.json` (generados por `build.py`)
+
+`likka.json` tiene **exactamente el formato del JSON que exporta Aseprite** (*Array* + `frameTags`): cada frame trae su `frame` (x, y, w, h) y `duration` en ms, y cada tag trae su rango de frames (`from`/`to`). Lo genera `build.py`, no Aseprite, pero por tener ese formato se puede abrir y retocar en Aseprite si hiciera falta; un retoque manual se pierde la próxima vez que se corre `build.py`, así que un cambio permanente se hace en el script. El código lo lee tal cual, sin reprocesarlo: los **tags son las animaciones** y la **duración por cuadro sale de `duration`**, no de un `fps` fijo.
+
+`likka_poses.json` es el archivo pequeño que traduce cada **pose** (lo que pide el resto del código: `idle`, `annoyed`, `fury`...) a un tag de `likka.json`, con su modo de reproducción y, si aplica, sus extras de Compose:
+
+```json
+{
+  "idle": { "tag": "idle", "mode": "loop" },
+  "talk": { "tag": "idle", "mode": "loop" },
+  "happy": { "tag": "idle", "mode": "loop", "extras": ["sparkles"] },
+  "worried": { "tag": "look_around", "mode": "loop", "extras": ["sweat_drop"] },
+  "sleeping": { "tag": "sleep", "mode": "loop", "extras": ["z"] },
+  "sit": { "tag": "sit", "mode": "loop" },
+  "perch": { "tag": "sit", "mode": "loop" },
+  "peek": { "tag": "peek", "mode": "loop" },
+  "annoyed": { "tag": "annoyed", "mode": "loop" },
+  "dragged": { "tag": "annoyed", "mode": "loop" },
+  "fury": { "tag": "fury", "mode": "loop", "extras": ["aura"] },
+  "walk_down": { "tag": "walk_down", "mode": "loop" },
+  "walk_up": { "tag": "walk_up", "mode": "loop" },
+  "walk_right": { "tag": "walk_diag_down_right", "mode": "loop" },
+  "goodbye": { "tag": "walk_diag_down_right", "mode": "loop" },
+  "walk_diag_down_right": { "tag": "walk_diag_down_right", "mode": "loop" },
+  "walk_left": { "tag": "walk_diag_down_right", "mode": "loop", "mirror": true },
+  "walk_diag_down_left": { "tag": "walk_diag_down_right", "mode": "loop", "mirror": true }
+}
+```
+- `mode` puede ser `loop`, `once`, `once_then_idle` o `hold`. Con el conjunto definitivo todas las poses usan `loop`; los otros modos los soporta el código por si se agregan poses.
+- `mirror: true` le dice al código que refleje en X los cuadros del `tag` indicado, en vez de buscar un tag propio. En `peek`, el reflejo depende del borde (`edge`, ver "Medio asomado") y lo decide la UI, no el JSON.
+- Ya no hay entradas provisionales: cada pose apunta a su tag definitivo (ver "Asignación definitiva").
+- **No se edita a mano**: `build.py` lo reescribe desde su tabla `POSES` cada vez que se regenera la hoja. Para cambiar una pose se edita `POSES` en `build.py` y se vuelve a correr el script.
+
+`sirv_frames.json` ya no existe (se borró): no hace falta describir filas/columnas/`cellSize` porque `likka.json` ya trae la posición exacta de cada cuadro.
+
+#### Prueba unitaria
+
+Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
+- `likka.json` tiene **los 10 tags de la hoja** (`idle`, `walk_down`, `walk_up`, `walk_diag_down_right`, `annoyed`, `fury`, `peek`, `sit`, `sleep`, `look_around`).
+- Cada pose de `likka_poses.json` apunta a un `tag` que existe en `likka.json` (incluidas las poses que reutilizan un tag).
+- Todos los cuadros de `likka.json` miden **96 × 96 px**.
+
+`likka_sprites/tools/validate.py` aplica los mismos criterios fuera de Gradle (más los del "Formato del arte"), para comprobar la hoja justo después de regenerarla.
+
+> **Qué se versiona en git** (`.gitignore`, §10.2 de `likkapet_documentacion.md`): **sí** `sprites/likka.png`, `sprites/likka.json`, `sprites/likka_poses.json` y `likka_sprites/` (scripts, revisión y README), y también la copia de `app/src/main/assets/sprites/`, para que quien clone el repo pueda compilar el APK con Likka; **no** `sprites/drafts/`, `sprites/sirv.png` ni los archivos `*.aseprite` / `*.ase`. Motivo: el repositorio de GitHub es público y el APK entregado ya contiene los sprites, así que versionarlos no expone nada nuevo y da copia de seguridad y un repo con el que se puede compilar. *Nota:* `app/src/main/assets/sprites/` todavía figura en `.gitignore`; esa línea se quita en la fase 2 de sprites, cuando se copian los archivos a `assets/`.
+>
+> Si los archivos de sprites no existen donde corre la prueba (por ejemplo, antes de la fase 2), esta se **salta** (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio. Si existen, valida todo lo de arriba.
+
+#### Reglas de renderizado del pixel art
+
+- **Escalado solo entero**: el tamaño en pantalla se calcula en **píxeles físicos** a partir de la altura real de Likka dentro del lienzo (≈88 px de referencia, no los 96 px del lienzo completo): `scale = floor(targetPx / 88)`. Las escalas fraccionarias deforman los píxeles. La **ventana del overlay** (Niveles 1–2), en cambio, se dimensiona con el cuadro completo (`96 × escala` px) más el grosor del halo en cada lado (`2 × escala` px por lado) y el globo.
+- **Sin suavizado**: dibujar con `FilterQuality.None`.
+- **Escenario y halo**: en el **overlay de los Niveles 1 y 2 no hay círculo**: Likka se dibuja directamente sobre la app de fondo, con un **halo del color del nivel** (`levelColor`), de 2 píxeles del sprite de grosor, alrededor de su silueta —extra `halo` de Compose, nunca parte de la hoja— más la sombra de pies (otro extra de Compose). En el **dashboard, el onboarding y el panel del Nivel 3** se mantiene el **círculo crema** (`neutral.cream`) con un borde de 3dp del color del nivel; es solo un fondo, con diámetro **no menor que la altura de Likka mostrada** (sin tokens nuevos), y el sprite se dibuja encima y puede sobresalir en las esquinas (los cuernos, por ejemplo). Likka es oscuro (capa ciruela, cuerpo cacao): el círculo crema garantiza que se vea sobre cualquier fondo en esas pantallas, y en el overlay N1–N2 esa función la cumple el halo (si se ve demasiado fino, primero se prueba subirlo; si aun así no basta, se vuelve al círculo; ver §12.3 M8 en `likkapet_documentacion.md`). En pantallas de la app con el tema claro activo (§1.1 "Paleta clara"), el relleno del círculo pasa a `#FFFFFF` y el borde de reposo a `outline`; el overlay (que siempre usa la paleta oscura) no cambia.
+- **"Medio asomado" (`peek`, Nivel 1, bordes laterales)**: el efecto de Likka asomándose por el borde de la pantalla depende de que el propio arte de `peek` esté **cortado por un lado del cuadro de 96×96 px** (no de recortar la ventana del overlay). `peek` no es una hoja aparte: se deriva de los cuadros de `idle`, **desplazados dentro del lienzo de 96×96** hasta que Likka queda cortado por un solo lado (el derecho en el arte base). El código expone el borde donde está Likka (`OverlayMotionPlanner`, campo `edge`: izquierdo, derecho o inferior) para que la UI sepa qué lado mostrar: en el **borde izquierdo** refleja (`mirror`) el cuadro, el mismo mecanismo que ya usa `walk_left`/`walk_diag_down_left`. En el borde inferior no se usa `peek` sino `perch` (tag `sit`). Este es un requisito para el arte de `peek`, no solo de código.
+- **Retrato**: no existe un archivo de retrato aparte. La bienvenida del onboarding usa el **cuadro 0 de `idle`** (vista 3/4) a escala entera, igual que cualquier otro uso del sprite.
+- **Accesibilidad**: `contentDescription` con el estado (*"Likka molesto, nivel 2"*).
+- El código lee la posición de cada cuadro solo de `likka.json` y el mapeo pose→tag solo de `likka_poses.json`; ningún offset va hardcodeado.
+
+#### Tabla de escalas (densidad de referencia: Redmi 9, ≈2.75; personaje de ≈88 px)
+
+`targetPx = dp × 2.75` y `scale = floor(targetPx / 88)` (la misma regla de arriba; nunca `round`). Altura de Likka mostrada = `88 × scale / 2.75` dp; cuadro completo = `96 × scale / 2.75` dp.
+
+| Uso | Objetivo (dp) | targetPx | targetPx / 88 | Escala | Likka mostrada | Cuadro completo |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Overlay Nivel 1 | 66dp | 181.5 | 2.0625 | 2× | ≈64dp | ≈69.8dp |
+| Overlay Nivel 2 (caminando) | 132dp | 363 | 4.125 | 4× | ≈128dp | ≈139.6dp |
+| Overlay Nivel 3 | 196dp | 539 | 6.125 | 6× | ≈192dp | ≈209.5dp |
+| Dashboard | 164dp | 451 | 5.125 | 5× | ≈160dp | ≈174.5dp |
+| Onboarding | 100dp | 275 | 3.125 | 3× | ≈96dp | ≈104.7dp |
+
+> La columna "Objetivo (dp)" son los tokens `LikkaSpriteSize` (§5), no números sueltos en el código, y expresan la **altura de Likka** (≈88 px de referencia), no la del cuadro. La "Likka mostrada" es menor que el objetivo **a propósito**: cada objetivo se eligió con margen suficiente para que `floor(targetPx / 88)` caiga exactamente en la escala entera prevista (2×/4×/6×/5×/3×) y no en la inferior; no es una pérdida por redondeo, es el margen de diseño incluido en el objetivo.
+
+> **Densidad de calibración.** Los objetivos `LikkaSpriteSize` están calibrados para la densidad del **Redmi 9 (≈2.75)**: las escalas de la tabla (2×/4×/6×/5×/3×) solo se cumplen a esa densidad, que es la que fija `SpriteScaleTest`. En un dispositivo de **2.625** (Pixel 7 y el emulador de prueba) `floor(targetPx / 88)` da una escala menor en los cinco usos: 1× en el Nivel 1 (66dp → 173.25 px), 3× en el Nivel 2 (346.5 px), 5× en el Nivel 3 (514.5 px), 4× en el dashboard (430.5 px) y **2× en el onboarding** (100dp → 262.5 px). Es el comportamiento esperado de la regla de escala entera, no un error: el sprite se ve más chico, nunca deformado.
+
+> **Ventana y fondo.** En el overlay de los Niveles 1 y 2 no hay escenario circular: la ventana se dimensiona con el cuadro completo (`96 × escala` px, ≈69.8dp en N1 y ≈139.6dp en N2 en el Redmi 9) más el grosor del halo en cada lado (`2 × escala` px por lado; en total `100 × escala` px, ≈72.7dp en N1 y ≈145.5dp en N2) y el globo, y el nivel se ve en el halo. En el dashboard, el onboarding y el panel del Nivel 3, el círculo crema es solo un fondo de diámetro no menor que la altura de Likka mostrada, sin tokens nuevos; el sprite se dibuja encima y puede sobresalir en las esquinas.
+
+---
+
+### 1.8 Componentes
+
+#### Botones
+
+| Variante | Relleno | Texto | Uso |
+| :--- | :--- | :--- | :--- |
+| **Primario** | `brand.amber` (`#FCA30B`, igual en ambos temas — `LikkaButtonColors`, §5) | Cacao, `label` | Una acción principal por pantalla ("Comenzar a cuidar mi cuello", "Conceder permiso") |
+| **Advertencia** | `brand.ochre` (`#D17B0F`, igual en ambos temas) | Cacao, `label` | Acciones con consecuencia leve ("Pausar a Likka") |
+| **Peligro** | `brand.raspberry` (`#A2315D`, igual en ambos temas) | Crema, `label` | "Me rindo (ir al inicio)" en el Nivel 3, "Desactivar a Likka" |
+| **Secundario** | Transparente, borde 1.5dp `colorScheme.primary` | `colorScheme.primary` | Acciones alternativas ("Ahora no") |
+| **Texto** | Ninguno | `colorScheme.primary` | Enlaces ("¿Por qué pedimos esto?") |
+
+**Secundario** y **Texto** leen `colorScheme.primary`, que cambia por tema: `brand.amber` (`#FCA30B`) en oscuro, `AmberDark` (`#8F5600`) en claro — sobre fondo claro, el ámbar de marca no llega a 3:1 como borde ni texto (§1.1 "Paleta clara"). **Primario**, **Advertencia** y **Peligro** son botones de relleno y no cambian con el tema: sus colores vienen de `LikkaButtonColors` (§5), no de `colorScheme`, precisamente para no heredar el cambio de `primary`/`secondary`/`tertiary` en claro.
+
+Alto de 52dp (token `LikkaComponentSize.buttonHeight`, `presentation/theme/ComponentSize.kt`, §5), forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
+
+#### Tarjeta de permiso (onboarding)
+
+```
+┌─────────────────────────────────────────────┐
+│ [ícono 32dp]  Mostrar sobre otras apps   [✓] │
+│               Para que Likka aparezca       │
+│               encima de TikTok.             │
+└─────────────────────────────────────────────┘
+```
+Estados:
+- **Pendiente**: borde ámbar y botón "Conceder".
+- **Concedido**: check ámbar y texto secundario.
+- **Denegado**: borde `raspberry.light`, botón "Reintentar" y Likka `worried`.
+
+#### Tarjeta de estadística (dashboard)
+
+Número en `display` o `headline`, etiqueta en `caption` debajo e ícono opcional arriba. Superficie ciruela con borde `outline`, radio `shape.m` y padding `space.m`. El número héroe va en **ámbar**; el resto, en crema.
+
+#### Burbuja de diálogo (roast)
+
+Superficie ciruela con borde de 2dp del color del nivel, radio `shape.m` y un **pico** apuntando a Likka. Máximo **25 palabras** (el prompt ya lo limita). Ancho máximo de 240dp, para que un roast largo se parta en varias líneas en vez de pedir una ventana del ancho de la pantalla, y pico de 16 × 8dp alineado con el borde donde está Likka (tokens `LikkaOverlayLayout`, §5; v3.17). En el Nivel 1, plegado, el globo solo muestra «…», pero TalkBack lee el roast completo. Texto en `bodyLarge` en los Niveles 1–2 y en `title` en el Nivel 3.
+
+#### Overlay por nivel
+
+| Nivel | Contenedor | Posición | ¿Se mueve? | Interacción |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Likka sin escenario, con halo del color del nivel (`levelColor`, 2 píxeles del sprite de grosor); ventana = cuadro de `96 × escala` px + halo en cada lado + globo colapsado | Asomado por un borde lateral (`peek`) o sentado sobre el borde inferior (`perch`), justo encima de la barra de navegación y nunca dentro de los *insets*; entra deslizándose con `motion.enter` y cambia de borde/altura cada rato (`motion.hop`, §1.6) | Sí — cambia de lugar periódicamente, elegido al azar entre posiciones permitidas fuera de los *insets* del sistema | Tocar a Likka despliega el roast durante 5 s (o dispara reacción local de toque repetido si se toca varias veces). El resto de la pantalla sigue funcionando. Mantener presionado abre la app. Arrastrarlo dispara una reacción local (§1.9) sin cambiar su ciclo de cambio de lugar. |
+| 2 | Likka sin escenario, con halo del color del nivel (`levelColor`, 2 píxeles del sprite de grosor); ventana = cuadro de `96 × escala` px + halo en cada lado + globo siempre visible | Entra con sacudida horizontal de 1 px del sprite (`shakeSpritePx`) sincronizada con la vibración; camina en 4 direcciones rectas (arriba, abajo, izquierda, derecha) por toda el área segura durante ≥3 s por tramo; luego se detiene (`annoyed`) 5 s (`motion.walk`, §1.6) | Sí — ciclo continuo de caminar (≥3 s)/detenerse (5 s); si se lo arrastra, vuelve a los `LEVEL_2_RETURN_DELAY_SEC` en tramos rectos | El roast queda siempre visible (no hay que tocar para desplegarlo, a diferencia del Nivel 1). Igual que el Nivel 1, no se puede cerrar sin resolver el motivo. Arrastrarlo o tocarlo repetidamente dispara una reacción local (§1.9). |
+| 3 | Panel a pantalla completa entre las barras del sistema (reemplaza el 80% de alto; decisión de la dueña, 2026-10-05), radio `shape.l` (28dp) en esquinas superiores, cacao al 96% (`LEVEL_3_PANEL_ALPHA = 0.96f`) | Ocupa toda la pantalla entre la barra de estado y la barra de navegación | No — sin movimiento de posición; Likka crece con `motion.fury` y el aura pulsa cada 1 s | Likka `fury`, roast, **cuenta regresiva de 20 s** y botón **Peligro** "Me rindo". |
+
+La pose de cada momento (incluidas `perch`, `dragged` y la reacción de tocar repetido) está en la tabla "Qué hace Likka en cada momento" (§1.7). En los Niveles 1 y 2, Likka se distingue del fondo por su halo (extra `halo`, §1.7) y su sombra de pies, sin círculo; si en el Redmi 9 no se distingue sobre un video oscuro (`likkapet_documentacion.md` §12.3, M8), primero se prueba subir el grosor del halo y, si aun así no basta, se vuelve al círculo crema.
+
+En Nivel 1 y 2, la ventana del overlay está recortada al tamaño de Likka y su globo (no cubre la pantalla completa), así que los toques fuera de su silueta siempre llegan a la app de fondo — incluso mientras camina. La **silueta de Likka sirve como objetivo táctil** (cumple ≥ 48 × 48dp, §1.3); los toques en N1/N2 se manejan **sin efecto de onda** (*ripple*, `indication = null`), ya que un destello rectangular sobre la app de fondo rompería la estética pixel art. Cada tap sobre Likka cuenta para la reacción local de toque repetido (§1.9). Con *Quitar animaciones* del sistema activado, ambos niveles quedan fijos en su última posición (§1.6).
+
+#### Notificación persistente (servicio en primer plano)
+
+Ícono pequeño monocromo con la silueta de los cuernos de Likka (vector de 24dp, ver §1.5) y sin ícono grande en el MVP. Tres modos (v3.16, `likkapet_documentacion.md` RF-O08 y RF-A06): **Protegiendo** (título «Likka está cuidando tu cuello», sin texto), **En pausa** («Likka está en pausa» / «Vuelve cuando termine la pausa.») y **Necesito un permiso** («Necesito un permiso» / «Toca para revisar los permisos.»). Acciones: **Pausar 30 min** (solo si la regla E lo permite y no falta ningún permiso: se oculta en Nivel 3, con una expulsión o una pausa en curso, y sin pausas restantes) y **Abrir** (trae al frente la instancia existente de la app).
+
+---
+
+### 1.9 Voz y Microcopy
+
+Likka es un **escarabajo ciervo nocturno sarcástico, bromista y un poco dramático**. Habla en **primera persona**, tutea, y molesta con cariño, como un amigo pesado que en el fondo te quiere. Se burla del **hábito** (encorvarte, quedarte pegado a la pantalla), **nunca** del cuerpo, la identidad ni la salud mental de la persona. Sin groserías ni culpa real: la idea es sacarte una sonrisa incómoda, no hacerte sentir mal.
+
+**La voz en inglés (v3.15, RF-S09):** en inglés la voz **se adapta, no se traduce literal**: mismos rasgos (pícaro, nocturno, se burla del hábito, nunca del cuerpo ni de la persona), con los juegos de palabras, la ironía y los remates cortos reescritos para que suenen naturales en inglés. **Sin marcar el género de la persona usuaria** (en ningún idioma): nada de «encorvado», «campeón» o «pegado»; se usan formas neutras («con el cuello encorvado», «a la pantalla»). Likka sí puede ser «él». Las muestras de abajo son del español; las del inglés se escriben aparte con el mismo criterio. Las frases locales (`roasts_fallback_en.json`, `reactions_en.json`) y el prompt de la IA en inglés siguen esta regla.
+
+#### Rasgos de personalidad
+
+| Rasgo | Qué significa | Ejemplo |
+| :--- | :--- | :--- |
+| **Ironía** | Dice lo contrario de lo que quiere decir, o exagera el elogio a algo que no lo merece | "27 minutos en TikTok. Qué dedicación." |
+| **Exageración dramática** | Convierte un hábito pequeño en una tragedia de proporciones absurdas, sobre todo en Nivel 3 | "Se acabó la función. Te mando al inicio antes de que el algoritmo te adopte." |
+| **Autorreferencia de escarabajo** | Se compara con su propio cuerpo (cuernos, élitros), su bosque o la noche | "Yo cargo cuernos y aun así camino derecho." |
+| **Comparaciones absurdas** | Compara el hábito con algo cotidiano y ridículo, nunca con el cuerpo de la persona | "Tu cuello carga lo mismo que un garrafón de agua." |
+| **Remates cortos** | Cierra con una frase corta y seca, no con una explicación | "Suelta eso." / "Qué valiente." |
+
+#### Tabla de sí / no
+
+| Sí | No |
+| :--- | :--- |
+| "27 minutos en TikTok. Qué dedicación. Ojalá tu tarea tuviera tanta suerte." (se burla del hábito, con ironía) | "Llevas 27 minutos en TikTok, deberías parar." (informativo, sin voz) |
+| "Tu cuello carga 27 kilos. Yo cargo cuernos y aun así camino derecho." (se compara consigo mismo) | "Tu postura es mala, podrías lastimarte la espalda." (suena a regaño médico) |
+| "Oye, que no soy un sticker." (remate corto ante el gesto) | "Por favor no me arrastres, prefiero quedarme quieto." (educado pero sin personalidad) |
+| "Sin internet. Tranquilo, mis frases de siempre también muerden." (le resta dramatismo al error con humor) | "Error de red: no se pudo conectar al servidor." (mensaje técnico crudo) |
+| "Conceder permiso" (permisos: claro, sin sarcasmo) | "Dame permiso o no puedo hacer mi trabajo, humano." (sarcasmo donde no debe haber) |
+
+#### Escala de tono por nivel
+
+| Nivel | Tono | Descripción |
+| :--- | :--- | :--- |
+| **N1** | Comentario pícaro | Un guiño ligero, casi cómplice; Likka insinúa más de lo que dice. |
+| **N2** | Sarcasmo directo | Sin rodeos: la ironía es evidente y un poco filosa, pero sigue siendo cariñosa. |
+| **N3** | Drama teatral con ultimátum | Exageración máxima, tono de "esto se acaba ya", cierra con una consecuencia clara (el aviso de expulsión). |
+
+#### Dónde aplica cada tono
+
+| Con la voz de Likka (irónica, bromista) | Claro y sin sarcasmo |
+| :--- | :--- |
+| Roasts (Niveles 1–3) | Permisos |
+| Reacciones locales (arrastrar, tocar) | Privacidad |
+| Estados globales del dashboard (§3.5) | Ajustes |
+| Onboarding | Errores técnicos |
+
+En permisos, privacidad, ajustes y errores técnicos el usuario necesita **entender**, no reírse: ahí Likka habla claro, sin ironía ni comparaciones.
+
+#### Muestras de referencia
+
+| Contexto | Frase |
+| :--- | :--- |
+| N1, `POSTURE` | "Psst… tu cuello acaba de pedir asilo en mi bosque." |
+| N2, `USAGE_TIME` | "27 minutos en TikTok. Qué dedicación. Ojalá tu tarea tuviera tanta suerte." |
+| N3, `POSTURE` | "Tu cuello carga 27 kilos. Yo cargo cuernos y aun así camino derecho. Suelta eso." |
+| N3, `USAGE_TIME` | "Se acabó la función. Te mando al inicio antes de que el algoritmo te adopte." |
+| Reacción: arrastrar | "Oye, que no soy un sticker." |
+| Reacción: tocar mucho | "Si me tocas tanto, empiezo a cobrar por hora." |
+| Estado: protegiendo | "Te vigilo desde mi tronco. Sin presión. Bueno, un poco." |
+| Estado: en pausa | "Me siento a esperar hasta las 18:40. No hagas nada que yo haría." |
+| Estado: sin internet | "Sin internet. Tranquilo, mis frases de siempre también muerden." |
+| Onboarding: bienvenida (`onboarding_welcome_body`, v3.17) | "Vivo en tu teléfono y me molesta que te encorves o no te despegues de las redes. Te lo digo con cariño. Casi siempre." |
+
+Reglas generales:
+- Botones con **verbo + objeto**: "Conceder permiso", no "OK".
+- Errores con solución, sin tecnicismos: aun en tono claro, se explica qué pasa y qué falta, nunca solo el código o el nombre del error.
+
+#### Reacciones locales
+
+Al arrastrarlo o tocarlo repetido (`likkapet_documentacion.md` RF-O12, `assets/reactions.json`, y `assets/reactions_en.json` en inglés, elegido por el idioma resuelto de `app_language`, RF-S09): frases cortas (≤ 12 palabras), sin IA, mismo tono que los roasts — se burla del hábito o del gesto de interactuar con él, nunca del cuerpo ni de la persona. Ejemplos: *"Oye, que no soy un sticker."* (arrastrar), *"Puedes moverme, pero no a tu cuello."* (arrastrar), *"Si me tocas tanto, empiezo a cobrar por hora."* (tocar repetido).
+
+---
+
+## 2. Jerarquía
+
+### 2.1 Jerarquía visual (qué se ve primero)
+
+En cada pantalla, el ojo debe recorrer este orden:
+
+1. **Likka**: su pose dice el estado general.
+2. **Dato o mensaje principal**: un solo número o frase en `display`/`headline`, en ámbar.
+3. **Acción principal**: un único botón primario.
+4. **Información de apoyo**: tarjetas secundarias y texto en `bodyMedium`/`caption`.
+
+Herramientas para construirla, en orden de preferencia: **tamaño → posición → color → peso**. Si todo es ámbar, nada destaca: el acento se gana.
+
+### 2.2 Jerarquía de la información (qué es más importante)
+
+| Prioridad | Información | Dónde vive |
+| :---: | :--- | :--- |
+| 1 | ¿Likka me está protegiendo? (servicio activo / en pausa / falta permiso) | Parte superior del dashboard, con la pose de Likka |
+| 2 | ¿Cómo voy hoy? (minutos de ocio, intervenciones) | Tarjeta héroe del dashboard |
+| 3 | Racha de días | Tarjeta secundaria |
+| 4 | Configuración (apps vigiladas, IA, pausa) | Pantalla de Ajustes |
+| 5 | Explicaciones (biomecánica, privacidad, créditos) | Detrás de enlaces "¿Por qué?" |
+
+### 2.3 Jerarquía de interrupción (overlay)
+
+El overlay sigue la regla de **mínima interrupción necesaria**: cada nivel ocupa más espacio y exige más atención que el anterior.
+
+| Nivel | % de pantalla | Canales de atención | ¿Bloquea la app? | ¿Se mueve? |
+| :--- | :---: | :--- | :--- | :--- |
+| 1 | ~3% | Visual | No | Sí, cambia de lugar cada rato (§1.8) |
+| 2 | ~10% | Visual + vibración | No | Sí, camina y persigue en ciclo (§1.8) |
+| 3 | Pantalla completa entre barras de sistema (reemplaza el 80%; decisión de la dueña, 2026-10-05) | Visual + vibración + (opcional) voz | Casi: deja libres las barras de estado y navegación | No |
+
+### 2.4 Plantilla del dashboard
+
+```
+┌───────────────────────────────┐
+│ Likka-Pet                 ⚙️  │  ← barra superior (título + Ajustes)
+│                               │
+│        [ Likka idle ]         │  ← 1. Personaje (`LikkaSpriteSize.dashboard`, escenario crema)
+│   ● Protegiendo tu cuello     │  ← estado (chip ámbar / frambuesa claro)
+│                               │
+│  ┌─────────────────────────┐  │
+│  │        23 min           │  │  ← 2. Dato héroe (display, ámbar)
+│  │   de redes hoy          │  │
+│  └─────────────────────────┘  │
+│  ┌──────────┐ ┌──────────┐    │
+│  │ 4        │ │ 🔥 6     │    │  ← 4. Apoyo: intervenciones · racha
+│  │ avisos   │ │ días     │    │
+│  └──────────┘ └──────────┘    │
+│                               │
+│  [        Pausar          ]   │  ← 3. Acción (abre la hoja de pausa)
+│     Te quedan 3 pausas hoy    │
+│  [   Desactivar a Likka   ]   │  ← Peligro (abre un diálogo de confirmación)
+└───────────────────────────────┘
+```
+
+**Botón "Desactivar a Likka" (v3.9, decisión de la dueña del proyecto):** además del interruptor "Likka activado" de Ajustes (§2.5), el dashboard lleva un botón de variante **Peligro** (§1.8) "Desactivar a Likka", debajo de la acción principal. Se muestra en todos los estados salvo "Desactivado", donde la acción principal pasa a ser "Activar a Likka" (§3.5). Al pulsarlo se abre `DeactivateDialog` (`presentation/components/DeactivateDialog.kt`), el mismo diálogo de confirmación que usa el interruptor de Ajustes (RF-S04 de `likkapet_documentacion.md`): título "¿Desactivar a Likka?" y botones "Desactivar" / "Cancelar"; nada se desactiva sin confirmar.
+
+**Qué cuenta como «aviso» (intervención, v3.14):** una por cada aparición de Likka, es decir, cuando el nivel mostrado pasa de 0 a 1 o más. El Nivel 3 se cuenta además una vez, al alcanzarlo. Subir de Nivel 1 a 2 dentro de la misma aparición no suma otro.
+
+#### Hoja de pausa (bottom sheet)
+
+```
+┌───────────────────────────────┐
+│  ¿Cuánto descanso, humano?    │  ← title
+│  [15 min] [30 min] [60 min]   │  ← chips; 30 min preseleccionado
+│  Te quedan 3 pausas hoy       │  ← caption; mismo conteo que el dashboard (baja a 2 recién al confirmar)
+│  [       Pausar a Likka     ] │  ← botón de advertencia (ocre)
+└───────────────────────────────┘
+```
+
+Si ya no quedan pausas o Likka está en el Nivel 3, el botón "Pausar" del dashboard se deshabilita con el texto *"Sin pausas por hoy"* o *"No puedes pausarme mientras estoy furioso"*.
+
+### 2.5 Plantilla de Ajustes
+
+```
+┌───────────────────────────────┐
+│ ←  Ajustes                    │
+│                               │
+│ LIKKA                         │  ← caption, texto secundario
+│ Likka activado          [●━]  │
+│ Vibración               [●━]  │
+│                               │
+│ APARIENCIA                    │
+│ Tema                          │  ← label, encima del control
+│ [ Oscuro | Claro | Sistema  ] │  ← control segmentado, ancho completo, objetivos ≥48dp
+│ Idioma                        │  ← label, encima del control (RF-S09)
+│ [ Sistema | Español | English ]│  ← control segmentado, igual que el de Tema
+│                               │
+│ APPS VIGILADAS                │
+│ TikTok                  [●━]  │
+│ Instagram               [●━]  │
+│ YouTube                 [●━]  │
+│ Facebook                [●━]  │
+│ [ico] Chrome            [●━]  │  ← app añadida por el usuario (ícono + nombre + interruptor)
+│        Quitar                 │  ←   opción de quitar, botón de texto ≥48dp
+│ Añadir app             →      │  ← abre la pantalla "Añadir app" (abajo)
+│                               │
+│ INTELIGENCIA ARTIFICIAL       │
+│ Mensajes con IA         [●━]  │
+│ ¿Qué datos se envían?  →      │  ← enlace de texto
+│                               │
+│ Revisar permisos       →      │
+│ Acerca de y créditos   →      │  ← créditos de la autora
+└───────────────────────────────┘
+```
+
+Reglas de la pantalla:
+- Los grupos llevan un encabezado `caption` en mayúsculas cortas.
+- Cada fila mide 56dp de alto.
+- Interruptores: pista `colorScheme.primary` cuando están activos (`brand.amber` en oscuro, `AmberDark` en claro) y `bg.switchTrackInactive` cuando están inactivos (`likkaSwitchColors()`, §5). Contraste ≥ 3:1 **solo sobre el fondo de la pantalla** (3.25:1 sobre cacao): los interruptores van en filas sobre el fondo, nunca sobre una tarjeta ciruela, donde la pista inactiva mide 2.94:1 (§1.1).
+- No se puede apagar la última app vigilada, y esa cuenta incluye las apps añadidas y solo cuenta las que siguen instaladas (RF-S02 y RF-S06 de `likkapet_documentacion.md`); tampoco se puede quitar la última activa: su "Quitar" queda deshabilitado. Debajo del grupo, el texto de apoyo `settings_watched_apps_hint` ("Tiene que quedar al menos una app vigilada.") lo explica.
+- **Qué filas se muestran (v3.13):** solo las apps vigiladas **instaladas**. Una app por defecto que no está instalada no tiene fila; cuando se instale aparece con el valor (activada o no) que tenía guardado. Una app añadida que se desinstala deja de listarse, aunque su valor sigue guardado. Mientras se leen las apps instaladas no se muestra ninguna fila de apps (nunca una lista parcial). Si no hay ninguna app vigilada instalada, el grupo muestra el texto de apoyo `settings_watched_apps_empty` ("No encuentro en tu teléfono ninguna de las redes que vigilo. Usa «Añadir app» para elegir cuál vigilar.") encima de la fila "Añadir app →".
+- **Apps añadidas (v3.12):** van en el grupo APPS VIGILADAS, debajo de las 4 por defecto y en orden alfabético, cada una con el **ícono de la app** (40dp, el del launcher) a la izquierda del nombre, el interruptor a la derecha y, debajo del nombre, el botón de texto "Quitar" (variante Texto, §1.8, objetivo ≥48dp). La fila crece con la fuente al 200% (RNF-U03): el nombre puede ocupar dos líneas y la altura de 56dp es un mínimo. "Quitar" no pide confirmación (es reversible: se vuelve a añadir desde "Añadir app"). La fila "Añadir app →" cierra el grupo y abre la pantalla de abajo.
+- **Idioma (v3.15, RF-S09; Pendiente de código (RF-S09):):** fila «Idioma» dentro del grupo APARIENCIA, justo debajo de «Tema», con el mismo patrón: etiqueta arriba y control segmentado de ancho completo debajo, con tres opciones mutuamente excluyentes: «Sistema» (sigue el idioma del teléfono: inglés si está en inglés, español en cualquier otro caso), «Español» y «English». Los nombres de los idiomas se muestran **siempre en su propio idioma** («Español», «English»), también con la UI en el otro; «Sistema» sí se traduce («System» en la UI en inglés). Cada segmento cumple el objetivo táctil de ≥48dp (§1.3) y el activo conserva el ícono de check de `SegmentedButton` (§1.1, regla 3). Elegir un idioma cambia **todo** el texto visible de la app, incluidos el overlay, la notificación y las frases de Likka, sin mezclar. Los dos idiomas tienen cadenas de largo distinto (una de las dos suele ser más larga según el texto): ninguna pantalla, botón, chip ni burbuja del overlay puede tener un ancho fijo pensado para un solo idioma, y todas se revisan con la fuente del sistema al 200% (RNF-U03) en español **y** en inglés, sin cortar texto.
+- **Apariencia** va en su propio grupo, justo debajo de LIKKA: no es un ajuste del personaje (como "Likka activado"/"Vibración") ni de las apps vigiladas o la IA, así que un grupo propio evita forzarlo dentro de una categoría a la que no pertenece. El control es segmentado (Oscuro / Claro / Sistema), no un interruptor, porque son 3 opciones mutuamente excluyentes; la etiqueta "Tema" va arriba y el control ocupa el ancho completo debajo (no en la misma fila) para que los 3 segmentos tengan espacio de crecer con la fuente del sistema al 200% (RNF-U03) sin comprimirse; cada segmento cumple el objetivo táctil mínimo de 48dp (§1.3). El segmento activo conserva el ícono de check de `SegmentedButton` (Material), para no comunicar cuál está seleccionado solo con el color de fondo (§1.1, regla 3).
+
+#### Pantalla "Añadir app" (v3.12, RF-S06)
+
+Subpantalla de Ajustes, abierta desde la fila "Añadir app →" del grupo APPS VIGILADAS (§3.1). Es un flujo de **ajustes**: voz clara, sin ironía ni comparaciones (§1.9, "Dónde aplica cada tono").
+
+```
+┌───────────────────────────────┐
+│ ←  Añadir app                 │  ← barra superior; "Atrás" regresa a Ajustes (§3.3)
+│                               │
+│ [ 🔍 Buscar app          ✕ ]  │  ← campo de búsqueda; ✕ solo con texto escrito
+│ Para la IA, toda app que      │  ← caption, texto secundario
+│ añadas es solo «otra app»:    │
+│ nunca envío su nombre.        │
+│                               │
+│ [ico] Chrome          Añadir  │  ← fila: ícono · nombre · acción
+│ [ico] Gmail           Añadir  │
+│ [ico] Netflix         Añadida │  ← ya añadida: check + "Añadida", sin acción
+│ [ico] Spotify         Añadir  │
+│  …                            │
+└───────────────────────────────┘
+```
+
+- **Contenido de la lista:** las apps instaladas con ícono de launcher (las que se ven con el intent `MAIN` + `LAUNCHER` declarado en `<queries>`, `likkapet_documentacion.md` §11), **sin** las 4 apps por defecto (ya están en Ajustes con su interruptor) y **sin** Likka-Pet. Orden alfabético por nombre, sin distinguir mayúsculas ni tildes.
+- **Filas:** ícono de la app (40dp) + nombre (`body`, una sola línea con elipsis; con fuente al 200% puede pasar a dos) + a la derecha el botón de texto "Añadir" o, si ya está añadida, un ícono de check y la palabra "Añadida" (nunca solo el ícono ni solo el color, §1.1 regla 3). Toda la fila es el objetivo táctil (≥ 56dp de alto, ≥ 48dp en cada elemento interactivo, RNF-U02). Al pulsar "Añadir" la fila pasa a "Añadida" en el momento y la app queda en el grupo APPS VIGILADAS, **encendida**; la pantalla no se cierra, para poder añadir varias seguidas.
+- **Buscador:** filtra la lista mientras se escribe, por coincidencia parcial del nombre, sin distinguir mayúsculas ni tildes. La ✕ borra el texto y se anuncia como "Borrar búsqueda".
+- **Estados:** *cargando* (mientras se leen las apps instaladas; un indicador de progreso centrado con el texto "Buscando tus apps…"), *lista* y *sin resultados*. Sin resultados: "No encuentro ninguna app con ese nombre." más el botón de texto "Borrar búsqueda". Si no hubiera ninguna app que ofrecer (todas ya añadidas): "Ya añadiste todas las apps que puedo ver."
+- **Textos (todos en `strings.xml`, sin emojis):** título "Añadir app", campo "Buscar app", aviso de privacidad "Para la IA, toda app que añadas es solo «otra app»: nunca envío su nombre.", acciones "Añadir" / "Añadida", y en Ajustes "Añadir app" y "Quitar". Los textos nuevos los escribe la tarea de código; aquí se fija su redacción.
+- **Accesibilidad:** el ícono de cada app es decorativo (`contentDescription = null`; el nombre ya está al lado); el botón "Añadir" se anuncia con el nombre de la app ("Añadir Chrome"), igual que "Quitar" ("Quitar Chrome"); el check de "Añadida" lleva su texto, así que no hace falta otra descripción.
+- **Tokens:** solo los del tema (§5): fondo y texto de `colorScheme`, espaciado de `LikkaSpacing`, tamaños de `LikkaComponentSize` (ícono de app con un token propio, `appIcon` = 40.dp; `minTouchTarget` y `settingsRowHeight` para los objetivos y el alto de fila), nunca `LikkaColors.X` directo ni números sueltos. Sin sprites ni escenario de Likka en esta pantalla.
+
+---
+
+## 3. Navegación
+
+### 3.1 Mapa de la app
+
+```mermaid
+flowchart TD
+    START(["Abrir app"]) --> CHECK{"¿Onboarding\ncompleto?"}
+    CHECK -->|No| OB1
+    CHECK -->|"Sí"| PERMCHECK{"¿Permisos\nvigentes?"}
+    PERMCHECK -->|"No (revocado desde el sistema)"| PERM["Pantalla de permisos\n(RF-A06, reusa el paso 4)"]
+    PERM -->|Todos concedidos| HOME
+    PERMCHECK -->|Sí| HOME
+
+    subgraph Onboarding["Onboarding (flujo lineal, una sola vez)"]
+        OB1["1. Bienvenida\nLikka se presenta"] --> OB2["2. Cómo funciona\n3 niveles en 3 tarjetas"]
+        OB2 --> OB3["3. Privacidad e IA\nQué se envía · interruptor de IA"]
+        OB3 --> OB4["4. Permisos\nChecklist de 3 permisos"]
+        OB4 --> MIUI{"¿Xiaomi / MIUI?"}
+        MIUI -->|Sí| OB5["5. Ajustes de tu teléfono\nguía MIUI: Autostart + batería + ventanas emergentes\ncasillas 'Ya lo activé'"]
+        MIUI -->|No| OB6
+        OB5 --> OB6["6. ¡Listo!\nLikka feliz"]
+    end
+
+    OB6 --> HOME["🏠 Inicio (Dashboard)"]
+    HOME --> PAUSA["Hoja de pausa\n15 · 30 · 60 min"]
+    HOME <--> SET["⚙️ Ajustes\nLikka, vibración, apps vigiladas (con las añadidas), IA"]
+    SET --> ADDAPP["Añadir app\nlista de apps instaladas + buscador"]
+    SET --> PRIV["Qué datos se envían\n(reusa la pantalla 3)"]
+    SET --> PERM["Revisar permisos\n(reusa la pantalla 4)"]
+    SET --> ABOUT["Acerca de y créditos\n(autora, materia, tipografías)"]
+```
+
+**Contenido de "Acerca de y créditos" (v3.9):** nombre de la autora (autora única: Paula Sofia Gonzalez Zambrano, no "el equipo") y la materia (Diseño de Interfaces), `versionName` de la app (RF-S07), y los créditos de licencia de las dos fuentes usadas (§1.2): **Baloo 2** y **Nunito**, ambas de Google Fonts bajo licencia **SIL Open Font License 1.1**, con el texto completo de cada licencia disponible desde ahí (`assets/licenses/baloo2_OFL.txt`, `assets/licenses/nunito_OFL.txt`).
+
+### 3.2 Patrón de navegación
+
+- **Sin barra de navegación inferior.** La app tiene solo 2 destinos principales (Inicio y Ajustes), así que una barra inferior sería peso muerto. Ajustes se abre desde el ícono ⚙️ de la barra superior.
+- **Onboarding lineal**, con indicador de pasos (puntos) y botón "Atrás". No se puede saltar la pantalla de permisos. El contenido de cada paso se desplaza dentro de su zona, y entre el final de esa zona y el indicador de pasos queda un espacio fijo `LikkaSpacing.l`, con cualquier posición de desplazamiento.
+- La pausa se elige en una **hoja inferior** (no es una pantalla nueva), para no sacar al usuario del dashboard.
+- Implementación: **Navigation Compose** con 2 grafos (`onboarding` y `main`). Al terminar el onboarding se hace `popUpTo(onboarding) { inclusive = true }`, para que "Atrás" no regrese a él.
+
+### 3.3 Comportamiento del botón "Atrás"
+
+| Dónde | Qué hace "Atrás" |
+| :--- | :--- |
+| Onboarding, paso 1 | Sale de la app |
+| Onboarding, pasos 2–6 | Paso anterior |
+| Inicio | Sale de la app (el servicio sigue corriendo) |
+| Ajustes y subpantallas | Regresa un nivel |
+| Overlay Nivel 1–2 | No lo intercepta (`FLAG_NOT_FOCUSABLE`): funciona en la app de fondo. El movimiento de Likka (§1.8) no cambia esto: la ventana sigue recortada a su silueta, nunca captura el botón "Atrás". |
+| Overlay Nivel 3 | No lo intercepta. Las salidas son "Me rindo", el botón/gesto **Inicio** del sistema (misma expulsión que "Me rindo": ver RF-O03) o esperar la cuenta regresiva. **Enderezar el cuello solo sirve si el motivo activo es `POSTURE`**; si es `USAGE_TIME`, ninguna postura resuelve el Nivel 3 (§3.3 de `likkapet_documentacion.md`, regla A). |
+
+### 3.4 Puntos de entrada externos
+
+```mermaid
+flowchart LR
+    N["🔔 Notificación persistente"] -->|"Tocar o acción 'Abrir'"| HOME["Inicio"]
+    N -->|"Acción 'Pausar 30 min' (oculta en Nivel 3, con expulsión o pausa en curso, sin pausas o sin un permiso)"| P["Pausa sin abrir la app"]
+    O1["Overlay Nivel 1–2"] -->|Mantener presionado a Likka| HOME
+    O3["Overlay Nivel 3"] -->|Me rindo / 20 s| LAUNCHER["Launcher de Android"]
+    REV["Permiso revocado desde el sistema"] -->|Al abrir la app| PERM["Pantalla de permisos"]
+```
+
+### 3.5 Estados globales
+
+Cada pantalla contempla estos estados, y cada uno tiene su pose de Likka:
+
+| Estado | Pose | Mensaje | Acción |
+| :--- | :--- | :--- | :--- |
+| Protegiendo | `idle` (tag `idle`) | "Te vigilo desde mi tronco. Sin presión. Bueno, un poco." | Pausar |
+| En pausa | `sit` (tag `sit`) | "Me siento a esperar hasta las 18:40. No hagas nada que yo haría." | Reanudar ahora |
+| Desactivado | `sleeping` (tag `sleep` + `z`) | "Estoy apagado. Sin mí, tu cuello queda por su cuenta." | Activar a Likka |
+| Falta permiso | `worried` (tag `look_around` + `sweat_drop`) | "Sin este permiso no puedo aparecer." | Conceder permiso |
+| Sin internet o sin saldo de IA | `idle` | "Sin internet. Tranquilo, mis frases de siempre también muerden." | — (informativo) |
+| IA desactivada | `idle` | — (no se muestra aviso: es una elección del usuario) | — |
+
+**Cómo se decide «Sin internet o sin saldo de IA» (v3.14):** por las últimas respuestas del Worker, no por el estado de la red del teléfono (sin `ConnectivityManager`, así que no hace falta el permiso `ACCESS_NETWORK_STATE`). Un fallo de red marca «sin internet», un `402 no_credit` marca «sin saldo» y una respuesta correcta quita el aviso. Es optimista: hasta que una petición falle se asume que hay conexión. Con la IA desactivada no hay peticiones ni aviso.
+
+Nota de tono (§1.9): "Protegiendo", "En pausa" y "Desactivado" usan la voz de Likka porque son estados del personaje, no del sistema. "Falta permiso" se mantiene claro y directo aun con la pose `worried`, porque es un mensaje de permisos. "Sin internet" usa la voz de Likka a propósito: le resta dramatismo a un error técnico sin dejar de explicar qué pasa.
+
+---
+
+## 4. Accesibilidad
+
+- Contraste AA verificado (ver [1.1](#11-color)) en **ambos temas**, oscuro y claro. **Nunca se usa frambuesa pura para texto o bordes sobre fondos oscuros**; en claro sí cumple AA (§1.1 "Paleta clara").
+- Ámbar y ocre pueden confundirse con algunos tipos de daltonismo, así que el nivel siempre se refuerza con el tamaño, la pose y la vibración.
+- Todas las imágenes de Likka llevan un `contentDescription` con su estado: *"Likka molesto, nivel 2"*.
+- TalkBack anuncia el texto del roast al aparecer (`liveRegion = Polite` en los Niveles 1–2 y `Assertive` en el Nivel 3).
+- Soporte de fuente grande hasta 200%: las tarjetas crecen en alto y nunca cortan texto.
+- La vibración y el color nunca son el único aviso.
+
+---
+
+## 5. Tokens en Compose
+
+```kotlin
+// presentation/theme/Color.kt
+package com.likkapet.presentation.theme
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.graphics.Color
+
+object LikkaColors {
+    // Forest palette (brand)
+    val Amber = Color(0xFFFCA30B)
+    val Ochre = Color(0xFFD17B0F)
+    val Raspberry = Color(0xFFA2315D)
+    val Plum = Color(0xFF4B1C33)
+    val Cocoa = Color(0xFF3D1B1C)
+
+    // Support colors
+    val Cream = Color(0xFFFFF4E6)
+    val CreamMuted = Color(0xFFE3C9C4)
+    val SurfaceHigh = Color(0xFF5E2A45)
+    val SwitchTrackInactive = Color(0xFF8A6B78)
+    val Outline = Color(0xFF9C7488)          // v3: was #6B3552 (1.64:1); now ≥3:1 (WCAG 1.4.11)
+    val RaspberryLight = Color(0xFFF07AA0)
+
+    // Extra surface/error roles so Material 3 doesn't fall back to its own purples
+    // for tokens the v2 scheme left unset (surfaceContainer*, inverseSurface, scrim...).
+    val SurfaceDim = Color(0xFF2E1416)
+    val SurfaceBright = Color(0xFF6B3552)
+    val SurfaceContainerLowest = Color(0xFF260F11)
+    val SurfaceContainerLow = Color(0xFF351719)
+    val SurfaceContainer = Color(0xFF3D1B1C)
+    val SurfaceContainerHigh = Color(0xFF48222A)
+    val SurfaceContainerHighest = Color(0xFF5E2A45)
+    val InverseSurface = Color(0xFFE3C9C4)
+    val InverseOnSurface = Color(0xFF3D1B1C)
+    val Scrim = Color(0xFF000000)
+
+    // Phase 4b: the overlay's foot shadow (design system §1.7), translucent black under Likka's feet.
+    val FootShadow = Color(0x59000000)
+
+    // Light theme (v3.6, COULD, §1.1 "Paleta clara"). App screens only — the overlay always
+    // uses the dark tokens above. Cocoa/Raspberry/Outline are reused as-is: the light palette
+    // was designed so the main text and the level-3/rest border colors match the existing
+    // brand hex values, verified in §1.1.
+    val LightBackground = Color(0xFFFFF4E6)
+    val LightSurface = Color(0xFFFFFFFF)
+    val LightSurfaceVariant = Color(0xFFF7E6DC)
+    val LightOnSurfaceVariant = Color(0xFF6B4A55)
+    val AmberDark = Color(0xFF8F5600)   // level 1 border / amber text accent in light; also colorScheme.primary in light
+    val OchreDark = Color(0xFF9A4A00)   // level 2 border / ochre text accent in light
+}
+
+/** True in the light theme, false in dark; set by [LikkaTheme]. The overlay always sees `false`, since it always renders inside `LikkaTheme(ThemeMode.DARK)` (§9.1 of `likkapet_documentacion.md`). */
+val LocalLikkaIsLightTheme = compositionLocalOf { false }
+
+/** Likka halo (overlay levels 1–2), stage border (dashboard, onboarding, level 3) and bubble color for an escalation level (0 = calm); reads [LocalLikkaIsLightTheme] instead of taking a parameter, so callers can't forget to pass the active theme. */
+@Composable
+fun levelColor(level: Int): Color = if (LocalLikkaIsLightTheme.current) {
+    when (level) {
+        1 -> LikkaColors.AmberDark
+        2 -> LikkaColors.OchreDark
+        3 -> LikkaColors.Raspberry
+        else -> LikkaColors.Outline
+    }
+} else {
+    when (level) {
+        1 -> LikkaColors.Amber
+        2 -> LikkaColors.Ochre
+        3 -> LikkaColors.RaspberryLight
+        else -> LikkaColors.Cream
+    }
+}
+
+/** Fill of Likka's cream stage circle (dashboard, onboarding, level 3 panel): `neutral.cream` in dark, `#FFFFFF` in light (§1.1 "Paleta clara", regla 3, and §1.7). */
+@Composable
+fun stageFillColor(): Color = if (LocalLikkaIsLightTheme.current) LikkaColors.LightSurface else LikkaColors.Cream
+
+/**
+ * Filled-button colors (§1.8): Primary/Advertencia/Peligro keep the same brand fill in both
+ * themes, unlike `colorScheme.primary`/`secondary`/`tertiary` (which change in light so they stay
+ * usable as text/border colors, §1.1). Read via [LocalLikkaButtonColors] in `LikkaButton`, never
+ * `LikkaColors.X` directly, so the source of these colors stays swappable and testable like any
+ * other themed token.
+ */
+data class LikkaButtonColors(
+    val primaryContainer: Color, val onPrimaryContainer: Color,
+    val warningContainer: Color, val onWarningContainer: Color,
+    val dangerContainer: Color, val onDangerContainer: Color,
+)
+
+val LikkaDefaultButtonColors = LikkaButtonColors(
+    primaryContainer = LikkaColors.Amber, onPrimaryContainer = LikkaColors.Cocoa,
+    warningContainer = LikkaColors.Ochre, onWarningContainer = LikkaColors.Cocoa,
+    dangerContainer = LikkaColors.Raspberry, onDangerContainer = LikkaColors.Cream,
+)
+
+val LocalLikkaButtonColors = compositionLocalOf { LikkaDefaultButtonColors }
+
+/**
+ * Colors of the Compose extras around Likka (design system §1.7: `sparkles`, `z`, `sweat_drop`,
+ * `aura` and the foot shadow; the halo uses [levelColor]). The same in both themes, like
+ * [LikkaButtonColors]: those extras are drawn on the stage circle, cream or white, and in the overlay,
+ * which is always dark. The cocoa outline is the 1 px outline the sprite itself has, so a sparkle or
+ * a drop reads on any of those backgrounds. Read via [LocalLikkaExtrasColors].
+ */
+data class LikkaExtrasColors(
+    val outline: Color,
+    val sparkle: Color,
+    val sleepZ: Color,
+    val sweatDrop: Color,
+    val sweatDropShine: Color,
+    // The aura's gradient, raspberry next to Likka, light raspberry outside (design system §1.6)
+    val auraInner: Color,
+    val auraOuter: Color,
+    val footShadow: Color,
+)
+
+val LikkaDefaultExtrasColors = LikkaExtrasColors(
+    outline = LikkaColors.Cocoa,
+    sparkle = LikkaColors.Amber,
+    sleepZ = LikkaColors.Plum,
+    sweatDrop = LikkaColors.Cream,
+    sweatDropShine = LikkaColors.LightSurface,
+    auraInner = LikkaColors.Raspberry,
+    auraOuter = LikkaColors.RaspberryLight,
+    footShadow = LikkaColors.FootShadow,
+)
+
+val LocalLikkaExtrasColors = compositionLocalOf { LikkaDefaultExtrasColors }
+```
+
+```kotlin
+// presentation/theme/Theme.kt — Material 3 schemes
+val LikkaDarkColorScheme = darkColorScheme(
+    primary = LikkaColors.Amber, onPrimary = LikkaColors.Cocoa,
+    primaryContainer = LikkaColors.Ochre, onPrimaryContainer = LikkaColors.Cocoa,
+    secondary = LikkaColors.Ochre, onSecondary = LikkaColors.Cocoa,
+    // secondaryContainer: SegmentedButton's selected-segment fill (§2.5 "Apariencia"), so it needs
+    // its own AA-verified pair, not Material's default (purple) tonal derivation.
+    secondaryContainer = LikkaColors.SurfaceHigh, onSecondaryContainer = LikkaColors.Cream, // 10.21:1
+    tertiary = LikkaColors.RaspberryLight, onTertiary = LikkaColors.Cocoa,
+    // tertiaryContainer mirrors errorContainer/onErrorContainer: same raspberry semantics.
+    tertiaryContainer = LikkaColors.Raspberry, onTertiaryContainer = LikkaColors.Cream, // 6.17:1
+    // RaspberryLight (not the pure Raspberry fill) so text/icons on the container stay AA (§1.1).
+    error = LikkaColors.RaspberryLight, onError = LikkaColors.Cocoa,
+    errorContainer = LikkaColors.Raspberry, onErrorContainer = LikkaColors.Cream,
+    background = LikkaColors.Cocoa, onBackground = LikkaColors.Cream,
+    surface = LikkaColors.Plum, onSurface = LikkaColors.Cream,
+    surfaceVariant = LikkaColors.SurfaceHigh, onSurfaceVariant = LikkaColors.CreamMuted,
+    surfaceDim = LikkaColors.SurfaceDim, surfaceBright = LikkaColors.SurfaceBright,
+    surfaceContainerLowest = LikkaColors.SurfaceContainerLowest,
+    surfaceContainerLow = LikkaColors.SurfaceContainerLow,
+    surfaceContainer = LikkaColors.SurfaceContainer,
+    surfaceContainerHigh = LikkaColors.SurfaceContainerHigh,
+    surfaceContainerHighest = LikkaColors.SurfaceContainerHighest,
+    inverseSurface = LikkaColors.InverseSurface, inverseOnSurface = LikkaColors.InverseOnSurface,
+    outline = LikkaColors.Outline, outlineVariant = LikkaColors.SurfaceHigh,
+    scrim = LikkaColors.Scrim
+)
+
+// v3.6: light theme (COULD). Every role the dark scheme defines is set here too, so Material 3
+// never falls back to its own purples (same reasoning as LikkaDarkColorScheme's extra roles).
+// Only used by app screens; the overlay always applies LikkaDarkColorScheme (§1.1).
+val LikkaLightColorScheme = lightColorScheme(
+    // AmberDark, not the brand.amber (#FCA30B) button fill: colorScheme.primary is also used as
+    // TextButton/OutlinedButton text, the checked Switch track, checkbox fill and the focused
+    // field border — #FCA30B only reaches 1.86:1/2.02:1 there (§1.1). The filled Primary button
+    // keeps #FCA30B via LikkaButtonColors below, which does not read colorScheme.
+    primary = LikkaColors.AmberDark, onPrimary = LikkaColors.LightSurface, // 6.00:1
+    primaryContainer = LikkaColors.Ochre, onPrimaryContainer = LikkaColors.Cocoa,
+    // OchreDark, not brand.ochre (#D17B0F): colorScheme.secondary is also used as text/icon color
+    // in some components, and #D17B0F doesn't clear AA there either (§1.1 "Paleta clara", regla 1).
+    secondary = LikkaColors.OchreDark, onSecondary = LikkaColors.LightSurface, // 6.26:1
+    secondaryContainer = LikkaColors.LightSurfaceVariant, onSecondaryContainer = LikkaColors.OchreDark, // 5.16:1
+    tertiary = LikkaColors.Raspberry, onTertiary = LikkaColors.LightBackground,
+    tertiaryContainer = LikkaColors.LightSurfaceVariant, onTertiaryContainer = LikkaColors.Raspberry, // 5.52:1
+    // Pure Raspberry text/borders are AA-compliant in light (§1.1), unlike in dark.
+    error = LikkaColors.Raspberry, onError = LikkaColors.LightBackground,
+    errorContainer = LikkaColors.LightSurfaceVariant, onErrorContainer = LikkaColors.Raspberry, // 5.52:1
+    background = LikkaColors.LightBackground, onBackground = LikkaColors.Cocoa,
+    surface = LikkaColors.LightSurface, onSurface = LikkaColors.Cocoa,
+    surfaceVariant = LikkaColors.LightSurfaceVariant, onSurfaceVariant = LikkaColors.LightOnSurfaceVariant,
+    surfaceDim = LikkaColors.LightSurfaceVariant, surfaceBright = LikkaColors.LightSurface,
+    surfaceContainerLowest = LikkaColors.LightSurface,
+    surfaceContainerLow = LikkaColors.LightSurface,
+    surfaceContainer = LikkaColors.LightSurfaceVariant,
+    surfaceContainerHigh = LikkaColors.LightSurfaceVariant,
+    surfaceContainerHighest = LikkaColors.LightSurfaceVariant,
+    inverseSurface = LikkaColors.Cocoa, inverseOnSurface = LikkaColors.LightBackground,
+    outline = LikkaColors.Outline, outlineVariant = LikkaColors.LightSurfaceVariant,
+    scrim = LikkaColors.Scrim
+)
+```
+
+```kotlin
+// presentation/theme/Theme.kt — theme entry point (v3.6)
+package com.likkapet.presentation.theme
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.MaterialTheme
+import com.likkapet.domain.model.ThemeMode
+// ThemeMode itself lives in domain/model/ThemeMode.kt (Kotlin puro), not here: data/preferences/
+// DataStoreStatsStore and the StatsStore port need it, and data/ cannot depend on presentation/
+// (§10.1 of likkapet_documentacion.md). This file only resolves it to a ColorScheme.
+
+@Composable
+fun LikkaTheme(themeMode: ThemeMode, content: @Composable () -> Unit) {
+    val isLight = when (themeMode) {
+        ThemeMode.LIGHT -> true
+        ThemeMode.DARK -> false
+        ThemeMode.SYSTEM -> !isSystemInDarkTheme()
+    }
+    CompositionLocalProvider(
+        LocalLikkaIsLightTheme provides isLight,
+        LocalLikkaButtonColors provides LikkaDefaultButtonColors
+    ) {
+        MaterialTheme(
+            colorScheme = if (isLight) LikkaLightColorScheme else LikkaDarkColorScheme,
+            typography = LikkaMaterialTypography,
+            shapes = LikkaMaterialShapes,
+            content = content
+            // dynamicColor is not a MaterialTheme parameter: Material You is never wired in,
+            // so the scheme above is always the Likka palette (dynamicColor = false, effectively).
+        )
+    }
+}
+```
+
+```kotlin
+// domain/model/ThemeMode.kt — Kotlin puro, sin imports de android.* ni Compose (§10.1)
+package com.likkapet.domain.model
+
+/** DataStore-backed choice from Settings (§2.5 of this document); SYSTEM is resolved to light/dark in presentation (`LikkaTheme`, `isSystemInDarkTheme()`). */
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+```
+
+```kotlin
+// presentation/theme/Spacing.kt — §1.3
+package com.likkapet.presentation.theme
+
+import androidx.compose.ui.unit.dp
+
+object LikkaSpacing {
+    val xs = 4.dp
+    val s = 8.dp
+    val m = 16.dp
+    val l = 24.dp
+    val xl = 32.dp
+    val xxl = 48.dp
+}
+```
+
+```kotlin
+// presentation/theme/ComponentSize.kt — medidas fijas de componentes: §1.3 (área táctil), §1.4 (bordes),
+// §1.5 (íconos), §1.8 (botones, bordes de botón y burbuja, borde del escenario), §2.5 (alto de fila de Ajustes e ícono de app)
+// y el indicador de pasos del onboarding (§3.2). Ningún composable lleva un dp suelto.
+package com.likkapet.presentation.theme
+
+import androidx.compose.ui.unit.dp
+
+object LikkaComponentSize {
+    val buttonHeight = 52.dp
+    val minTouchTarget = 48.dp
+    val settingsRowHeight = 56.dp
+
+    val borderThin = 1.dp
+    val borderButton = 1.5.dp
+    val borderLevel = 2.dp
+    val stageBorder = 3.dp
+
+    val iconStandard = 24.dp
+    val iconChip = 20.dp
+    val iconPermission = 32.dp
+
+    // Launcher icon of an app in the "Apps vigiladas" and "Añadir app" lists (§2.5).
+    val appIcon = 40.dp
+
+    val stepDot = 8.dp
+}
+```
+
+```kotlin
+// presentation/theme/SwitchColors.kt — §2.5 (filas de Ajustes) y §1.1 (contraste de la pista inactiva)
+package com.likkapet.presentation.theme
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Switch colors for Settings rows (design system §2.5): active track `colorScheme.primary`,
+ * inactive track `bg.switchTrackInactive` (≥ 3:1 on the screen background only; 3.25:1 on cocoa,
+ * 4.34:1 on cream, 2.94:1 on plum, so never on a card, §1.1). The inactive thumb is light in both
+ * themes so it stays visible on that mid-tone track.
+ */
+@Composable
+fun likkaSwitchColors(): SwitchColors {
+    val scheme = MaterialTheme.colorScheme
+    return SwitchDefaults.colors(
+        checkedThumbColor = scheme.onPrimary,
+        checkedTrackColor = scheme.primary,
+        checkedBorderColor = scheme.primary,
+        uncheckedThumbColor = switchThumbInactiveColor(),
+        uncheckedTrackColor = switchTrackInactiveColor(),
+        uncheckedBorderColor = switchTrackInactiveColor(),
+        disabledCheckedThumbColor = scheme.onPrimary.copy(alpha = DISABLED_ALPHA),
+        disabledCheckedTrackColor = scheme.primary.copy(alpha = DISABLED_ALPHA),
+        disabledCheckedBorderColor = scheme.primary.copy(alpha = DISABLED_ALPHA),
+    )
+}
+
+/** `bg.switchTrackInactive`: the same value in both themes. */
+@Composable
+fun switchTrackInactiveColor(): Color = LikkaColors.SwitchTrackInactive
+
+/** Cream on dark, white on light, so the thumb reads against [switchTrackInactiveColor]. */
+@Composable
+fun switchThumbInactiveColor(): Color = if (LocalLikkaIsLightTheme.current) LikkaColors.LightSurface else LikkaColors.Cream
+
+/** Material's own disabled opacity for content; also the 38% of design system §1.8. */
+const val DISABLED_ALPHA = 0.38f
+```
+
+```kotlin
+// presentation/theme/SpriteSize.kt — §1.7
+package com.likkapet.presentation.theme
+
+import androidx.compose.ui.unit.dp
+
+/**
+ * Target height of Likka in dp (the character, ≈88 px tall inside the 96×96 px frame),
+ * before integer scaling: scale = floor(targetPx / 88), with targetPx = dp × density.
+ * Not the frame size: the frame is 96 × scale px, and the overlay window is sized to that frame plus the halo on each side and the bubble.
+ */
+object LikkaSpriteSize {
+    val level1 = 66.dp
+    val level2 = 132.dp
+    val level3 = 196.dp
+    val dashboard = 164.dp
+    val onboarding = 100.dp
+}
+```
+
+```kotlin
+// presentation/theme/OverlayLayout.kt — §1.8 (v3.17, phase 4a)
+package com.likkapet.presentation.theme
+
+import androidx.compose.ui.unit.dp
+
+/**
+ * Overlay measures (design system §1.8 "Overlay por nivel" and "Burbuja de diálogo"). The Level 3
+ * panel fills the screen between the system bars (owner decision, 2026-10-05, replacing the 80%
+ * panel), cocoa at 96% as in §1.8; the bubble values are new in phase 4a.
+ */
+object LikkaOverlayLayout {
+    const val LEVEL_3_PANEL_ALPHA = 0.96f
+
+    // A roast of up to 25 words wraps into a few lines instead of a window as wide as the screen.
+    val bubbleMaxWidth = 240.dp
+
+    // The bubble's tail pointing at Likka.
+    val bubbleTailWidth = 16.dp
+    val bubbleTailHeight = 8.dp
+}
+```
+
+```kotlin
+// presentation/components/LikkaSprite.kt (excerpt) — §1.7 "Formato del arte" and extra `halo`
+/** Pixel geometry of the sprite sheet (design system §1.7, "Formato del arte"). */
+object SpriteMetrics {
+    const val FRAME_PX = 96
+    const val CHARACTER_HEIGHT_PX = 88
+    const val FEET_LINE_Y = 92
+
+    // Thickness of the overlay's level halo, in sprite pixels (design system §1.7, extra `halo`).
+    const val HALO_PX = 2
+}
+```
+
+`SpriteMetrics` no es un token del tema (vive con `LikkaSprite`, en `presentation/components/`), pero se lista aquí porque fija el grosor del halo de §1.7. El panel del Nivel 3 toma su opacidad de `LikkaOverlayLayout` (pantalla completa entre barras de sistema por decisión de la dueña, 2026-10-05), no de números sueltos.
+
+```kotlin
+// presentation/theme/Shape.kt — §1.4
+package com.likkapet.presentation.theme
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.ui.unit.dp
+
+object LikkaShapes {
+    val s = RoundedCornerShape(12.dp)
+    val m = RoundedCornerShape(20.dp)
+    val l = RoundedCornerShape(28.dp)
+    val full = RoundedCornerShape(50)
+}
+
+val LikkaMaterialShapes = Shapes(small = LikkaShapes.s, medium = LikkaShapes.m, large = LikkaShapes.l)
+```
+
+```kotlin
+// presentation/theme/Type.kt — §1.2
+package com.likkapet.presentation.theme
+
+import androidx.annotation.FontRes
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.likkapet.R
+
+// Baloo 2 and Nunito are variable fonts from Google Fonts under SIL OFL 1.1 (license texts in
+// assets/licenses/). A variable file renders at its default weight unless each Font sets the wght
+// axis, so every weight used below is declared explicitly.
+val Baloo2 = FontFamily(
+    variableFont(R.font.baloo2_variable, FontWeight.SemiBold),
+    variableFont(R.font.baloo2_variable, FontWeight.Bold),
+    variableFont(R.font.baloo2_variable, FontWeight.ExtraBold),
+)
+
+val Nunito = FontFamily(
+    variableFont(R.font.nunito_variable, FontWeight.Normal),
+    variableFont(R.font.nunito_variable, FontWeight.SemiBold),
+    variableFont(R.font.nunito_variable, FontWeight.Bold),
+)
+
+// The Font overload that takes variationSettings is still @ExperimentalTextApi in Compose 1.11.
+@OptIn(ExperimentalTextApi::class)
+private fun variableFont(@FontRes resId: Int, weight: FontWeight): Font = Font(
+    resId = resId, weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+)
+
+object LikkaTypography {
+    val display = TextStyle(fontSize = 40.sp, lineHeight = 48.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Baloo2)
+    val headline = TextStyle(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold, fontFamily = Baloo2)
+    val title = TextStyle(fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold, fontFamily = Baloo2)
+    val bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Normal, fontFamily = Nunito)
+    val bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal, fontFamily = Nunito)
+    val label = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito)
+    val caption = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Nunito)
+}
+
+// Maps to Material 3's Typography so default components (Text, Button...) pick up the right style.
+val LikkaMaterialTypography = Typography(
+    displayLarge = LikkaTypography.display, headlineLarge = LikkaTypography.headline,
+    titleLarge = LikkaTypography.title, bodyLarge = LikkaTypography.bodyLarge,
+    bodyMedium = LikkaTypography.bodyMedium, labelLarge = LikkaTypography.label,
+    labelSmall = LikkaTypography.caption
+)
+```
+
+```kotlin
+// presentation/theme/Motion.kt — §1.6
+package com.likkapet.presentation.theme
+
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+
+/**
+ * Motion tokens (design system §1.6). Movement cadence and timings (hop, walk, return) are not
+ * redefined here: they live only in `EscalationConfig` (MOVEMENT_STEP_FPS, LEVEL_1_HOP_INTERVAL_SEC,
+ * LEVEL_2_WALK_MIN_SEC, LEVEL_2_STOP_SEC, LEVEL_2_RETURN_DELAY_SEC), and so does the Level 2 vibration
+ * the shake below goes with (LEVEL_2_VIBRATION_MS). Everything moves in whole sprite pixels.
+ */
+object LikkaMotion {
+    const val FAST_MS = 150
+    const val STANDARD_MS = 300
+    val easing = FastOutSlowInEasing
+
+    // Level 1 slides in from its edge; Level 3 grows on its panel.
+    val enter = spring<Float>(dampingRatio = 0.6f)
+    val fury = spring<Float>(dampingRatio = 0.4f)
+
+    // Level 2 appears with a horizontal shake of 1 sprite pixel, spread over the vibration.
+    val shakeSpritePx = listOf(1, -1, 1, -1, 0)
+
+    // Frame cadence of the drawn extras (sparkles, z, sweat drop), and the aura's pulse (every 1 s).
+    const val EXTRAS_STEP_MS = 250L
+    const val AURA_PULSE_MS = 1_000L
+}
+```
+
+---
+
+## 6. Registro de Cambios
+
+| Versión | Cambio | Motivo |
+| :--- | :--- | :--- |
+| v1 | Paleta Fairy (violeta, periwinkle, cian, crema) + ajolote vectorial por capas | Propuesta inicial |
+| v1.1 | Ajolote en pixel art de itch.io (Lil Axolotl) | Decisión del equipo de usar sprites de itch.io |
+| **v2** | **Paleta Bosque** (frambuesa, ámbar, cacao, ocre, ciruela) + neutros derivados | Nueva paleta del equipo, que coincide con los colores del sprite |
+| **v2** | **Likka pasa a ser un sátiro bromista** (Satyr de LuckyLoops) | Personaje elegido (Cain); el sátiro bromista justifica el sarcasmo |
+| **v2** | El nivel se comunica con el **borde del escenario y el aura**, sin recolorear el sprite | Los colores del sprite ya pertenecen a la paleta |
+| **v2** | Frambuesa pura prohibida como texto o borde sobre fondos oscuros; se agrega `raspberry.light` | Contraste 2.3:1 (no cumple AA) |
+| **v2** | Bordes `outline` para separar superficies | Cacao y ciruela tienen un contraste de 1.1:1 |
+| **v2** | Sección de licencia CC BY 4.0 y atribución | Proyecto académico privado (decisión del equipo) |
+| **v3** | **Likka pasa a ser un escarabajo ciervo nocturno** (diseño original del equipo, "Sirv") | Personaje propio: sin licencias de terceros |
+| **v3** | Hoja de sprites generada con `tools/sprites/build_sirv_sheet.py`: celdas de 80 px, 9 animaciones, paleta de 24 colores | La hoja de concepto no era utilizable directamente |
+| **v3** | Se eliminan la sección de licencia CC BY y la atribución | Ya no se usa el sprite *Satyr* |
+| **v3** | Se elimina la pose `thinking` | Contradecía la regla de que la UI nunca espera a la red (Módulo 4 de `likkapet_documentacion.md`) |
+| **v3** | Mapa de navegación (§3.1): un permiso revocado va a la pantalla de permisos, no al paso 1 del onboarding | El flujo anterior no distinguía "onboarding incompleto" de "permiso revocado" (RF-A06) |
+| **v3** | Máximo de tamaños tipográficos por pantalla: 3 → 4 | El propio mockup del dashboard (§2.4) ya usaba 4 |
+| **v3** | Nivel 3 del overlay: unificado a "anclado al fondo, deja visible la parte superior" | §1.8 decía "centrado" y §2.3 decía "deja visible la parte superior" |
+| **v3** | Vibración del Nivel 3 especificada (dos pulsos de 300 ms) | §2.3 la daba por hecha pero no existía en `likkapet_documentacion.md` RF-O02 |
+| **v3** | Sacudida del Nivel 2: 4dp fijos → 1 píxel del sprite | 4dp no coincidía con el tamaño real de un píxel del sprite en las escalas usadas |
+| **v3** | "Te quedan N pausas" unificado a 3 en ambos mockups del §2.4 | Los mockups mostraban 3 y 2 sin explicar la diferencia |
+| **v3** | Excepción de mayúsculas sostenidas para los encabezados de grupo de Ajustes | §2.5 ya los mostraba en mayúsculas; la regla de §1.2 solo permitía la excepción del Nivel 3 |
+| **v3** | `outline` corregido de `#6B3552` a `#9C7488` (≥3:1 en vez de 1.64:1/1.49:1); nuevo `bg.switchTrackInactive` | WCAG 1.4.11 exige 3:1 para límites de componente; no se cumplía |
+| **v3** | Definición de "texto grande" corregida: 18pt/14pt negrita ≈ 24sp/18.7sp, no 18sp/14sp | Los sp no son puntos; la v2 los igualaba sin convertir |
+| **v3** | `ColorScheme` ampliado: `errorContainer`, `onErrorContainer`, `primaryContainer`, `surfaceContainer*`, `surfaceBright`, `surfaceDim`, `outlineVariant`, `inverseSurface`, `scrim` | Sin ellos, Material 3 usa sus morados por defecto para esos roles |
+| **v3** | §1.5 corregido: Compose trae *Material Icons Extended* (estilo Rounded), no una fuente "Material Symbols" | Nombre incorrecto de la librería |
+| **v3** | Tokens `LikkaSpacing`, `LikkaShapes`, `LikkaTypography`, `LikkaMotion` agregados al §5 | `CLAUDE.md` y la skill `likka-ui` ya los daban por existentes |
+| **v3.1** | Principio "estorba con cariño y se mueve, pero nunca atrapa" (§0); Likka se mueve por nivel: cambia de lugar en N1, camina y persigue en N2 (§1.6, §1.8, §2.3) | Decisión del usuario: Likka solo crecía por nivel, nunca se movía |
+| **v3.1** | Tokens `motion.hop`/`motion.walk` en §1.6; `LikkaMotion` documenta que la cadencia y los tiempos viven en `EscalationConfig`, no se redefinen aquí | Coherencia con la regla de "sin números mágicos" |
+| **v3.1** | Microcopy de reacciones locales (arrastrar/tocar repetido) en §1.9 | Nueva función sin IA (RF-O12 de `likkapet_documentacion.md`) |
+| **v3.1** | Columna "¿Se mueve?" agregada a las tablas de §1.8 y §2.3 | El movimiento por nivel no tenía dónde documentarse en la jerarquía de interrupción |
+| **v3.1** | §3.3: aclarado que el movimiento no cambia el comportamiento del botón "Atrás" | Evitar la duda de si una ventana que se mueve podría interceptarlo |
+| **v3.2** | §1.7 reescrita: `sprites/sirv.png` **es** la hoja final (768×896 px, 6×7 celdas de 128×128 px, 22 colores, sin generador); animaciones renombradas a `idle`, `walk_left`, `walk_right`, `sleep`, `joy`, `sway`, `jump`; `annoyed`/`fury`/`worried` reutilizan `idle` con extras de Compose | La hoja anterior (`art/sirv/sirv_sheet.png` de 80 px, "9 animaciones" con `attack`/`hurt`) no correspondía a lo que hay realmente en `sirv.png`; se verificó la imagen directamente. |
+| **v3.2** | Retrato aparte eliminado: la bienvenida usa el cuadro 0 de `idle` | No existe un archivo de retrato independiente; mantenerlo como requisito documental era falso. |
+| **v3.2** | Tabla de escalas recalculada sobre la altura real del `contentBox` (≈120 px) en vez del `cellSize` completo; Nivel 1 baja a ≈44dp reales a escala 1× (decisión pendiente: subir a 88dp) | La v3.1 escalaba sobre el tamaño de celda completo, que incluye aire transparente alrededor del personaje. |
+| **v3.3** | §1.9 reescrita: rasgos de personalidad (ironía, exageración dramática, autorreferencia de escarabajo, comparaciones absurdas, remates cortos), tabla de sí/no, escala de tono por nivel (N1 pícaro, N2 sarcasmo directo, N3 drama teatral) y tabla de dónde aplica cada tono | El usuario sintió que los diálogos no transmitían la personalidad de Likka; faltaba una guía concreta de voz más allá de "se burla con cariño". |
+| **v3.3** | Mensajes de §3.5 (estados globales) y ejemplos de reacciones reescritos con la nueva voz | Coherencia con la §1.9 reescrita. |
+| **v3.3** | `Facebook` agregado a la plantilla de Ajustes (§2.5) | Nueva app vigilada por defecto (Messenger queda fuera; ver `likkapet_documentacion.md` §3.4, §7.2). |
+| **v3.4** | §1.7 reescrita por completo: Likka se dibuja **a mano en Aseprite** (`sprites/likka.png` + `likka.json` exportado, lienzo de 64×64 px, paleta de 12–16 colores); `sirv.png` pasa a ser solo referencia de diseño; se elimina `sirv_frames.json` y se agrega `likka_poses.json` (mapeo pose→tag, escrito a mano) | Los sprites generados por agentes no servían; el equipo dibuja a Likka desde cero, y la maqueta/app deben poder avanzar mientras tanto con sprites provisionales. |
+| **v3.4** | Tabla de animaciones ampliada de 7 a 18 tags (P1/P2/P3), con seis direcciones de movimiento (`walk_down`/`walk_up`/`walk_right`/`walk_left`/`walk_diag_down_right`/`walk_diag_down_left`); las diagonales hacia arriba usan `walk_up` | El sprite anterior solo tenía dos direcciones horizontales; el movimiento del overlay (§9.6 de `likkapet_documentacion.md`) necesita cubrir las seis direcciones de pantalla. |
+| **v3.4** | Extras (`z`, gota de sudor, aura, destellos, sombra) pasan a dibujarse siempre en Compose, nunca horneados en la hoja | Mantener la hoja de sprites limpia facilita redibujar una animación sin repetir el extra en cada cuadro. |
+| **v3.4** | Tabla de escalas recalculada sobre un personaje de 48 px (en vez del `contentBox` de 120 px de la hoja generada); Nivel 1 sube de ≈44dp a ≈52dp reales | Cierra la decisión pendiente de v3.3 sobre subir el escenario del Nivel 1 a 88dp: con el nuevo dibujo a mano ya no hace falta. |
+| **v3.4** | Nueva subsección "Guía corta para quien dibuja" en §1.7 | El equipo dibuja los sprites por primera vez a mano; necesitaban una guía mínima de proceso (onion skin, línea de pies, un tag por animación, exportación). |
+| **v3.5** | Regla de escalado unificada a **solo `floor(targetPx / 48)`** en la tabla de escalas (se quita la mención a `round`, que contradecía la regla de renderizado justo arriba); nueva columna "Objetivo (dp)" (56/144/196/160/108 para N1/N2/N3/Dashboard/Onboarding) como tokens `LikkaSpriteSize` (§5) | La tabla de escalas usaba `round` mientras la regla de renderizado ya decía `floor`: dos fórmulas distintas para el mismo cálculo. Los objetivos en dp tampoco tenían dónde vivir como token del tema. |
+| **v3.5** | §1.7 documenta que `sprites/` y `app/src/main/assets/sprites/` son carpetas locales (ignoradas por git): si faltan, la prueba unitaria de sprites se salta explícitamente en vez de pasar en silencio | Evitar que alguien sin la carpeta de sprites (nunca versionada) crea que la prueba pasó cuando en realidad no llegó a correr. |
+| **v3.6** | Tema claro opcional (COULD): nueva subsección "Paleta clara" en §1.1 con la tabla de colores, la tabla de contraste verificada (WCAG 2.1) y los colores de nivel en claro; §0 y el encabezado aclaran que el oscuro sigue siendo el tema de marca | La dueña del proyecto pidió un tema claro elegible en Ajustes sin perder la identidad visual de Likka. |
+| **v3.6** | §1.7 (reglas de renderizado): en pantallas de la app con tema claro, el escenario usa relleno `#FFFFFF` y borde de reposo `outline`; el overlay no cambia, siempre usa la paleta oscura | El overlay flota sobre apps ajenas y su escenario crema ya estaba pensado para cualquier fondo; solo las pantallas de la app necesitan la variante clara. |
+| **v3.6** | §2.5 (Plantilla de Ajustes): nueva fila "Apariencia" con control segmentado Oscuro/Claro/Sistema, en su propio grupo, etiqueta arriba y control a todo el ancho debajo | No encajaba en LIKKA (ajustes del personaje), APPS VIGILADAS ni IA; el diseño en una sola fila no dejaba margen para que el control creciera con fuente al 200% (RNF-U03). |
+| **v3.6** | §4: el contraste AA se declara verificado en ambos temas | Coherencia con la nueva paleta clara. |
+| **v3.6** | §1.8 (Botones): Secundario/Texto pasan a leer `colorScheme.primary` (que cambia por tema) en vez de `brand.amber` fijo; Primario/Advertencia/Peligro (relleno) se documentan como invariantes de tema, resueltos por `LikkaButtonColors` | En claro, `#FCA30B` no cumple 3:1 como texto/borde (1.86–2.02); los botones de relleno debían seguir siendo ámbar/ocre/frambuesa en ambos temas sin heredar el cambio de `primary`. |
+| **v3.6** | §5: `LikkaColors` gana los tokens del tema claro (`LightBackground`, `LightSurface`, `LightSurfaceVariant`, `LightOnSurfaceVariant`, `AmberDark`, `OchreDark`); nuevo `LikkaLightColorScheme` con `primary = AmberDark` y `secondary = OchreDark` (no `brand.amber`/`brand.ochre`) y `secondaryContainer`/`tertiaryContainer` propios en ambos esquemas; `levelColor` pasa a `@Composable` sin parámetro, leyendo `LocalLikkaIsLightTheme`; nuevo `LikkaButtonColors`/`LocalLikkaButtonColors` para los botones de relleno; `ThemeMode` se mueve a `domain/model/ThemeMode.kt`; `LikkaTheme(themeMode)` provee ambos `CompositionLocal` | `colorScheme.primary` y `colorScheme.secondary` se usan como texto/pista/borde/ícono en varios componentes de Material y `#FCA30B`/`#D17B0F` no son AA ahí en claro; sin `secondaryContainer`/`tertiaryContainer` propios, `SegmentedButton` habría salido morado (color por defecto de Material); `levelColor` con un parámetro por defecto permitía olvidarlo sin error de compilación; `ThemeMode` en `presentation/theme` violaba la regla de capas del §10.1 de `likkapet_documentacion.md`. |
+| **v3.6** | §9.1 de `likkapet_documentacion.md`: `ComposeOverlayHelper.create` envuelve el contenido en `LikkaTheme(ThemeMode.DARK)` | Deja explícito en el código que el overlay siempre renderiza en oscuro, sin depender de que cada composable del overlay lo recuerde por su cuenta. |
+| **v3.7** | §1.7 "Origen y derechos" y `CLAUDE.md`: todo el arte de Likka se genera con herramientas de IA a partir de "Sirv" y se limpia en Aseprite; se eliminan las afirmaciones "dibujado a mano" y "sin generador" (`likka_poses.json` sigue escrito a mano, es un JSON); la fila "Derechos" pasa a "Diseño propio (Sirv); arte generado con IA a partir de él; uso académico privado, no se publica" | Es como se produce realmente el arte y refleja que el APK nunca se publica. |
+| **v3.7** | §1.7: lienzo de **96 × 96 px**, Likka de ≈84–88 px (máximo 90, con 2 px libres arriba), pies en **y = 92**; regla `floor(targetPx / 88)`; tokens `LikkaSpriteSize` N1 66, N2 132, N3 196, dashboard 164, onboarding 100 dp (2×/4×/6×/5×/3× en el Redmi 9); prueba unitaria y `.claude/skills/likka-ui` con cuadros de 96×96 | Los bocetos de IA traen más detalle del que cabe en 64×64. |
+| **v3.7** | §1.7 y §5: los tokens `LikkaSpriteSize` son la altura de Likka; la ventana del overlay (N1–N2) se dimensiona con el cuadro de 96 × escala px más el grosor del halo en cada lado y el globo. En el dashboard, el onboarding y el Nivel 3 el círculo crema es solo un fondo, de diámetro no menor que la altura de Likka mostrada, y el sprite puede sobresalir en las esquinas. Sin tokens de escenario (no se crea `LikkaStageSize`) | Un círculo no cubre un cuadrado (los 64dp/140dp quedaban por debajo del cuadro de ≈69.8 / ≈139.6dp) y no había regla para dimensionar la ventana. |
+| **v3.7** | §1.1, §1.7 (reglas de renderizado, extras, tabla "Qué hace Likka en cada momento"), §1.8 "Overlay por nivel", §5 (`levelColor`) y regla 6 de `likka-ui`: el overlay de los Niveles 1 y 2 **no lleva círculo de escenario**; Likka lleva un halo del color del nivel, de 2 píxeles del sprite de grosor (`2 × escala` px: ≈1.5dp en N1, ≈2.9dp en N2), nuevo extra de Compose `halo` (nunca en la hoja, no se lista por pose en `likka_poses.json`; se llama `halo` para no chocar con el token de color `outline`), más la sombra de pies. El nivel se lee en el halo y en el borde de la burbuja. El panel del Nivel 3, el dashboard y el onboarding no cambian. `likkapet_documentacion.md` §2, RF-O02 y §12.3 M8 alineados | Decisión de diseño de la dueña. Se comprueba en el Redmi 9 (M8): si el halo del Nivel 1 se ve demasiado fino sobre un video oscuro de TikTok, se prueba subirlo antes de volver al círculo crema. Reemplaza los valores contradictorios anteriores (64/140, ≈52/≈140 y "burbuja 64dp"). |
+| **v3.7** | §1.7: "Guía corta para quien dibuja" se reemplaza por "Preparar los bocetos de IA en Aseprite" | El flujo pasa a ser limpiar bocetos de IA, no dibujar cuadro por cuadro. |
+| **v3.7** | §1.7: nuevas poses `sit` (P2, "En pausa" del dashboard; §3.5 cambia de `sleeping` a `sit`, "Desactivado" sigue con `sleeping`) y `perch` (P3, Nivel 1 en el borde inferior; provisional `peek`); `dragged` provisional `annoyed`; ejemplo de `likka_poses.json` actualizado. Los 9 tags P1 no cambian; la tabla pasa a 19 tags (más los 2 espejos derivados en código) | "En pausa" y el Nivel 1 en el borde inferior pedían una pose propia. |
+| **v3.7** | §1.7: nueva tabla única "Qué hace Likka en cada momento" (momento → pose → posición → ¿se mueve? → referencia) | Reunir en un solo lugar lo que estaba repartido en §1.7, §1.8, §3.5 y `likkapet_documentacion.md` §9.6. |
+| **v3.7** | §1.5 y §1.8: definidos el ícono de la app (adaptativo, fondo cacao `#3D1B1C`, primer plano recortado del cuadro 0 de `idle`, escala entera en xxhdpi/xxxhdpi) y el ícono pequeño de la notificación (vector monocromo de 24dp, sin ícono grande) | No estaban definidos. |
+| **v3.8** | §1.7 agrega que el efecto "medio asomado" de `peek` depende de que el arte esté dibujado cortado por un lado del cuadro de 96×96, y que `OverlayMotionPlanner` expone el borde (`edge`) para que la UI lo refleje (mismo mecanismo de `mirror` que `walk_left`) | Requisito de arte que no estaba escrito; el código de la tarea 3 ya expone `edge` para esto. |
+| **v3.8** | §1.2 y §5 documentan la implementación real de la tipografía: Baloo 2 y Nunito como fuentes variables (`res/font/*_variable.ttf`), `FontVariation.Settings` por peso (`@OptIn(ExperimentalTextApi::class)`, sigue experimental en Compose 1.11), licencias SIL OFL 1.1 en `assets/licenses/` | La sección solo mencionaba "Google Fonts" en general; el código de la tarea 1 (esqueleto y tema) ya implementa las fuentes variables y trae las licencias. |
+| **v3.8** | §1.8 y §5 documentan el token de alto de botón `LikkaComponentSize.buttonHeight = 52.dp` en `presentation/theme/ComponentSize.kt` (en paralelo a `SpriteSize.kt`/`LikkaSpriteSize`), hoy sin implementar (§1.8 ya pedía 52dp, pero no existía el token; los botones de relleno miden los ~40dp por defecto de Material 3). El código se agrega en la tarea 4, no en esta revisión de documentación | El botón de relleno no tenía token propio, contra la regla de "sin números sueltos" de `CLAUDE.md`. |
+| **v3.8** | §3.1 y RF-S07 (`likkapet_documentacion.md`): "Acerca de y créditos" agrega los créditos y licencias SIL OFL 1.1 de Baloo 2 y Nunito | Las fuentes usadas necesitan atribución de licencia visible en la app. |
+| **v3.8** | Nota pendiente: `presentation/theme/Motion.kt` (`LikkaMotion`, §5) todavía no existe en el código (solo `Color.kt`, `Shape.kt`, `Spacing.kt`, `SpriteSize.kt`, `Theme.kt`, `Type.kt`); se deja documentado como diseño objetivo, igual que otras piezas de la arquitectura completa que las tareas 1–3 todavía no cubren | Verificado contra el código de las tareas 1–3 al actualizar esta documentación; queda anotado para no perderlo de vista. |
+| **v3.9** | §2.4: el dashboard lleva además un botón de variante Peligro "Desactivar a Likka" (debajo de la acción principal, oculto en el estado "Desactivado") que abre un diálogo de confirmación (`components/DeactivateDialog.kt`), el mismo que usa el interruptor de Ajustes | Decisión de la dueña del proyecto, ya implementada en la tarea 4; hasta ahora solo estaba documentada la desactivación desde Ajustes (RF-S04). |
+| **v3.9** | §5: el bloque de tokens agrega el objeto real `LikkaComponentSize` completo (`buttonHeight`, `minTouchTarget`, `settingsRowHeight`, `borderThin`, `borderButton`, `borderLevel`, `stageBorder`, `iconStandard`, `iconChip`, `iconPermission`, `stepDot`), `likkaSwitchColors()` con sus ayudantes (`switchTrackInactiveColor()`, `switchThumbInactiveColor()`, `DISABLED_ALPHA`) y `stageFillColor()`; §1.8 y el comentario del bloque dejan de decir que `LikkaComponentSize` estaba "pendiente de agregar al código" | La tarea 4 creó `ComponentSize.kt` y `SwitchColors.kt` y `stageFillColor()` en `Color.kt`; el documento solo conocía `buttonHeight` como propuesta. |
+| **v3.9** | §1.1, tabla de contraste y §2.5: `bg.switchTrackInactive` (`#8A6B78`) mide **3.25:1 sobre cacao** y **2.94:1 sobre ciruela** (no "≈3.0 sobre ambos fondos"); los interruptores solo van sobre el fondo de la pantalla, nunca sobre una tarjeta ciruela | Lo dejó escrito `ColorContrastTest` al verificar las parejas de color de las pantallas: sobre ciruela la pista inactiva no llega a los 3:1 de WCAG 1.4.11. |
+| **v3.9** | §1.7 (tabla de escalas): los `LikkaSpriteSize` están calibrados para la densidad del Redmi 9 (≈2.75); a 2.625 (Pixel 7, emulador de prueba) la escala baja a 1×/3×/5×/4×/2× (Nivel 1/Nivel 2/Nivel 3/dashboard/onboarding), por ejemplo el sprite de onboarding sale a 2× | En el emulador de prueba (2.625) el sprite de onboarding salió a 2×: la regla `floor(targetPx / 88)` es entera a propósito, así que otra densidad cae en otra escala. |
+| **v3.9** | §3.1 (mapa y contenido de "Acerca de y créditos") y §2.5: el crédito es de la **autora única**, Paula Sofia Gonzalez Zambrano, con la materia "Diseño de Interfaces" (RF-S07 de `likkapet_documentacion.md`); ya no "el equipo" | Así quedó en `strings.xml` (`about_author`, `about_course`) en la tarea 4. |
+| **v3.9** | Nota de v3.8 sobre `presentation/theme/` actualizada, sin reescribirla: ahora existen además `ComponentSize.kt` y `SwitchColors.kt`; `Motion.kt` (`LikkaMotion`, §5) sigue sin existir en el código | Verificado contra el código de las tareas 1–4 al escribir v3.9. |
+| **v3.10** | §1.7: **conjunto final de animaciones**. La tabla P1/P2/P3 de 19 tags se reemplaza por **10 tags de la hoja** (`idle`, `walk_down`, `walk_up`, `walk_diag_down_right`, `annoyed`, `fury`, `peek`, `sit`, `sleep`, `look_around`, con su hoja de origen y factor de reducción) y una tabla de **poses que reutilizan un tag** (`walk_right`/`goodbye` y los espejos de `walk_left`/`walk_diag_down_left` → `walk_diag_down_right`; `happy`/`talk` → `idle`; `worried` → `look_around`; `perch` → `sit`; `dragged` → `annoyed`). Se eliminan `blink`, `hop` y `wave` como animaciones; `likka_poses.json` se reescribe completo | Decisión de la dueña: no hay presupuesto para más animaciones; el proyecto se entrega con las hojas actuales de `sprites/drafts/2d-sprites-sheets/`, y los documentos pedían tags que nunca existirían. |
+| **v3.10** | §1.7: la "Regla de provisionales" pasa a "Asignación definitiva": ya no hay provisionales. `idle` es ahora en vista 3/4; `walk_up` se usa sin escalar (≈76–78 px, excepción al rango 84–88); `peek` se deriva de los cuadros de `idle` desplazados en el lienzo (cortado por un lado, reflejado con `mirror` en el borde izquierdo); la guía de limpieza lista el origen y el factor de reducción de cada tag; no se usan `walk_side-left.png`, `side_left-idle.png` ni los `.jpg` de `drafts/` | Mismo motivo: fijar un diseño definitivo y coherente con el arte que existe. |
+| **v3.10** | §1.5: el primer plano del ícono de la app es explícitamente la **cara de Likka** (recorte de 48×48 px con solo la cabeza y los cuernos, del cuadro 0 de `idle`, que ahora es 3/4) | Petición de la dueña: que el ícono muestre la cara de Likka, sin cuerpo. |
+| **v3.10** | §1.6, §1.7 (tabla "Qué hace Likka en cada momento") y §3.5: poses y tags actualizados (`perch` = `sit`, `dragged` = `annoyed`, `worried` = `look_around` + `sweat_drop`, `happy` = `idle` + `sparkles`); `motion.hop` es solo movimiento de Compose; la prueba unitaria valida los 10 tags de la hoja | Coherencia con el conjunto final. |
+| **v3.11** | §1.7: la hoja ya no "se limpia en Aseprite". "Preparar los bocetos de IA en Aseprite" pasa a **"Construir la hoja con `build.py`"**: `likka_sprites/tools/build.py` construye `likka.png`, `likka.json` y `likka_poses.json` desde `sprites/drafts/2d-sprites-sheets/` (reducción por factor entero con vecino más cercano, paleta común de 16 colores en Lab con contorno y ámbar de ojos fijos, alfa binaria, contorno de 1 px, pies en y = 92); `validate.py` comprueba la hoja y `contact.py` genera la revisión en `likka_sprites/review/`. Se agregan la tabla de cuadros elegidos por tag (origen → cuadros → fps → alto) y la paleta final | Es como se construyó de verdad la hoja: un script determinista y reproducible, no una limpieza manual. |
+| **v3.11** | §1.7: `likka.json` tiene el formato del JSON de Aseprite (*Array* + `frameTags`) pero lo genera el script (se puede abrir en Aseprite; un retoque manual se pierde al regenerar). `likka_poses.json` deja de ser "escrito a mano": lo genera `build.py` desde su tabla `POSES`, y una pose se cambia ahí | `build.py` reescribe ambos archivos en cada ejecución; editarlos a mano llevaría a perder cambios sin aviso (decisión de la dueña). |
+| **v3.11** | §1.7 "Formato del arte": excepciones de altura aceptadas, además de `walk_up` (76–78 px): `walk_down` 81–90 px (sin escalar, varía con el ciclo), `walk_diag_down_right` 81–83 px (÷3, único factor entero posible) y `sit` 63 px (pose sentada, misma escala ÷2) | Son las alturas reales de la hoja (`validate.py`); ningún factor entero las acerca al rango sin agrandar el arte. Aceptadas por la dueña. |
+| **v3.11** | §1.7: nueva política de git del arte. Se versionan `sprites/likka.png`, `sprites/likka.json`, `sprites/likka_poses.json`, `likka_sprites/` y (desde la fase 2 de sprites) `app/src/main/assets/sprites/`; no se versionan `sprites/drafts/`, `sprites/sirv.png` ni `*.aseprite`/`*.ase`. Reemplaza la nota de v3.5 ("carpetas locales, ignoradas por git"); la prueba se sigue saltando con `Assume` si faltan los archivos. Se quita la mención a `sirv_frames.json` como archivo que se elimina: ya se borró | El repo de GitHub es público y el APK entregado ya contiene los sprites: versionarlos da copia de seguridad y un repo con el que se puede compilar el APK. |
+| **v3.12** | §2.5 (Plantilla de Ajustes): el grupo APPS VIGILADAS muestra además las apps que el usuario añadió (ícono de 40dp + nombre + interruptor + botón de texto "Quitar", en orden alfabético bajo las 4 por defecto) y cierra con la fila "Añadir app →"; "no se puede apagar la última app vigilada" pasa a contar también las añadidas (y a deshabilitar "Quitar" en la última activa) | Decisión de la dueña: RF-S06 pasa de `WON'T (MVP)` a `SHOULD` en `likkapet_documentacion.md` v5.12. |
+| **v3.12** | §2.5: nueva pantalla **"Añadir app"** (subpantalla de Ajustes): lista de apps instaladas con ícono y nombre (sin las 4 por defecto ni Likka-Pet), buscador con filtrado por coincidencia parcial, estados cargando / lista / sin resultados, acción "Añadir" → "Añadida" sin cerrar la pantalla, aviso de privacidad ("toda app que añadas es solo «otra app»"), textos en español en voz clara (ajustes, §1.9) y sin emojis, objetivos ≥ 48dp, accesibilidad (nombre de la app en "Añadir"/"Quitar") y solo tokens del tema, con un token `LikkaComponentSize.appIcon` (40dp) **pendiente de agregar al código** | Hay que poder elegir qué apps vigila Likka sin exponer su nombre fuera del teléfono (`likkapet_documentacion.md` §8). |
+| **v3.12** | §3.1 (mapa de la app): Ajustes → "Añadir app" (destino nuevo; "Atrás" regresa a Ajustes, §3.3 ya cubre "Ajustes y subpantallas") y la etiqueta de Ajustes menciona las apps añadidas | Coherencia con la pantalla nueva. |
+| **v3.13** | **Autoría** (§1.1, §1.5, ficha del personaje de §1.7): "del equipo" pasa a "de la autora" (paleta de referencia, ícono de la notificación, "Sirv"). Las filas antiguas de este registro conservan su redacción | Hay una sola autora. |
+| **v3.13** | §5 y §2.5: token `LikkaComponentSize.appIcon = 40.dp`, ya implementado; deja de ser "a agregar" | Existe en `ComponentSize.kt` (Data 1). |
+| **v3.13** | §2.5: qué filas se muestran en APPS VIGILADAS (solo las instaladas; las por defecto no instaladas aparecen con su valor guardado al instalarse; sin filas mientras se leen las apps; texto de lista vacía `settings_watched_apps_empty`) y la regla de la última app, que solo cuenta las instaladas | Reglas de Data 1 (`WatchedApps`, `SettingsViewModel`); el texto de lista vacía (aprobado: "…ninguna de las redes que vigilo…") ya está así en `strings.xml` desde Data 2. |
+| **v3.13** | §3.1 y RF-A05: el paso 5 del onboarding se titula "Ajustes de tu teléfono" (antes "Ajustes de Xiaomi") | Cambio de `onboarding_miui_title` en c13e44b: el paso se muestra solo en MIUI/Xiaomi, pero el título ya no nombra la marca. |
+| **v3.13** | §3.2: espacio fijo `LikkaSpacing.l` entre la zona desplazable del onboarding y el indicador de pasos | El espacio estaba dentro del scroll y desaparecía al desplazarse (c13e44b). |
+| **v3.13** | Animaciones (§1.6 y tabla de §1.7): duraciones reales de `sprites/likka.json`. `idle` y `peek` pasan de "8 cuadros / 8 fps" a 4 cuadros de 750 / 250 / 250 / 250 ms (solo los cuadros de reposo, con el 0 sostenido); se elimina "8–10 fps, tal como vienen en el paquete" | `idle` ya no incluye el aleteo (c13e44b; `likka_sprites/README.md`, "Ritmo de idle"). Las demás duraciones coinciden con la hoja. |
+| **v3.13** | §2.5: texto de lista vacía aprobado ("…ninguna de las redes que vigilo…") | Respuesta de la dueña; `strings.xml` lo recoge desde Data 2. |
+| **v3.14** | §2.5: se quita la nota "pendiente de código (Data 2)" del texto de lista vacía y las menciones equivalentes del registro de v3.13 | `strings.xml` ya dice "redes" (Data 2). |
+| **v3.14** | §3.5: cómo se decide "Sin internet o sin saldo de IA" (últimas respuestas del Worker, sin `ConnectivityManager`) | Así lo implementa Data 2 (`AiServiceStatus`); RF-D05 de `likkapet_documentacion.md`. |
+| **v3.14** | §2.4: definición de "aviso" (intervención): una por aparición de Likka; el Nivel 3 se cuenta una vez al alcanzarlo | Definición aprobada por la dueña; RF-D03 de `likkapet_documentacion.md`. |
+| **v3.15** | §2.5 (Plantilla de Ajustes): fila «Idioma» con control segmentado (Sistema / Español / English), como el de Tema, objetivos ≥48dp, y nota sobre cadenas de distinto largo con la fuente al 200% en los dos idiomas. Pendiente de código (RF-S09) | Decisión de la dueña: la app en dos idiomas, MUST (RF-S09 de `likkapet_documentacion.md`). |
+| **v3.15** | §1.9: nota de que la voz en inglés se adapta, no se traduce literal, con los mismos rasgos; no se marca el género de la persona usuaria (Likka sí puede ser «él»); §2.5: los idiomas se muestran siempre en su idioma y «Sistema» se traduce; §1.9 (reacciones locales): versión en inglés | Respuestas de la dueña (RF-S09). |
+| **v3.16** | §1.5 (íconos): el ícono de la app y el de la notificación los genera `likka_sprites/tools/icons.py`, no se dibujan a mano; variante aplicada `fit` (3× en xxhdpi, 4× en xxxhdpi), porque la de 4× y 5× dejaba la cara unos 3 px fuera del círculo seguro de 66dp; se describe el recorte tal como lo hace el script; contraste de la capucha con el cacao (1,15:1) frente a los cuernos (5,6:1) y decisión de mantener el fondo cacao; vista previa en `likka_sprites/review/icon_preview.png` | Fase 3: íconos implementados. Decisión de la autora sobre el fondo. |
+| **v3.16** | §1.8 (notificación persistente): tres modos (Protegiendo, En pausa, Necesito un permiso) con sus textos, y reglas de «Pausar 30 min» y «Abrir»; el diagrama de §3.4 muestra «Abrir» y todas las condiciones que ocultan «Pausar 30 min» | Fase 3: implementado en `GuardianNotification`; RF-O08 y RF-A06 de `likkapet_documentacion.md`. |
+| **v3.17** | §5: nuevo bloque `presentation/theme/OverlayLayout.kt` (`LikkaOverlayLayout`: panel del Nivel 3 al 80% de alto y 96% de opacidad, globo de 240dp de ancho máximo, pico de 16 × 8dp) y extracto de `SpriteMetrics` con `HALO_PX = 2`; §1.7 (extra `halo`): cómo lo dibuja `LikkaSprite` y dónde vive la constante; §1.8 (burbuja): ancho máximo, pico y globo plegado «…» que TalkBack lee entero | Fase 4a: overlay de los 3 niveles implementado (commit `15ba5df`). |
+| **v3.17** | §1.9 (muestras de referencia): texto nuevo de la bienvenida del onboarding, citado de `strings.xml` (`onboarding_welcome_body`): «Vivo en tu teléfono y me molesta que te encorves o no te despegues de las redes. Te lo digo con cariño. Casi siempre.» (antes: «…o te quedes pegado a las redes…») | Regla de §1.9: no marcar el género de la persona usuaria («pegado»). |
+| **v3.18** | Rediseño del movimiento del Nivel 2 (§1.6, §1.7, §1.8): solo 4 direcciones rectas (`walk_down`, `walk_up`, `walk_right`, `walk_left`), sin diagonales; tramos rectos de ≥3 s (`LEVEL_2_WALK_MIN_SEC = 3`) por toda el área segura; pausa de 5 s (`LEVEL_2_STOP_SEC = 5`) en pose `annoyed`; regreso tras arrastrar en tramos rectos | Decisión de la dueña (2026-10-05) para solucionar bug en Redmi 9 donde Likka no avanzaba y saltaba entre poses por falta de espacio en tramos diagonales/cortos. |
+| **v3.18** | Nivel 3 a pantalla completa entre barras del sistema (§1.8, §2.3, §5): el panel ocupa todo el espacio entre la barra de estado y la de navegación en vez de limitarse al 80% de alto; se elimina `LEVEL_3_PANEL_HEIGHT_FRACTION` de `LikkaOverlayLayout` y se mantiene `LEVEL_3_PANEL_ALPHA = 0.96f` | Decisión de la dueña (2026-10-05) para dar presencia completa al Nivel 3 sin tapar las barras del sistema. |
+| **v3.18** | Extras en Compose detallados (§1.6, §1.7, §5, `SpriteExtras.kt`): sombra de pies (`FOOT_SHADOW_MARGINS = listOf(2, 4, 4, 2)` desde y = 92 en 4 filas, solo overlay), destellos (`sparkles`), z de dormir, gota de sudor (`SWEAT_DROP_FALL_PX = 2`), pulso del aura; radio seguro `STAGE_SAFE_RADIUS_PX = 46` px del centro del cuadro 96×96 para no cortar en el escenario circular; tokens `LikkaExtrasColors` y `LikkaColors.FootShadow = Color(0x59000000)` | Fase 4b: extras implementados en Compose a nivel de píxeles del sprite. |
+| **v3.18** | Tokens de `LikkaMotion` completados (§1.6, §5, `Motion.kt`): `shakeSpritePx = listOf(1, -1, 1, -1, 0)`, cadencia de extras `EXTRAS_STEP_MS = 250L`, pulso del aura `AURA_PULSE_MS = 1000L` | Fase 4b: sincronización de movimiento, sacudida y animaciones de extras. |
+| **v3.18** | Interacción en overlay (§1.8): silueta de Likka como objetivo táctil (≥48dp); toques en N1/N2 sin ripple (`indication = null`) para no romper el pixel art sobre apps ajenas; los toques cuentan para la reacción de toque repetido (§1.9) | Fase 4b: soporte táctil y de arrastre refinado en el overlay. |
+| **v3.18** | Contraste de `SwitchColors.kt` (§1.1, §5): documentada la relación exacta (3.25:1 sobre cacao, 4.34:1 sobre crema, 2.94:1 sobre ciruela) | Precisión documental con la verificación de `ColorContrastTest`. |
