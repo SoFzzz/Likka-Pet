@@ -1,0 +1,79 @@
+# ---------------------------------------------------------------
+# Android Studio / Gradle
+# ---------------------------------------------------------------
+.gradle/
+.kotlin/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+.idea/
+*.iml
+*.hprof
+local.properties
+
+# Build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+/app/release/
+/app/debug/
+
+# ---------------------------------------------------------------
+# Secrets and signing (never commit)
+# ---------------------------------------------------------------
+*.jks
+*.keystore
+*.p12
+keystore.properties
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+
+# ---------------------------------------------------------------
+# Backend (Cloudflare Worker)
+# ---------------------------------------------------------------
+node_modules/
+.wrangler/
+npm-debug.log*
+
+# ---------------------------------------------------------------
+# Python (roast-lab)
+# ---------------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+
+# ---------------------------------------------------------------
+# Likka art: sprites, drawings and animations stay local for now
+# ---------------------------------------------------------------
+/sprites/
+/art/
+/app/src/main/assets/sprites/
+*.aseprite
+*.ase
+# Loose images/archives at the repo root (old concept sheets, sprite zips)
+/*.png
+/*.gif
+/*.zip
+# Mockup exports embed the sprite as base64
+*Maqueta*.html
+
+# ---------------------------------------------------------------
+# OS / editors / Claude Code personal settings
+# ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+*.swp
+
+# ---------------------------------------------------------------
+# Claude Code: project rules, skills, agents and settings stay local
+# ---------------------------------------------------------------
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
