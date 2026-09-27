@@ -1,4 +1,4 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.4
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.5
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
 > *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: **oscuro** (el MVP no incluye tema claro). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
@@ -319,6 +319,8 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 - Cada pose de `likka_poses.json` apunta a un `tag` que existe en `likka.json`.
 - Todos los cuadros de `likka.json` miden **64 × 64 px**.
 
+> `sprites/` y `app/src/main/assets/sprites/` son carpetas **locales**, ignoradas por git (`.gitignore`, §10.2 de `likkapet_documentacion.md`). Si la carpeta de sprites no existe donde corre la prueba, esta se **salta** (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio. Si existe, valida todo lo de arriba.
+
 #### Reglas de renderizado del pixel art
 
 - **Escalado solo entero**: el tamaño en pantalla se calcula en **píxeles físicos** a partir de la altura real de Likka dentro del lienzo (≈48 px de referencia, no los 64 px del lienzo completo): `scale = floor(targetPx / 48)`. Las escalas fraccionarias deforman los píxeles.
@@ -330,15 +332,17 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 #### Tabla de escalas (densidad de referencia: Redmi 9, ≈2.75; personaje de 48 px)
 
-`scale = round(targetPx / 48)`; tamaño real mostrado = `48 × scale / 2.75` dp.
+`scale = floor(targetPx / 48)` (la misma regla de arriba; nunca `round`); tamaño real mostrado = `48 × scale / 2.75` dp.
 
-| Uso | Escala | Tamaño real mostrado |
-| :--- | :---: | :---: |
-| Overlay Nivel 1 (asomado) | 3× | ≈52dp |
-| Overlay Nivel 2 (caminando) | 8× | ≈140dp |
-| Overlay Nivel 3 | 11× | ≈192dp |
-| Dashboard | 9× | ≈157dp |
-| Onboarding | 6× | ≈105dp |
+| Uso | Objetivo (dp) | Escala | Tamaño real mostrado |
+| :--- | :---: | :---: | :---: |
+| Overlay Nivel 1 (asomado) | 56dp | 3× | ≈52dp |
+| Overlay Nivel 2 (caminando) | 144dp | 8× | ≈140dp |
+| Overlay Nivel 3 | 196dp | 11× | ≈192dp |
+| Dashboard | 160dp | 9× | ≈157dp |
+| Onboarding | 108dp | 6× | ≈105dp |
+
+> La columna "Objetivo (dp)" son los tokens `LikkaSpriteSize` (§5), no números sueltos en el código. El "Tamaño real mostrado" es menor que el objetivo **a propósito**: cada objetivo se eligió con margen suficiente para que `floor(targetPx / 48)` caiga exactamente en la escala entera prevista (3×/8×/11×/9×/6×) y no en la escala inmediatamente inferior; no es una pérdida por redondeo, es el margen de diseño incluido en el objetivo.
 
 > **Se cierra la decisión pendiente de v3.3 sobre el escenario de 88dp para el Nivel 1:** con el personaje dibujado a 48 px de alto (en vez de calcularse sobre el `contentBox` de la hoja generada, de 120 px), la escala 3× ya da ≈52dp reales — un tamaño razonable para un elemento que además se mueve de borde en borde. Ya no hace falta subir el escenario del Nivel 1 a 88dp.
 
@@ -742,6 +746,21 @@ object LikkaSpacing {
 ```
 
 ```kotlin
+// presentation/theme/SpriteSize.kt — §1.7 (target dp before floor(targetPx / 48) integer scaling)
+package com.likkapet.presentation.theme
+
+import androidx.compose.ui.unit.dp
+
+object LikkaSpriteSize {
+    val level1 = 56.dp
+    val level2 = 144.dp
+    val level3 = 196.dp
+    val dashboard = 160.dp
+    val onboarding = 108.dp
+}
+```
+
+```kotlin
 // presentation/theme/Shape.kt — §1.4
 package com.likkapet.presentation.theme
 
@@ -852,3 +871,5 @@ object LikkaMotion {
 | **v3.4** | Extras (`z`, gota de sudor, aura, destellos, sombra) pasan a dibujarse siempre en Compose, nunca horneados en la hoja | Mantener la hoja de sprites limpia facilita redibujar una animación sin repetir el extra en cada cuadro. |
 | **v3.4** | Tabla de escalas recalculada sobre un personaje de 48 px (en vez del `contentBox` de 120 px de la hoja generada); Nivel 1 sube de ≈44dp a ≈52dp reales | Cierra la decisión pendiente de v3.3 sobre subir el escenario del Nivel 1 a 88dp: con el nuevo dibujo a mano ya no hace falta. |
 | **v3.4** | Nueva subsección "Guía corta para quien dibuja" en §1.7 | El equipo dibuja los sprites por primera vez a mano; necesitaban una guía mínima de proceso (onion skin, línea de pies, un tag por animación, exportación). |
+| **v3.5** | Regla de escalado unificada a **solo `floor(targetPx / 48)`** en la tabla de escalas (se quita la mención a `round`, que contradecía la regla de renderizado justo arriba); nueva columna "Objetivo (dp)" (56/144/196/160/108 para N1/N2/N3/Dashboard/Onboarding) como tokens `LikkaSpriteSize` (§5) | La tabla de escalas usaba `round` mientras la regla de renderizado ya decía `floor`: dos fórmulas distintas para el mismo cálculo. Los objetivos en dp tampoco tenían dónde vivir como token del tema. |
+| **v3.5** | §1.7 documenta que `sprites/` y `app/src/main/assets/sprites/` son carpetas locales (ignoradas por git): si faltan, la prueba unitaria de sprites se salta explícitamente en vez de pasar en silencio | Evitar que alguien sin la carpeta de sprites (nunca versionada) crea que la prueba pasó cuando en realidad no llegó a correr. |

@@ -1,4 +1,4 @@
-# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.4
+# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.5
 
 > **Mascota virtual anti-procrastinación y guardián físico contra el dolor cervical.**  
 > *El trinomio core: Postura Física + Overlay Flotante + IA Sarcástica (DeepSeek vía backend propio).*  
@@ -46,9 +46,9 @@
 | **Nombre del Proyecto** | **Likka-Pet** |
 | **Nombre del Personaje** | **Likka**, un escarabajo ciervo nocturno (diseño original del equipo, "Sirv") |
 | **Plataforma Objetivo** | Android nativo (Kotlin, Jetpack Compose, Coroutines/Flow) |
-| **Versión de Android** | Mínima: Android 8.0 (API 26) \| Objetivo: Android 14/15 (API 34/35) |
+| **Versión de Android** | Mínima: Android 10 (API 29) \| Objetivo: Android 15 (API 35) |
 | **Dispositivo de Prueba Real** | **Xiaomi Redmi 9 (MIUI 12.x, Android 10/11 — no recibe HyperOS)** — requiere validación temprana de restricciones de batería/autostart. Probablemente **sin giroscopio** (a confirmar en el spike, §14): si falta, no existe `TYPE_GRAVITY` y aplica el fallback de RF-P01. |
-| **Emulador de Prueba** | **API 34/35 (Android 14/15), AOSP** — cubre lo que el Redmi 9 no puede probar por su versión: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE_TYPE_HEALTH` y la restricción de actividades en segundo plano de Android 15 (RF-O03). Ver §12.3. |
+| **Emulador de Prueba** | **API 35 (Android 15), AOSP** — cubre lo que el Redmi 9 no puede probar por su versión: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE_TYPE_HEALTH` y la restricción de actividades en segundo plano de Android 15 (RF-O03). Ver §12.3. |
 | **Distribución** | **Sideload (APK directo)** — sin revisión de Google Play |
 | **Idioma** | **100% Español** (interfaz, onboarding, prompts y fallback local) |
 | **Cerebro de IA** | **DeepSeek API** (`deepseek-flash`, formato OpenAI), llamada **solo desde el backend** |
@@ -349,11 +349,11 @@ enum class OverlayVisibility { SHOWN, HIDDEN_WHILE_AWAY, HIDDEN_SUSPENDED }
 | :--- | :--- | :---: | :--- | :--- |
 | RF-P01 | Leer `Sensor.TYPE_GRAVITY` a 5 Hz (200 ms) para el ángulo; si el sensor no existe, usar `TYPE_ACCELEROMETER` con filtro EMA ($\alpha = 0.15$). | MUST | Dado un equipo sin `TYPE_GRAVITY`, cuando arranca `AndroidPostureSource`, entonces usa `TYPE_ACCELEROMETER` filtrado y sigue emitiendo lecturas a ~200 ms. | Spike Día 1 (§14); confirma si el Redmi 9 tiene giroscopio. |
 | RF-P02 | Calcular $\theta$ en grados aplicando `.coerceIn(-1.0, 1.0)` antes del arcocoseno. | MUST | Dado un vector cuyos componentes harían que el argumento de `acos` supere 1 o sea menor que -1, cuando se calcula $\theta$, entonces el resultado es un número válido, nunca `NaN`. | §12.1, `BiomechanicsCalculator`. |
-| RF-P03 | Detectar "Teléfono en Mesa" con la triple condición del §4.1 ($Z > 9.0$, $\lvert Y\rvert < 2.0$, desviación estándar < `TABLE_MAX_STDDEV` en `TABLE_WINDOW_SAMPLES` muestras de `TYPE_ACCELEROMETER` crudo). | MUST | Dado el teléfono plano y quieto, se clasifica `ON_TABLE`. Dado el teléfono plano pero con temblor (σ ≥ `TABLE_MAX_STDDEV`, ej. "en las piernas"), no se clasifica `ON_TABLE`. | §12.1 "Detección de mesa"; §12.3 escenarios 3–4. |
+| RF-P03 | Detectar "Teléfono en Mesa" con la triple condición del §4.1 ($Z > 9.0$, $\lvert Y\rvert < 2.0$, desviación estándar < `TABLE_MAX_STDDEV` en `TABLE_WINDOW_SAMPLES` muestras de `TYPE_ACCELEROMETER` crudo). | MUST | Dado el teléfono plano y quieto, se clasifica `ON_TABLE`. Dado el teléfono plano pero con temblor (σ ≥ `TABLE_MAX_STDDEV`, ej. "en las piernas"), no se clasifica `ON_TABLE`. | §12.1 "Detección de mesa"; §12.3 escenario M3. |
 | RF-P04 | Histéresis de disparo/resolución de `POSTURE` con los umbrales de `EscalationConfig` (`POSTURE_DANGER_ANGLE`, `POSTURE_TRIGGER_SEC`, `POSTURE_RESET_ANGLE`, `POSTURE_RESET_SEC`). | MUST | Dado $\theta$ < `POSTURE_DANGER_ANGLE` sostenido `POSTURE_TRIGGER_SEC`, se dispara `POSTURE`; a `POSTURE_TRIGGER_SEC - 1` no se dispara. Dado $\theta$ > `POSTURE_RESET_ANGLE` sostenido `POSTURE_RESET_SEC`, se resuelve. Dado $\theta$ entre ambos umbrales, ni dispara ni resuelve. | §12.1, `EscalationCoordinator`. |
-| RF-P05 | Pausar el registro de sensores en `ACTION_SCREEN_OFF` y reactivarlo en `ACTION_SCREEN_ON`. | MUST | Dado que la pantalla se apaga, los listeners de sensores se desregistran en menos de 1 ciclo (200 ms); al encenderse, se reregistran. | §12.3 escenario 1 (batería con pantalla apagada). |
+| RF-P05 | Pausar el registro de sensores en `ACTION_SCREEN_OFF` y reactivarlo en `ACTION_SCREEN_ON`. | MUST | Dado que la pantalla se apaga, los listeners de sensores se desregistran en menos de 1 ciclo (200 ms); al encenderse, se reregistran. | §12.3 escenario M1 (batería con pantalla apagada). |
 | RNF-P01 | Consumo de CPU del hilo de sensores. | MUST | < 1% de CPU con el teléfono en reposo, medido con `adb shell top`. | `redmi-check`, §12.3. |
-| RNF-P02 | Impacto de batería con pantalla encendida. | MUST | < 2.5%/h medido en Configuración → Batería tras 30 min de uso continuo de una app vigilada. | §12.3 escenario 9. |
+| RNF-P02 | Impacto de batería con pantalla encendida. | MUST | < 2.5%/h medido en Configuración → Batería tras 30 min de uso continuo de una app vigilada. | §12.3 escenario M8. |
 
 ---
 
@@ -361,16 +361,16 @@ enum class OverlayVisibility { SHOWN, HIDDEN_WHILE_AWAY, HIDDEN_SUSPENDED }
 
 | ID | Requisito | Prioridad | Criterio de aceptación | Verificación |
 | :--- | :--- | :---: | :--- | :--- |
-| RF-A01 | Poller cada 2 s con `UsageStatsManager.queryEvents`, procesando `ACTIVITY_RESUMED` (API 29+) / `MOVE_TO_FOREGROUND` (API 26–28) y conservando la última app conocida entre consultas. Al iniciar el servicio, consulta los últimos 10 min para conocer la app actual. | MUST | Dada una ventana de 2 s sin eventos nuevos, la app en primer plano reportada no cambia. Dado el arranque del servicio con TikTok ya abierto, detecta TikTok sin esperar el siguiente cambio de app. | §12.1 (fake `ForegroundAppSource`). |
+| RF-A01 | Poller cada 2 s con `UsageStatsManager.queryEvents`, procesando `ACTIVITY_RESUMED` (único evento relevante desde API 29, el minSdk del proyecto) y conservando la última app conocida entre consultas. Al iniciar el servicio, consulta los últimos 10 min para conocer la app actual. | MUST | Dada una ventana de 2 s sin eventos nuevos, la app en primer plano reportada no cambia. Dado el arranque del servicio con TikTok ya abierto, detecta TikTok sin esperar el siguiente cambio de app. | §12.1 (fake `ForegroundAppSource`). |
 | RF-A02 | Apps vigiladas por defecto: TikTok, Instagram, YouTube y Facebook (`com.facebook.katana`, `com.facebook.lite`; Messenger queda fuera) (`DEFAULT_TARGET_PACKAGES`), activables/desactivables en Ajustes. | MUST | Instalación limpia → las 4 apps quedan vigiladas por defecto. | §12.3 manual. |
-| RF-A03 | Suspender por llamada con `AudioManager.getMode()` (§4.2), con respaldo por nombre de paquete de marcador conocido. | MUST | Dado `AudioManager.getMode()` en `MODE_IN_CALL`/`MODE_RINGTONE`/`MODE_IN_COMMUNICATION`, el estado global pasa a `SUSPENDED` en ≤ 2 s (siguiente ciclo del poller). | §12.3 escenario 5. |
-| RF-A04 | Onboarding de 6 pasos (design system §3) con checklist de permisos **solo los que apliquen a la versión de Android** del equipo (`POST_NOTIFICATIONS` únicamente en API 33+). | MUST | Dado API < 33, el checklist muestra 2 permisos y el botón final se habilita con esos 2. Dado API 33+, muestra 3 y exige los 3. | §12.3 escenario 11 (emulador API 34). |
+| RF-A03 | Suspender por llamada con `AudioManager.getMode()` (§4.2), con respaldo por nombre de paquete de marcador conocido. | MUST | Dado `AudioManager.getMode()` en `MODE_IN_CALL`/`MODE_RINGTONE`/`MODE_IN_COMMUNICATION`, el estado global pasa a `SUSPENDED` en ≤ 2 s (siguiente ciclo del poller). | §12.3 escenario M4. |
+| RF-A04 | Onboarding de 6 pasos (design system §3) con checklist de permisos **solo los que apliquen a la versión de Android** del equipo (`POST_NOTIFICATIONS` únicamente en API 33+). | MUST | Dado API < 33, el checklist muestra 2 permisos y el botón final se habilita con esos 2. Dado API 33+, muestra 3 y exige los 3. | §12.3 escenario E1 (emulador API 35, 3 permisos) y onboarding en el Redmi 9 antes de M1 (API 29–30, 2 permisos). |
 | RF-A05 | Guía MIUI (Xiaomi/Redmi/POCO o ROM MIUI/HyperOS) con accesos directos a Autostart, Batería sin restricciones y ventanas emergentes en segundo plano, cada uno con casilla "Ya lo activé" (`miui_*_confirmed`, RF-D01). | MUST | Dado un equipo MIUI, el onboarding muestra el paso 5 con las 3 casillas; en un equipo no-MIUI, el paso se salta. | §12.3 manual en el Redmi 9. |
 | RF-A06 | Si se revoca un permiso desde el sistema, al abrir la app se redirige a la pantalla de permisos (reutiliza el paso 4) y la notificación del servicio muestra "Necesito un permiso". | MUST | Dado un permiso revocado desde Ajustes del sistema, cuando se reabre la app, entonces se muestra la pantalla de permisos (no el paso 1 del onboarding) y la notificación cambia de texto. | §12.3 manual. |
-| RF-A07 | `BootReceiver` reinicia `LikkaService` tras `ACTION_BOOT_COMPLETED` si `likka_enabled = true` (§9.3). | MUST | Tras reiniciar el teléfono con Likka activado, el servicio vuelve a correr sin abrir la app. En MIUI, requiere *Autostart* concedido (RF-A05). | §12.3 escenario 2. |
-| RNF-A01 | Compatibilidad del checklist de permisos con API 26–35. | MUST | Pasa en el Redmi 9 (API 26–28 y 29–30 vía `checkOpNoThrow`/`unsafeCheckOpNoThrow`, RF-A04 nota de §9) y en el emulador API 34/35. | §12.3 escenarios 1–10 y 11. |
+| RF-A07 | `BootReceiver` reinicia `LikkaService` tras `ACTION_BOOT_COMPLETED` si `likka_enabled = true` (§9.3). | MUST | Tras reiniciar el teléfono con Likka activado, el servicio vuelve a correr sin abrir la app. En MIUI, requiere *Autostart* concedido (RF-A05). | §12.3 escenario M2. |
+| RNF-A01 | Compatibilidad del checklist de permisos con API 29–35. | MUST | Pasa en el Redmi 9 (API 29–30 vía `unsafeCheckOpNoThrow`, RF-A04 nota de §9) y en el emulador API 35. | §12.3 escenarios M1–M8 y E1. |
 
-**Detalle de implementación de RF-A04** (los 6 pasos del onboarding y qué verifica cada permiso): 1) Bienvenida. 2) Cómo funciona (3 niveles). 3) Privacidad e IA (§8, interruptor de IA). 4) Permisos — `POST_NOTIFICATIONS` vía `ContextCompat.checkSelfPermission` (solo API 33+), `SYSTEM_ALERT_WINDOW` vía `Settings.canDrawOverlays()`, `PACKAGE_USAGE_STATS` vía `AppOpsManager.unsafeCheckOpNoThrow` (API 29+) o `checkOpNoThrow` (API 26–28). 5) Guía MIUI (RF-A05, solo Xiaomi). 6) Listo.
+**Detalle de implementación de RF-A04** (los 6 pasos del onboarding y qué verifica cada permiso): 1) Bienvenida. 2) Cómo funciona (3 niveles). 3) Privacidad e IA (§8, interruptor de IA). 4) Permisos — `POST_NOTIFICATIONS` vía `ContextCompat.checkSelfPermission` (solo API 33+), `SYSTEM_ALERT_WINDOW` vía `Settings.canDrawOverlays()`, `PACKAGE_USAGE_STATS` vía `AppOpsManager.unsafeCheckOpNoThrow` (único camino: minSdk = 29). 5) Guía MIUI (RF-A05, solo Xiaomi). 6) Listo.
 
 **Detalle de implementación de RF-A05**: los Intents a pantallas de MIUI van envueltos en `try/catch` con respaldo a la pantalla de detalles de la app (`ACTION_APPLICATION_DETAILS_SETTINGS`), porque esas pantallas no son API pública y varían entre versiones de MIUI.
 
@@ -381,16 +381,16 @@ enum class OverlayVisibility { SHOWN, HIDDEN_WHILE_AWAY, HIDDEN_SUSPENDED }
 | ID | Requisito | Prioridad | Criterio de aceptación | Verificación |
 | :--- | :--- | :---: | :--- | :--- |
 | RF-O01 | `WindowManager.addView()` con `TYPE_APPLICATION_OVERLAY` y flags `FLAG_NOT_FOCUSABLE \| FLAG_NOT_TOUCH_MODAL \| FLAG_LAYOUT_IN_SCREEN`. La ventana del overlay está **recortada al tamaño de Likka y su globo** (no es una ventana transparente de pantalla completa), para que los toques fuera de esa silueta sigan llegando a la app de fondo (§9.6). | MUST | Con el overlay visible, el teclado y el botón "Atrás" siguen funcionando en la app de fondo, y tocar fuera de la silueta de Likka llega a la app de fondo (no al overlay). | §12.3 manual; revisión de código (`android-reviewer`). |
-| RF-O02 | Tamaño y contenido por nivel: N1 burbuja 64dp (tocar despliega el roast 5 s, mantener presionado abre la app); N2 burbuja 140dp con roast siempre visible y vibración de un pulso de 250 ms; N3 panel 80% con Likka `fury`, roast, cuenta regresiva de 20 s y vibración de dos pulsos de 300 ms separados 150 ms. La posición de N1 y N2 no es fija: ver RF-O09/RF-O10. | MUST | Cada nivel muestra el tamaño, contenido y vibración de su fila; medido con `VibrationEffect` capturado en logs de depuración. | §12.3 escenarios 3–6. |
-| RF-O03 | Al pulsar "Me rindo", pulsar Inicio, o terminar la cuenta regresiva del Nivel 3: primero se lanza `ACTION_MAIN + CATEGORY_HOME`, después se retira el overlay. Pulsar Inicio en el Nivel 3 cuenta como la **misma expulsión** que "Me rindo" (mismas reglas D y de fin de sesión, §3.2), para que no sea una forma de escapar sin consecuencias. | MUST | En Android 15 (API 35), el Intent de Inicio se lanza con éxito porque el overlay sigue visible en ese instante (la app tiene `SYSTEM_ALERT_WINDOW`). Salir con Inicio desde el Nivel 3 deja el mismo rastro de expulsión (`EJECTED`) que "Me rindo": una reapertura antes de 5 min entra directo a Nivel 2 (regla D). | §12.3 escenario 6 (Redmi) y 13 (emulador API 35); §12.1 regla D. |
+| RF-O02 | Tamaño y contenido por nivel: N1 burbuja 64dp (tocar despliega el roast 5 s, mantener presionado abre la app); N2 burbuja 140dp con roast siempre visible y vibración de un pulso de 250 ms; N3 panel 80% con Likka `fury`, roast, cuenta regresiva de 20 s y vibración de dos pulsos de 300 ms separados 150 ms. La posición de N1 y N2 no es fija: ver RF-O09/RF-O10. | MUST | Cada nivel muestra el tamaño, contenido y vibración de su fila; medido con `VibrationEffect` capturado en logs de depuración. | §12.3 escenarios M3–M5. |
+| RF-O03 | Al pulsar "Me rindo", pulsar Inicio, o terminar la cuenta regresiva del Nivel 3: primero se lanza `ACTION_MAIN + CATEGORY_HOME`, después se retira el overlay. Pulsar Inicio en el Nivel 3 cuenta como la **misma expulsión** que "Me rindo" (mismas reglas D y de fin de sesión, §3.2), para que no sea una forma de escapar sin consecuencias. | MUST | En Android 15 (API 35), el Intent de Inicio se lanza con éxito porque el overlay sigue visible en ese instante (la app tiene `SYSTEM_ALERT_WINDOW`). Salir con Inicio desde el Nivel 3 deja el mismo rastro de expulsión (`EJECTED`) que "Me rindo": una reapertura antes de 5 min entra directo a Nivel 2 (regla D). | §12.3 escenario M5 (Redmi) y E1 (emulador API 35); §12.1 regla D. |
 | RF-O04 | Al resolverse el motivo que causó el nivel actual, Likka reproduce la animación de despedida (~1 s) y el overlay se retira. | MUST | Dado `POSTURE` resuelto con `USAGE_TIME` inactivo, se reproduce la despedida antes de ocultar. Dado `POSTURE` resuelto con `USAGE_TIME` activo, no se reproduce (el overlay sigue mostrando el nivel de `USAGE_TIME`, §3.3). | §12.1 (estado `isFarewell` de `LikkaOverlayState`). |
-| RF-O05 | Sin fugas de memoria: una sola instancia de overlay que cambia de tamaño y posición con `updateViewLayout()` entre niveles y durante el movimiento (`ComposeOverlayHelper`, §9.1), en lugar de destruirse y recrearse. | MUST | Crear y destruir el overlay 50 veces no deja instancias retenidas en LeakCanary (build debug). | §12.3 escenario 7. |
-| RF-O06 | La cuenta regresiva del Nivel 3 se congela en `SUSPENDED` (llamada, pantalla apagada) y se retoma con el tiempo restante al volver. | MUST | Dada una llamada entrante en el segundo 12 de 20, al colgar la cuenta regresiva continúa en el segundo 12, no se reinicia en 20. | §12.1 "Suspendido"; §12.3 escenario 5. |
+| RF-O05 | Sin fugas de memoria: una sola instancia de overlay que cambia de tamaño y posición con `updateViewLayout()` entre niveles y durante el movimiento (`ComposeOverlayHelper`, §9.1), en lugar de destruirse y recrearse. | MUST | Crear y destruir el overlay 50 veces no deja instancias retenidas en LeakCanary (build debug). | §12.3 escenario M6. |
+| RF-O06 | La cuenta regresiva del Nivel 3 se congela en `SUSPENDED` (llamada, pantalla apagada) y se retoma con el tiempo restante al volver. | MUST | Dada una llamada entrante en el segundo 12 de 20, al colgar la cuenta regresiva continúa en el segundo 12, no se reinicia en 20. | §12.1 "Suspendido"; §12.3 escenario M4. |
 | RF-O07 | Salir de la app vigilada en Nivel 1–2 sin llegar a la expulsión del Nivel 3 (botón Inicio, cambiar a una app no vigilada, minimizar) oculta el overlay (`HIDDEN_WHILE_AWAY`), congela ambas pistas de escalamiento **y detiene el movimiento** (RF-O09/RF-O10); volver antes de 5 min retoma el mismo nivel y posición, y 5 min fuera terminan la sesión. | MUST | Dado Nivel 2 de `POSTURE` y el usuario abre una app no vigilada, el overlay desaparece y el nivel no avanza a N3 aunque pasen los 3 min de `LEVEL_2_TO_3_MIN`. Al volver a los 2 min, sigue en N2 y retoma su ciclo de movimiento donde iba. | §12.1 "Sesión de ocio y salir de la app". |
 | RF-O08 | Notificación persistente del servicio en primer plano, con acciones **Pausar 30 min** (oculta en Nivel 3 o sin pausas restantes) y **Abrir**. | MUST | Dada la notificación visible y `pauses_today < MAX_PAUSES_PER_DAY` con el nivel global < 3, la acción "Pausar 30 min" está presente y, al tocarla, inicia una pausa sin abrir la app. | §12.1 (`DataStoreStatsStore` + acción de notificación); §12.3 manual. |
 | RF-O09 | **Movimiento en Nivel 1 ("se asoma y cambia de lugar")**: cada `LEVEL_1_HOP_INTERVAL_SEC` (40 s), Likka se esconde y reaparece asomado por otro borde o a otra altura, elegido al azar entre las posiciones permitidas (fuera de los *insets* del sistema, RF-O13). | MUST | En una sesión de Nivel 1 de más de 40 s, con `Clock` falso, se observa al menos un cambio de posición hacia un borde/altura distinto del anterior. | §12.1 (lógica de posiciones con `Clock` falso). |
-| RF-O10 | **Movimiento en Nivel 2 ("te persigue")**: Likka camina por la pantalla con la animación de caminar, orientado hacia donde va y llevando el globo del roast; camina `LEVEL_2_WALK_SEC` (4 s) y se detiene `LEVEL_2_STOP_SEC` (8 s) sobre la zona central del contenido, en un ciclo continuo. No se puede cerrar. | MUST | Con `Clock` falso, tras `LEVEL_2_WALK_SEC` el estado de movimiento pasa de "caminando" a "detenido", y tras `LEVEL_2_STOP_SEC` vuelve a "caminando". | §12.1; §12.3 escenario manual (Redmi 9, Nivel 2 caminando). |
-| RF-O11 | **Regreso tras arrastrar (Nivel 2)**: si el usuario arrastra a Likka lejos de su posición, a los `LEVEL_2_RETURN_DELAY_SEC` (5 s) vuelve caminando hacia la zona central del contenido. | MUST | Con `Clock` falso, tras soltar un arrastre, el temporizador de regreso dispara a los 5 s y el modo de movimiento pasa a "caminando" hacia el centro. | §12.1; §12.3 escenario manual. |
+| RF-O10 | **Movimiento en Nivel 2 ("te persigue")**: Likka camina por la pantalla con la animación de caminar, orientado hacia donde va y llevando el globo del roast; camina `LEVEL_2_WALK_SEC` (4 s) y se detiene `LEVEL_2_STOP_SEC` (8 s) sobre la zona central del contenido, en un ciclo continuo. No se puede cerrar. | MUST | Con `Clock` falso, tras `LEVEL_2_WALK_SEC` el estado de movimiento pasa de "caminando" a "detenido", y tras `LEVEL_2_STOP_SEC` vuelve a "caminando". | §12.1; §12.3 escenario M8 (Nivel 2 caminando). |
+| RF-O11 | **Regreso tras arrastrar (Nivel 2)**: si el usuario arrastra a Likka lejos de su posición, a los `LEVEL_2_RETURN_DELAY_SEC` (5 s) vuelve caminando hacia la zona central del contenido. | MUST | Con `Clock` falso, tras soltar un arrastre, el temporizador de regreso dispara a los 5 s y el modo de movimiento pasa a "caminando" hacia el centro. | §12.1; §12.3 escenario M8 (arrastre y regreso). |
 | RF-O12 | **Reacciones locales sin IA**: al arrastrar a Likka, o al alcanzar `POKE_REACTION_TAPS` (3) toques (el tercer toque, no el cuarto) dentro de `POKE_REACTION_WINDOW_SEC` (5 s), se muestra una frase corta de `assets/reactions.json` (claves `drag`/`poke`, ≥ 7 frases cada una, ≤ 12 palabras, mismo tono que los roasts: se burla del hábito, nunca del cuerpo ni de la persona). No usa la IA ni el Worker. | MUST | Arrastrar a Likka muestra una frase de la clave `drag`. Tocarlo exactamente 3 veces en 5 s ya dispara una frase de la clave `poke` (no hace falta un cuarto toque); tocarlo 2 veces no dispara nada. Ninguna de las dos hace una petición de red. | §12.1 (estructura y longitud de `reactions.json`, como `roasts_fallback.json`). |
 | RF-O13 | El movimiento (N1 y N2) nunca coloca a Likka sobre la barra de estado ni la barra de navegación: usa los *insets* del sistema (`WindowInsets`) como zona prohibida. | MUST | Ninguna posición generada por la lógica de movimiento cae dentro de los *insets* de sistema, para un rango de tamaños de pantalla probados. | §12.1 ("nunca dentro de los insets"). |
 | RF-O14 | Con *Quitar animaciones* del sistema activado (`ANIMATOR_DURATION_SCALE == 0`), Likka no camina ni cambia de lugar: queda fijo en su última posición. | MUST | Con la escala de animación en 0, tras varios ciclos de `LEVEL_1_HOP_INTERVAL_SEC`/`LEVEL_2_WALK_SEC`, la posición no cambia. | §12.1 ("detenido con Quitar animaciones"). |
@@ -486,10 +486,10 @@ Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_c
 | RNF-R02 | Rendimiento | Impacto de batería con pantalla apagada | < 1%/h en 8 h, medido en Configuración → Batería del sistema. | MUST |
 | RNF-R03 | Rendimiento | Tiempo entre disparo de nivel y overlay visible | < 500 ms desde que `EscalationCoordinator` emite el nuevo `LikkaOverlayState` hasta que `WindowManager` pinta el frame, medido con timestamps en logs de depuración. | SHOULD |
 | RNF-R04 | Rendimiento | Arranque en frío de `MainActivity` | < 1.5 s hasta el primer frame útil (Android Vitals "cold start" o `adb shell am start -W`). | SHOULD |
-| RNF-R05 | Rendimiento | Batería del movimiento del overlay (N1/N2) | El movimiento no suma más de **0.3%/h** al presupuesto de RNF-P02 (< 2.5%/h con pantalla encendida en total); se mide comparando `dumpsys batterystats` con el movimiento activo vs. con `ANIMATOR_DURATION_SCALE = 0` (RF-O14, Likka fijo). Se apoya en `MOVEMENT_STEP_FPS = 10` (no 60 fps) para mantenerse dentro del presupuesto. | MUST |
+| RNF-R05 | Rendimiento | Batería del movimiento del overlay (N1/N2) | El movimiento no suma más de **0.3%/h** al presupuesto de RNF-P02 (< 2.5%/h con pantalla encendida en total); se mide comparando `dumpsys batterystats` con el movimiento activo vs. con `ANIMATOR_DURATION_SCALE = 0` (RF-O14, Likka fijo). Se apoya en `MOVEMENT_STEP_FPS = 10` (no 60 fps) para mantenerse dentro del presupuesto. Esta comparación específica es opcional; el tope MUST de batería con pantalla encendida lo fija RNF-P02, verificado en el escenario M8. | SHOULD |
 | RNF-F01 | Fiabilidad | Supervivencia del servicio con pantalla apagada | 60 min sin que `dumpsys activity services` deje de listar `LikkaService`. | MUST |
 | RNF-F02 | Fiabilidad | Reinicio tras boot en MIUI | El servicio vuelve a correr tras reiniciar el teléfono, con *Autostart* concedido (RF-A07). | MUST |
-| RNF-F03 | Fiabilidad | Estabilidad | Cero *crashes* en los 12 escenarios de §12.3 (9 Redmi + 3 emulador). | MUST |
+| RNF-F03 | Fiabilidad | Estabilidad | Cero *crashes* en los 9 escenarios de §12.3 (8 Redmi + 1 emulador). | MUST |
 | RNF-F04 | Fiabilidad | Fugas de memoria del overlay | Cero instancias retenidas tras 50 ciclos de creación/destrucción (LeakCanary, RF-O05). | MUST |
 | RNF-S01 | Privacidad y seguridad | Lista blanca de campos hacia DeepSeek | El Worker descarta cualquier campo fuera de `{app, minutes, angle, level, reason}` (RF-I02); verificado con la prueba "campo extra ignorado" de `roast-lab`. | MUST |
 | RNF-S02 | Privacidad y seguridad | La key de DeepSeek nunca viaja en el APK | `grep -aE "sk-[a-f0-9]{32}"` sobre los `.dex` del release no encuentra nada (§13.4). | MUST |
@@ -503,9 +503,9 @@ Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_c
 | RNF-U04 | Usabilidad y accesibilidad | TalkBack | El roast se anuncia al aparecer (`liveRegion = Polite` en N1–2, `Assertive` en N3, design system §4). | MUST |
 | RNF-U05 | Usabilidad y accesibilidad | Quitar animaciones | Con `ANIMATOR_DURATION_SCALE == 0`, se muestra solo el primer frame de cada pose (design system §1.6). | SHOULD |
 | RNF-U06 | Usabilidad y accesibilidad | Onboarding completable | En ≤ 3 min sin guía MIUI, en ≤ 5 min con guía MIUI (recorrido manual con un usuario nuevo). | SHOULD |
-| RNF-C01 | Compatibilidad | Rango de API soportado | API 26–35 sin *crash* de arranque (RF-P01, §9.3). | MUST |
-| RNF-C02 | Compatibilidad | Dispositivo real | Corre en el Redmi 9 (MIUI 12.x, Android 10/11) cumpliendo los 9 escenarios del Redmi en §12.3. | MUST |
-| RNF-C03 | Compatibilidad | Emulador de versiones nuevas | Cumple los 3 escenarios del emulador API 34/35 en §12.3. | MUST |
+| RNF-C01 | Compatibilidad | Rango de API soportado | API 29–35 sin *crash* de arranque (RF-P01, §9.3). | MUST |
+| RNF-C02 | Compatibilidad | Dispositivo real | Corre en el Redmi 9 (MIUI 12.x, Android 10/11) cumpliendo los 8 escenarios del Redmi en §12.3. | MUST |
+| RNF-C03 | Compatibilidad | Emulador de versiones nuevas | Cumple el escenario E1 del emulador API 35 en §12.3. | MUST |
 | RNF-M01 | Mantenibilidad | Capas y dependencias | `domain/` sin imports de `android.*` (§10.1), verificado por `android-reviewer` antes de cada commit relevante. | MUST |
 | RNF-M02 | Mantenibilidad | Formato | ktlint pasa sin *warnings* nuevos (§10.4). | MUST |
 | RNF-M03 | Mantenibilidad | Cobertura de pruebas unitarias | `domain/` y `data/` con cobertura de línea ≥ 70% (razonable para un MVP de 3 semanas; no cubre `presentation/` ni `service/`, que se validan manualmente en el Redmi 9 y el emulador). | SHOULD |
@@ -522,8 +522,8 @@ Todo requisito **MUST** tiene al menos una prueba en §12.1 (unitaria), §12.2 (
 | :--- | :--- |
 | §12.1 (JVM, `domain`/`data`) | RF-E01–E08, RF-P02–P04, RF-A01, RF-I05–I11, RF-D01–D05, RF-S01, RF-O04, RF-O06, RF-O07, RF-O09–RF-O14 |
 | §12.2 (Worker, `roast-lab`) | RF-I01–I04 |
-| §12.3 escenarios 1–10 (Redmi 9) | RF-P01, RF-P05, RNF-P01, RNF-P02, RNF-R05, RF-A07, RF-O01, RF-O02, RF-O03, RF-O05, RF-O08, RF-O10, RF-O11, RNF-F01–F04, RNF-C02 |
-| §12.3 escenarios 11–13 (emulador API 34/35) | RF-A04, RF-O03, RNF-C01, RNF-C03 |
+| §12.3 escenarios M1–M8 (Redmi 9) | RF-P01, RF-P05, RNF-P01, RNF-P02, RF-A07, RF-O01, RF-O02, RF-O03, RF-O05, RF-O08, RF-O10, RF-O11, RNF-F01–F04, RNF-C02 |
+| §12.3 escenario E1 (emulador API 35) | RF-A04, RF-O03, RNF-C01, RNF-C03 |
 | §12.3 manual (sin escenario numerado: Ajustes, Acerca de, dashboard) | RF-A02, RF-A05, RF-A06, RF-S02–S04, RF-S07, RF-D03, RF-D05 |
 | Revisión de código / `android-reviewer` | RF-O01, RNF-S01–S06, RNF-M01, RNF-M04 |
 
@@ -943,15 +943,15 @@ Organización **por capa y luego por funcionalidad**:
 
 ```
 Likka-Pet/
-├── CLAUDE.md                              # Reglas del proyecto para asistentes de IA
+├── CLAUDE.md                              # (local, no versionado) Reglas del proyecto para asistentes de IA
 ├── likkapet_documentacion.md              # Este documento
 ├── likkapet_design_system.md              # Diseño de interfaz
-├── sprites/
+├── sprites/                                # (local, no versionado; .gitignore)
 │   ├── sirv.png                            # Referencia de diseño (colores, capucha, cuernos, bufanda); no se usa en la app
 │   ├── likka.png                           # Hoja de sprites final, dibujada a mano en Aseprite (cuadros de 64×64 px)
 │   ├── likka.json                          # Exportado por Aseprite (Array + Tags): posición y duración de cada cuadro
 │   └── likka_poses.json                    # Mapeo pose → tag de Aseprite, escrito a mano (§1.7 de likkapet_design_system.md)
-├── .claude/
+├── .claude/                                # (local, no versionado; .gitignore)
 │   ├── skills/                            # likka-ui, roast-lab, redmi-check, release-apk
 │   └── agents/                            # android-reviewer
 ├── backend/
@@ -993,7 +993,7 @@ Likka-Pet/
     │   ├── assets/
     │   │   ├── roasts_fallback.json       # 42+ frases (3 niveles × 2 motivos)
     │   │   ├── reactions.json             # Reacciones locales sin IA: claves drag/poke, ≥7 frases cada una (§9.6, RF-O12)
-    │   │   └── sprites/                   # likka.png + likka.json + likka_poses.json, copiados sin cambios desde sprites/ (raíz); sirv.png NO se copia (es solo referencia)
+    │   │   └── sprites/                   # (local, no versionado; .gitignore) likka.png + likka.json + likka_poses.json, copiados sin cambios desde sprites/ (raíz); sirv.png NO se copia (es solo referencia)
     │   └── res/values/strings.xml         # TODO el texto visible, en español
     ├── test/                              # Pruebas unitarias JVM (§12)
     └── androidTest/                       # Pruebas instrumentadas
@@ -1127,7 +1127,7 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 | `reactions.json` | Estructura válida, claves `drag`/`poke` con ≥ 7 frases cada una, todas con ≤ 12 palabras. |
 | `OverlayMotionPlanner` (con `Clock` falso, §9.6) | N1: cambia a un borde/altura distinto cada `LEVEL_1_HOP_INTERVAL_SEC`. N2: alterna "caminando" (`LEVEL_2_WALK_SEC`) / "detenido" (`LEVEL_2_STOP_SEC`) en ciclo. N2: tras un arrastre, vuelve a caminar hacia el centro a los `LEVEL_2_RETURN_DELAY_SEC`. Ninguna posición generada cae dentro de los *insets* de sistema pasados como límite. Con `ANIMATOR_DURATION_SCALE = 0`, la posición no cambia tras varios ciclos. Reacciones: arrastrar dispara `drag`; exactamente `POKE_REACTION_TAPS` (3) toques en `POKE_REACTION_WINDOW_SEC` ya disparan `poke` (el umbral es inclusivo, no hace falta un cuarto toque); 2 toques no disparan nada. **Dirección del sprite**: un vector recto hacia cada uno de los 4 ejes (`walk_down`/`walk_up`/`walk_right`/`walk_left`) y hacia cada diagonal inferior (`walk_diag_down_right`/`walk_diag_down_left`) elige el tag esperado según la tabla de sectores de §9.6; un vector diagonal hacia arriba (p. ej. 315°) elige `walk_up`. |
 | `DataStoreStatsStore` | Cambio de fecha reinicia contadores. Racha: día sin N3 suma, día con N3 reinicia. |
-| Sprites (`likka.json` + `likka_poses.json`, §1.7 de `likkapet_design_system.md`) | `likka.json` contiene los 10 tags P1 (`idle`, `blink`, `walk_right`, `walk_down`, `walk_up`, `peek`, `annoyed`, `fury`, `happy`, y su respectivo *once*/*loop*). Cada pose de `likka_poses.json` apunta a un `tag` presente en `likka.json`. Todos los cuadros de `likka.json` miden 64×64 px. |
+| Sprites (`likka.json` + `likka_poses.json`, §1.7 de `likkapet_design_system.md`) | `likka.json` contiene los 9 tags P1 dibujados (`idle`, `blink`, `walk_right`, `walk_down`, `walk_up`, `peek`, `annoyed`, `fury`, `happy`; `walk_left` es un espejo de `walk_right` en `likka_poses.json`, no un tag propio). Cada pose de `likka_poses.json` apunta a un `tag` presente en `likka.json`. Todos los cuadros de `likka.json` miden 64×64 px. **`sprites/` y `app/src/main/assets/sprites/` son carpetas locales, ignoradas por git (§10.2): si falta la carpeta completa de sprites, la prueba se SALTA (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio; si la carpeta existe, se valida todo lo anterior.** |
 
 ### 12.2 Pruebas del Worker
 
@@ -1140,24 +1140,21 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 
 | # | Escenario | Resultado esperado |
 | :---: | :--- | :--- |
-| 1 | Servicio 60 min con pantalla apagada | Sigue vivo (`adb shell dumpsys activity services com.likkapet`) |
-| 2 | Reiniciar el teléfono | El servicio vuelve solo |
-| 3 | Teléfono sobre la mesa con TikTok abierto | No dispara `POSTURE`; si `USAGE_TIME` ya estaba activo, sigue corriendo (§3.3, "en mesa") |
-| 4 | TikTok con el teléfono en las piernas | Dispara `POSTURE` a los 10 s |
-| 5 | Llamada de WhatsApp en Nivel 3 | El overlay se oculta y vuelve al colgar con el mismo nivel y tiempo restante |
-| 6 | "Me rindo" en Nivel 3 | Va al inicio (verifica el permiso de ventanas emergentes de MIUI) |
-| 7 | Crear y destruir el overlay 50 veces | Sin fugas (LeakCanary en build debug) |
-| 8 | Modo avión | Roasts del fallback, sin errores visibles |
-| 9 | Batería | < 2.5%/h con pantalla encendida (Configuración → Batería) |
-| 10 | Nivel 2 activo (TikTok): dejar a Likka caminar varios ciclos, tocar la app de fondo fuera de su silueta, y luego arrastrarlo lejos y soltarlo | Camina y se detiene en ciclo sin bloquear los toques de TikTok fuera de su silueta; a los `LEVEL_2_RETURN_DELAY_SEC` (5 s) de soltarlo, vuelve caminando hacia el centro |
+| Previo | Onboarding en el Redmi 9 (API 29–30), antes de M1 | Muestra 2 permisos (sin `POST_NOTIFICATIONS`, que solo aplica en API 33+, RF-A04) y el botón final se habilita con esos 2 |
+| M1 | Pantalla apagada 60 min | Servicio vivo (`adb shell dumpsys activity services com.likkapet`) y batería < 1%/h (RNF-F01, RNF-R02) |
+| M2 | Reiniciar el teléfono | El servicio vuelve solo (RNF-F02) |
+| M3 | Teléfono sobre la mesa con TikTok abierto, y luego en las piernas, en la misma sesión | Sobre la mesa (plano y quieto): no dispara `POSTURE`; si `USAGE_TIME` ya estaba activo, sigue corriendo (§3.3, "en mesa"). En las piernas (temblor): dispara `POSTURE` a los 10 s |
+| M4 | Llamada de WhatsApp en Nivel 3 | El overlay se oculta y vuelve al colgar con el mismo nivel y tiempo restante |
+| M5 | "Me rindo" en Nivel 3 | Va al inicio (verifica el permiso de ventanas emergentes de MIUI) |
+| M6 | Crear y destruir el overlay 50 veces | Sin fugas (LeakCanary en build debug) |
+| M7 | Modo avión | Roasts del fallback, sin errores visibles |
+| M8 | Sesión de uso normal de TikTok de al menos 30 min (mismo umbral que RNF-P02): durante un Nivel 2 de la sesión, verificar que Likka camina y se detiene en ciclo, que los toques fuera de su silueta llegan a TikTok, y que tras arrastrarlo y soltarlo vuelve caminando al centro | El ciclo caminar/detenerse no bloquea los toques de TikTok fuera de la silueta de Likka; a los `LEVEL_2_RETURN_DELAY_SEC` (5 s) de soltar un arrastre, vuelve caminando hacia el centro; al terminar la sesión, batería < 2.5%/h con la pantalla encendida (Configuración → Batería) |
 
-#### En el emulador API 34/35 (lo que el Redmi 9 no puede probar por versión de Android)
+#### En el emulador API 35 (lo que el Redmi 9 no puede probar por versión de Android)
 
 | # | Escenario | Resultado esperado |
 | :---: | :--- | :--- |
-| 11 | Onboarding en API 34 | Se pide `POST_NOTIFICATIONS`; el botón final se habilita con los 3 permisos |
-| 12 | `startForeground()` en API 34/35 | Arranca con `FOREGROUND_SERVICE_TYPE_HEALTH` sin `SecurityException` |
-| 13 | "Me rindo" en Android 15 (API 35) | El Intent `ACTION_MAIN + CATEGORY_HOME` se lanza con éxito pese a la restricción de actividades en segundo plano de Android 15 (RF-O03), porque el overlay sigue visible en ese momento |
+| E1 | Una sola sesión: onboarding, `startForeground()` y "Me rindo" | El onboarding pide `POST_NOTIFICATIONS` y el botón final se habilita con los 3 permisos; `startForeground()` arranca con `FOREGROUND_SERVICE_TYPE_HEALTH` sin `SecurityException`; "Me rindo" lanza `ACTION_MAIN + CATEGORY_HOME` con éxito pese a la restricción de actividades en segundo plano de Android 15 (RF-O03), porque el overlay sigue visible en ese momento |
 
 ### 12.4 Definición de Terminado
 
@@ -1219,7 +1216,7 @@ El entregable del proyecto es un **APK de release firmado** que se instala por s
 - Resultado: `app/build/outputs/apk/release/app-release.apk`.
 - Verificar la firma: `apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk`.
 - Versión: `versionCode` +1 y `versionName` (`1.0.0`, `1.0.1`…) en **cada** APK que se entregue.
-- Requisitos: JDK 17 y el Gradle Wrapper del proyecto.
+- Requisitos: **JDK 21 (mínimo 17)**. No usar el JBR de Android Studio si es Java 25: el Gradle del proyecto puede no soportarlo. En Android Studio: Settings → Build Tools → Gradle → Gradle JDK = JDK 21. Nunca fijar `org.gradle.java.home` en el `gradle.properties` del proyecto (se versiona; las rutas de JDK son locales a cada máquina). La versión de Gradle la fija el Wrapper del proyecto.
 
 ### 13.3 Instalación en el Redmi 9
 
@@ -1232,7 +1229,7 @@ Sin cable: copiar el APK al teléfono y abrirlo; MIUI pedirá permitir **"Instal
 ### 13.4 Checklist de entrega
 
 - [ ] Todas las pruebas unitarias pasan.
-- [ ] Los 10 escenarios manuales del Redmi 9 pasan **con el APK de release** (R8 puede romper cosas que en debug funcionan); los 3 escenarios del emulador API 34/35 (§12.3) pasan con un build debug o release equivalente.
+- [ ] Los 8 escenarios manuales del Redmi 9 (M1–M8, §12.3) pasan **con el APK de release** (R8, el shrinker de Android, puede romper cosas que en debug funcionan); el escenario E1 del emulador API 35 (§12.3) pasa con un build debug o release equivalente.
 - [ ] El roast de la IA llega en release (prueba de las reglas de R8).
 - [ ] El APK no contiene la key de DeepSeek (`unzip -p app-release.apk classes*.dex | grep -aE "sk-[a-f0-9]{32}"` no devuelve nada; el patrón simple `"sk-"` da falsos positivos con palabras como "task-" o "disk-").
 - [ ] `app/src/main/assets/sprites/` contiene una copia exacta (sin cambios) de `sprites/likka.png`, `sprites/likka.json` y `sprites/likka_poses.json` (no de `sprites/sirv.png`, que es solo referencia de diseño).
@@ -1261,11 +1258,11 @@ gantt
     section Semana 3: IA, ajustes y pulido
     Worker + WorkerRoastGenerator + prefetch + fallback      :w3_1, after w2_4, 2d
     Ajustes, pausa y dashboard con DataStore            :w3_2, after w3_1, 2d
-    Pruebas manuales Redmi 9 + emulador API 34/35 + APK release :w3_3, after w3_2, 3d
+    Pruebas manuales Redmi 9 (M1–M8) + emulador API 35 (E1) + APK release :w3_3, after w3_2, 3d
 ```
 
 ### Tarea inicial clave (Día 1)
-- **Spike técnico en el Redmi 9**: mini-versión de `LikkaService` (sin overlay ni IA) corriendo **60 min** con la pantalla apagada (mismo umbral que el escenario 1 de §12.3, para que el spike sea una validación temprana del mismo criterio de aceptación). Confirmar además si el equipo tiene `TYPE_GRAVITY` — **el Redmi 9 probablemente no tiene giroscopio**, así que el sensor podría no existir; el spike lo confirma y, si falta, RF-P01 ya prevé el fallback a `TYPE_ACCELEROMETER` con filtro EMA. Si MIUI mata el servicio, validar *Inicio automático* y *Batería sin restricciones* antes de continuar.
+- **Spike técnico en el Redmi 9**: mini-versión de `LikkaService` (sin overlay ni IA) corriendo **60 min** con la pantalla apagada (mismo umbral que el escenario M1 de §12.3, para que el spike sea una validación temprana del mismo criterio de aceptación). Confirmar además si el equipo tiene `TYPE_GRAVITY` — **el Redmi 9 probablemente no tiene giroscopio**, así que el sensor podría no existir; el spike lo confirma y, si falta, RF-P01 ya prevé el fallback a `TYPE_ACCELEROMETER` con filtro EMA. Si MIUI mata el servicio, validar *Inicio automático* y *Batería sin restricciones* antes de continuar.
 - **En paralelo** (el spike es mayormente espera): comenzar la maquetación con el design system y estados falsos de `LikkaOverlayState`.
 
 ---
@@ -1276,14 +1273,14 @@ gantt
 | :--- | :---: | :--- |
 | **MIUI mata `LikkaService`** | **ALTA** | Guía MIUI (RF-A05) + `BootReceiver` + `START_STICKY`. Validado en el spike del Día 1. |
 | **MIUI bloquea el envío al inicio del Nivel 3** | **ALTA** | Permiso "ventanas emergentes en segundo plano" en la guía MIUI + Intent lanzado antes de retirar el overlay (RF-O03). |
-| **Crash al iniciar el servicio en Android 14+** | **ALTA** | `HIGH_SAMPLING_RATE_SENSORS` declarado + tipo `health` solo en API 34+ en `startForeground()` (§9.3). Validado en el emulador (escenario 12, §12.3). |
-| **Restricción de actividades en segundo plano de Android 15 rompe "Me rindo"** | **MEDIA** | Intent lanzado antes de retirar el overlay, mientras la ventana sigue visible (RF-O03). Validado en el emulador API 35 (escenario 13, §12.3): el Redmi 9 (Android 10/11) no puede probar esto. |
+| **Crash al iniciar el servicio en Android 14+** | **ALTA** | `HIGH_SAMPLING_RATE_SENSORS` declarado + tipo `health` solo en API 34+ en `startForeground()` (§9.3). Validado en el emulador (escenario E1, §12.3). |
+| **Restricción de actividades en segundo plano de Android 15 rompe "Me rindo"** | **MEDIA** | Intent lanzado antes de retirar el overlay, mientras la ventana sigue visible (RF-O03). Validado en el emulador API 35 (escenario E1, §12.3): el Redmi 9 (Android 10/11) no puede probar esto. |
 | **Redmi 9 sin giroscopio** | **MEDIA** | Fallback a `TYPE_ACCELEROMETER` + filtro EMA (RF-P01). Confirmado en el spike del Día 1. |
 | **Usuario evade las reglas** | **MEDIA** | Reglas anti-trampa A–E (§3.2) con pruebas unitarias. |
-| **Falso positivo "en mesa" / "en piernas"** | **MEDIA** | Triple condición con desviación estándar (§4.1). Probado en los escenarios 3 y 4. |
+| **Falso positivo "en mesa" / "en piernas"** | **MEDIA** | Triple condición con desviación estándar (§4.1). Probado en el escenario M3. |
 | **Fuga de memoria del overlay** | **MEDIA** | Instancia única con `updateViewLayout()` + `ComposeOverlayHelper.destroy()` + LeakCanary. |
 | **Llamada tapada por el Nivel 3** | **MEDIA** | `AudioManager.getMode()` cubre llamadas normales y VoIP. |
-| **El movimiento del overlay resulta demasiado molesto o tapa controles de la app vigilada** | **MEDIA** | Ventana recortada al tamaño de Likka (RF-O01, nunca pantalla completa); zona prohibida de *insets* del sistema (RF-O13); ciclo caminar/detenerse con más tiempo detenido que caminando (`LEVEL_2_STOP_SEC` > `LEVEL_2_WALK_SEC`); el usuario puede arrastrarlo lejos en cualquier momento (RF-O11) y `ANIMATOR_DURATION_SCALE = 0` lo detiene por completo (RF-O14). Validado en el escenario 10 de §12.3; si en las pruebas manuales resulta molesto, ajustar los tiempos de `EscalationConfig`, no la mecánica. |
+| **El movimiento del overlay resulta demasiado molesto o tapa controles de la app vigilada** | **MEDIA** | Ventana recortada al tamaño de Likka (RF-O01, nunca pantalla completa); zona prohibida de *insets* del sistema (RF-O13); ciclo caminar/detenerse con más tiempo detenido que caminando (`LEVEL_2_STOP_SEC` > `LEVEL_2_WALK_SEC`); el usuario puede arrastrarlo lejos en cualquier momento (RF-O11) y `ANIMATOR_DURATION_SCALE = 0` lo detiene por completo (RF-O14). Validado en el escenario M8 de §12.3; si en las pruebas manuales resulta molesto, ajustar los tiempos de `EscalationConfig`, no la mecánica. |
 | **Abuso del endpoint del Worker** | **BAJA** | Endpoint que solo genera roasts + límite de 10/min por IP + saldo prepago de \$2 como tope. |
 | **Latencia de DeepSeek (1–4 s)** | **BAJA** | Prefetch con minutos de margen + fallback inmediato. |
 | **Saldo agotado** | **BAJA** | `402` con `{"error":"no_credit"}` → solo fallback hasta el día siguiente; la app sigue funcionando completa. |
@@ -1398,3 +1395,9 @@ Configuración mínima de Claude Code para este proyecto (más que esto sería s
 | 57 | **v5.4** · `sprites/sirv.png` pasa a ser solo referencia de diseño; Likka se dibuja a mano en Aseprite como `sprites/likka.png` + `sprites/likka.json` (exportado); se elimina `sprites/sirv_frames.json` y se agrega `sprites/likka_poses.json` (§10.2, §13.4) | Los sprites generados por agentes no servían para el juego; el equipo dibuja a Likka desde cero, y la maqueta/app deben seguir funcionando mientras tanto con sprites provisionales. |
 | 58 | **v5.4** · §9.6 agrega las seis direcciones de movimiento del overlay (`walk_down`/`walk_up`/`walk_right`/`walk_left`/`walk_diag_down_right`/`walk_diag_down_left`) y la clasificación por sectores de 60° del vector de movimiento; nueva fila de `OverlayMotionPlanner` en §12.1 para la dirección del sprite; nueva fila de prueba para `likka.json`/`likka_poses.json` | El sprite anterior solo distinguía izquierda/derecha; el nuevo dibujo a mano cubre las seis direcciones de pantalla y necesita reglas explícitas para elegirlas. |
 | 59 | **v5.4** · Decisión pendiente: con 6 sprites y sectores uniformes de 60°, una diagonal-arriba exacta (225°/315°) puede clasificarse de forma distinta a la esperada en el borde del sector; a decidir por el equipo al implementar `OverlayMotionPlanner`, fijándolo con los casos de la prueba unitaria | Los 6 ángulos "reales" de las direcciones dibujadas no están espaciados exactamente cada 60°, así que un reparto uniforme desplaza los bordes de algunos sectores respecto al ángulo ideal. |
+| 60 | **v5.5** · minSdk sube de 26 a **29** (Android 10): RF-A01 usa solo `ACTIVITY_RESUMED`, RF-A04 usa solo `unsafeCheckOpNoThrow`, RNF-A01 y RNF-C01 pasan a "API 29–35"; ficha técnica (§1) actualizada | El Redmi 9 corre Android 10/11 (API 29/30) y nunca llegará a HyperOS: la rama de código para API 26–28 no se iba a ejercitar nunca en el dispositivo real del equipo. |
+| 61 | **v5.5** · Escenarios manuales de §12.3 reducidos de 13 a 9: 8 en el Redmi 9 (`M1`–`M8`, mesa+piernas fusionados en `M3`, batería+Nivel 2+arrastre fusionados en `M8`) y 1 en el emulador (`E1`, fusiona onboarding + `startForeground` + "Me rindo"); el emulador de prueba pasa a ser solo **API 35** (ya no "API 34/35"); referencias actualizadas en RF-P03/P05, RNF-P02, RF-A03/A04/A07, RNF-A01, RF-O02/O03/O05/O06/O10/O11, RNF-F03, RNF-C02/C03, §6.8, §13.4, §14 y §15; `RNF-R05` pasa a **SHOULD** (la comparación de batería con/sin animación queda como verificación opcional; el tope MUST de batería lo sigue fijando `RNF-P02`, cubierto por `M8`) | Varios de los escenarios anteriores probaban condiciones que caben en la misma sesión manual (mesa/piernas, batería/movimiento/arrastre, los tres puntos del emulador), así que numerarlos por separado inflaba el conteo sin agregar cobertura real; además "API 34/35" para el emulador ya no reflejaba que solo se prueba contra API 35. El prefijo es `M` ("manual"), no `R`, para no chocar con "R8" (el shrinker de Android, §13.2/§13.4). |
+| 62 | **v5.5** · §12.1 corrige "los 10 tags P1" a los **9 tags P1 dibujados** (`walk_left` es espejo de `walk_right` en `likka_poses.json`, no un tag propio) y quita la frase "y su respectivo once/loop"; §12.1 y design system §1.7 documentan que `sprites/` y `assets/sprites/` son carpetas locales (`.gitignore`): si faltan, la prueba de sprites se SALTA con un mensaje explícito en vez de pasar en silencio | El texto anterior contaba mal los tags dibujados (contaba la fila espejo de `walk_left` como si tuviera tag propio) y no explicaba qué pasa con la prueba cuando alguien clona el repo sin la carpeta de sprites, que nunca se versiona. |
+| 63 | **v5.5** · Tabla de escalas de sprites (design system §1.7) unificada a **solo `floor(targetPx / 48)`** (se quita la mención a `round`); nueva columna "Objetivo (dp)" (56/144/196/160/108 para N1/N2/N3/Dashboard/Onboarding) como tokens `LikkaSpriteSize` (§5) | La regla de renderizado ya decía `floor`, pero la tabla de escalas debajo decía `round`: dos fórmulas distintas para el mismo cálculo. Los objetivos en dp tampoco tenían dónde vivir como token, contra la regla de "sin números sueltos" de `CLAUDE.md`. |
+| 64 | **v5.5** · §10.2 marca `CLAUDE.md`, `.claude/` y `sprites/` como "(local, no versionado)" en el árbol de carpetas | Esos tres ya estaban en `.gitignore`, pero el árbol de carpetas no lo dejaba claro a quien lee la documentación por primera vez. |
+| 65 | **v5.5** · §13.2 documenta la versión de JDK requerida (JDK 21, mínimo 17) y la advertencia de no usar el JBR de Android Studio si es Java 25, sin rutas personales (las rutas locales de cada máquina viven en `CLAUDE.md` y en la skill `release-apk`) | El equipo tuvo problemas compilando con un JBR de Java 25 que Gradle no soporta; la documentación versionada necesitaba la regla general sin exponer rutas de una máquina específica. |
