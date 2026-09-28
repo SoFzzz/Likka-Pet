@@ -1,7 +1,7 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.5
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.6
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
-> *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: **oscuro** (el MVP no incluye tema claro). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
+> *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
 
 ---
 
@@ -34,7 +34,7 @@
 | **Molestar con cariño** | Los overlays estorban a propósito, pero nunca humillan ni atrapan: siempre hay una salida visible. |
 | **Estorba con cariño y se mueve, pero nunca atrapa** | Desde el Nivel 1, Likka cambia de lugar; en el Nivel 2, camina y persigue. El movimiento es parte de la travesura, no un obstáculo real: nunca tapa la barra de estado/navegación, nunca bloquea los toques fuera de su silueta, y siempre se puede alejar de un arrastre o detener del todo con *Quitar animaciones* (`likkapet_documentacion.md` §9.6). |
 | **Cero fricción fuera del overlay** | La app se abre poco. Cuando se abre, responde en 3 segundos: *¿estoy protegido? ¿cómo voy hoy?* |
-| **Cálido y oscuro** | Fondo cacao para no deslumbrar (el usuario suele estar en redes de noche). El ámbar y la frambuesa son acentos, no fondos. |
+| **Cálido y oscuro** | El tema oscuro (fondo cacao) es el de marca y el que usa el overlay siempre: no deslumbra al usuario, que suele estar en redes de noche. En Ajustes existe además un tema claro opcional (§1.1 "Paleta clara"), pero conserva la misma identidad: el cacao sigue siendo el color de texto principal y el ámbar el del botón primario. El ámbar y la frambuesa son acentos, no fondos, en ambos temas. |
 
 ---
 
@@ -110,6 +110,57 @@ Como el sprite conserva sus colores originales, **el nivel se comunica con el bo
 | 3 — Furia | `raspberry.light` + aura pulsante | `raspberry.light` | Alerta |
 
 La progresión **claro → oscuro → rojo** (ámbar → ocre → frambuesa) comunica el escalamiento sin leer texto.
+
+#### Paleta clara
+
+Tema opcional (COULD), elegible en Ajustes (§2.5). Se aplica **solo a las pantallas de la app** (onboarding, dashboard, hoja de pausa, ajustes y sus subpantallas): el overlay (Niveles 1–3, burbuja, panel de Nivel 3) **no cambia**, siempre usa la paleta oscura de arriba, porque flota sobre apps ajenas y su escenario crema (§1.7) ya está pensado para verse sobre cualquier fondo. La notificación persistente tampoco depende de este ajuste, pero por otra razón: la dibuja el sistema (`NotificationCompat`), no un Composable de la app.
+
+| Rol | Hex | Ratio esperado |
+| :--- | :--- | :--- |
+| Fondo de pantalla | `#FFF4E6` | — |
+| Tarjeta / superficie | `#FFFFFF` | — |
+| Superficie secundaria (chips) | `#F7E6DC` | — |
+| Texto principal | `#3D1B1C` | 14.09 sobre fondo |
+| Texto secundario | `#6B4A55` | 7.07 sobre fondo / 6.33 sobre chip |
+| Borde `outline` | `#9C7488` | 3.67 sobre fondo / 3.99 sobre tarjeta |
+| Acento de texto "ámbar" (también `colorScheme.primary` en claro, ver más abajo) | `#8F5600` | 5.53 sobre fondo / 4.95 sobre chip / 6.00 sobre tarjeta |
+| Acento de texto "ocre" (también `colorScheme.secondary` en claro, ver más abajo) | `#9A4A00` | 5.77 sobre fondo / 5.16 sobre chip / 6.26 sobre tarjeta |
+| Frambuesa (texto y borde) | `#A2315D` | 6.17 sobre fondo / 6.70 sobre tarjeta / 5.52 sobre chip |
+| Botón primario (relleno, sin cambios en ningún tema) | `#FCA30B` + texto `#3D1B1C` | 7.57 |
+| Botón de advertencia (relleno, sin cambios en ningún tema) | `#D17B0F` + texto `#3D1B1C` | 4.78 |
+| Botón de peligro (relleno, sin cambios en ningún tema) | `#A2315D` + texto `#FFF4E6` | 6.17 |
+
+Contraste verificado (WCAG 2.1, luminancia relativa con linealización sRGB): todas las combinaciones de arriba cumplen **4.5:1** para texto normal y **3:1** para bordes; ninguna necesita la excepción de "texto grande" que sí hace falta en el tema oscuro (§1.1 arriba, fila del ocre sobre ciruela).
+
+| Combinación | Ratio | Uso permitido |
+| :--- | :---: | :--- |
+| Cacao sobre Fondo / Tarjeta | **14.1 / 15.3** | ✅ Cualquier texto |
+| Texto secundario sobre Fondo / Chip | **7.1 / 6.3** | ✅ Cualquier texto |
+| `outline` sobre Fondo / Tarjeta | **3.7 / 4.0** | ✅ Cumple WCAG 1.4.11 (≥3:1) para bordes |
+| Ámbar de texto (`#8F5600`) sobre Fondo / Chip / Tarjeta | **5.5 / 4.9 / 6.0** | ✅ Cualquier texto |
+| Ocre de texto (`#9A4A00`) sobre Fondo / Chip / Tarjeta | **5.8 / 5.2 / 6.3** | ✅ Cualquier texto |
+| Frambuesa (`#A2315D`) sobre Fondo / Tarjeta / Chip | **6.2 / 6.7 / 5.5** | ✅ Cualquier texto y bordes (a diferencia del tema oscuro, en claro la frambuesa pura sí cumple AA) |
+| Cacao sobre Ámbar / Ocre (botones primario/advertencia) | **7.6 / 4.8** | ✅ Cualquier texto |
+| Crema sobre Frambuesa (botón de peligro) | **6.2** | ✅ Cualquier texto |
+| `#FCA30B` como texto o borde sobre Fondo / Tarjeta | **1.86 / 2.02** | ❌ **Nunca como texto ni como borde**: no llegan a 3:1. Solo como relleno de botón con texto cacao. |
+| `#D17B0F` como texto o borde sobre Fondo / Tarjeta | **2.95 / 3.21** | ❌ **Nunca como texto ni como borde**: 2.95 no llega a 3:1 sobre fondo (y 3.21 sobre tarjeta no llega a 4.5:1 de texto normal). Solo como relleno de botón con texto cacao. |
+
+Reglas de uso en claro:
+1. `brand.amber` (`#FCA30B`) y `brand.ochre` (`#D17B0F`) **nunca** se usan como texto ni como borde en el tema claro. Solo como relleno de botón, siempre con texto cacao encima. Esto incluye `colorScheme.primary` **y** `colorScheme.secondary`: Material usa `primary` como texto de `TextButton`/`OutlinedButton`, pista de `Switch` activo, casillas y borde de campo con foco, y `secondary` en otros componentes, así que en claro `primary = AmberDark (#8F5600)` y `secondary = OchreDark (#9A4A00)` (no `#FCA30B`/`#D17B0F`) — ver "Botones" en §1.8 y las filas de "Ámbar/Ocre de texto... sobre Tarjeta" arriba (6.00:1 / 6.26:1). Los botones de relleno Primario/Advertencia/Peligro siguen siendo ámbar/ocre/frambuesa + texto cacao (o crema) en **ambos** temas, pero a través de `LikkaButtonColors` (§5), no de `colorScheme.primary`/`secondary`.
+2. Donde el tema oscuro usa `neutral.cream`/`raspberry.light` como color de texto o acento, el tema claro usa los tonos oscurecidos de esta tabla (`#8F5600`, `#9A4A00`, `#A2315D`) para mantener el mismo contraste AA sobre un fondo claro.
+3. El escenario de Likka (§1.7) usa relleno `#FFFFFF` en claro en vez de `neutral.cream`, con el mismo borde de 3dp del color de nivel.
+4. En claro, los iconos de la barra de estado del sistema pasan a oscuros (`isAppearanceLightStatusBars = isLight`) — sobre el fondo crema, los iconos claros por defecto no se verían.
+
+**Colores de nivel en claro** (borde del escenario y de la burbuja, solo en pantallas de la app — por ejemplo, las tarjetas de "Cómo funciona" del onboarding; el overlay siempre usa la tabla oscura de arriba):
+
+| Nivel | Borde del escenario (3dp) / burbuja | Sensación |
+| :--- | :--- | :--- |
+| Reposo / Feliz | `outline` `#9C7488` (el borde crema del tema oscuro sería invisible sobre fondo crema) | Calma |
+| 1 — Susurro | `#8F5600` | Aviso amable |
+| 2 — Molesto | `#9A4A00` | Cuidado |
+| 3 — Furia | `#A2315D` | Alerta |
+
+Los colores de Nivel 1 (`#8F5600`) y Nivel 2 (`#9A4A00`) se parecen entre sí en claro (como ya pasa con ámbar/ocre en oscuro): el nivel se refuerza con tamaño y pose, nunca solo con el color, siguiendo la regla "el color nunca va solo" de más arriba.
 
 ---
 
@@ -325,7 +376,7 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 - **Escalado solo entero**: el tamaño en pantalla se calcula en **píxeles físicos** a partir de la altura real de Likka dentro del lienzo (≈48 px de referencia, no los 64 px del lienzo completo): `scale = floor(targetPx / 48)`. Las escalas fraccionarias deforman los píxeles.
 - **Sin suavizado**: dibujar con `FilterQuality.None`.
-- **Escenario**: detrás del sprite va un **círculo crema** (`neutral.cream`) con un borde de 3dp del color del nivel. Likka es oscuro (capa ciruela, cuerpo cacao), y el crema garantiza que se vea sobre cualquier app, incluso sobre fondos negros. La sombra del escenario es un extra de Compose (ver arriba), no parte de la hoja.
+- **Escenario**: detrás del sprite va un **círculo crema** (`neutral.cream`) con un borde de 3dp del color del nivel. Likka es oscuro (capa ciruela, cuerpo cacao), y el crema garantiza que se vea sobre cualquier app, incluso sobre fondos negros. La sombra del escenario es un extra de Compose (ver arriba), no parte de la hoja. En pantallas de la app con el tema claro activo (§1.1 "Paleta clara"), el relleno del escenario pasa a `#FFFFFF` y el borde de reposo a `outline`; en el overlay (que siempre usa la paleta oscura) esto no cambia nada.
 - **Retrato**: no existe un archivo de retrato aparte. La bienvenida del onboarding usa el **cuadro 0 de `idle`** a escala entera, igual que cualquier otro uso del sprite.
 - **Accesibilidad**: `contentDescription` con el estado (*"Likka molesto, nivel 2"*).
 - El código lee la posición de cada cuadro solo de `likka.json` y el mapeo pose→tag solo de `likka_poses.json`; ningún offset va hardcodeado.
@@ -354,11 +405,13 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 | Variante | Relleno | Texto | Uso |
 | :--- | :--- | :--- | :--- |
-| **Primario** | `brand.amber` | Cacao, `label` | Una acción principal por pantalla ("Comenzar a cuidar mi cuello", "Conceder permiso") |
-| **Advertencia** | `brand.ochre` | Cacao, `label` | Acciones con consecuencia leve ("Pausar a Likka") |
-| **Peligro** | `brand.raspberry` | Crema, `label` | "Me rindo (ir al inicio)" en el Nivel 3, "Desactivar a Likka" |
-| **Secundario** | Transparente, borde 1.5dp `brand.amber` | `brand.amber` | Acciones alternativas ("Ahora no") |
-| **Texto** | Ninguno | `brand.amber` | Enlaces ("¿Por qué pedimos esto?") |
+| **Primario** | `brand.amber` (`#FCA30B`, igual en ambos temas — `LikkaButtonColors`, §5) | Cacao, `label` | Una acción principal por pantalla ("Comenzar a cuidar mi cuello", "Conceder permiso") |
+| **Advertencia** | `brand.ochre` (`#D17B0F`, igual en ambos temas) | Cacao, `label` | Acciones con consecuencia leve ("Pausar a Likka") |
+| **Peligro** | `brand.raspberry` (`#A2315D`, igual en ambos temas) | Crema, `label` | "Me rindo (ir al inicio)" en el Nivel 3, "Desactivar a Likka" |
+| **Secundario** | Transparente, borde 1.5dp `colorScheme.primary` | `colorScheme.primary` | Acciones alternativas ("Ahora no") |
+| **Texto** | Ninguno | `colorScheme.primary` | Enlaces ("¿Por qué pedimos esto?") |
+
+**Secundario** y **Texto** leen `colorScheme.primary`, que cambia por tema: `brand.amber` (`#FCA30B`) en oscuro, `AmberDark` (`#8F5600`) en claro — sobre fondo claro, el ámbar de marca no llega a 3:1 como borde ni texto (§1.1 "Paleta clara"). **Primario**, **Advertencia** y **Peligro** son botones de relleno y no cambian con el tema: sus colores vienen de `LikkaButtonColors` (§5), no de `colorScheme`, precisamente para no heredar el cambio de `primary`/`secondary`/`tertiary` en claro.
 
 Alto de 52dp, forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
 
@@ -546,6 +599,10 @@ Si ya no quedan pausas o Likka está en el Nivel 3, el botón "Pausar" del dashb
 │ Likka activado          [●━]  │
 │ Vibración               [●━]  │
 │                               │
+│ APARIENCIA                    │
+│ Tema                          │  ← label, encima del control
+│ [ Oscuro | Claro | Sistema  ] │  ← control segmentado, ancho completo, objetivos ≥48dp
+│                               │
 │ APPS VIGILADAS                │
 │ TikTok                  [●━]  │
 │ Instagram               [●━]  │
@@ -564,8 +621,9 @@ Si ya no quedan pausas o Likka está en el Nivel 3, el botón "Pausar" del dashb
 Reglas de la pantalla:
 - Los grupos llevan un encabezado `caption` en mayúsculas cortas.
 - Cada fila mide 56dp de alto.
-- Interruptores: pista ámbar cuando están activos y `bg.switchTrackInactive` cuando están inactivos (contraste ≥ 3:1, ver §1.1).
+- Interruptores: pista `colorScheme.primary` cuando están activos (`brand.amber` en oscuro, `AmberDark` en claro) y `bg.switchTrackInactive` cuando están inactivos (contraste ≥ 3:1, ver §1.1).
 - No se puede apagar la última app vigilada.
+- **Apariencia** va en su propio grupo, justo debajo de LIKKA: no es un ajuste del personaje (como "Likka activado"/"Vibración") ni de las apps vigiladas o la IA, así que un grupo propio evita forzarlo dentro de una categoría a la que no pertenece. El control es segmentado (Oscuro / Claro / Sistema), no un interruptor, porque son 3 opciones mutuamente excluyentes; la etiqueta "Tema" va arriba y el control ocupa el ancho completo debajo (no en la misma fila) para que los 3 segmentos tengan espacio de crecer con la fuente del sistema al 200% (RNF-U03) sin comprimirse; cada segmento cumple el objetivo táctil mínimo de 48dp (§1.3). El segmento activo conserva el ícono de check de `SegmentedButton` (Material), para no comunicar cuál está seleccionado solo con el color de fondo (§1.1, regla 3).
 
 ---
 
@@ -648,7 +706,7 @@ Nota de tono (§1.9): "Protegiendo", "En pausa" y "Desactivado" usan la voz de L
 
 ## 4. Accesibilidad
 
-- Contraste AA verificado (ver [1.1](#11-color)). **Nunca se usa frambuesa pura para texto o bordes sobre fondos oscuros.**
+- Contraste AA verificado (ver [1.1](#11-color)) en **ambos temas**, oscuro y claro. **Nunca se usa frambuesa pura para texto o bordes sobre fondos oscuros**; en claro sí cumple AA (§1.1 "Paleta clara").
 - Ámbar y ocre pueden confundirse con algunos tipos de daltonismo, así que el nivel siempre se refuerza con el tamaño, la pose y la vibración.
 - Todas las imágenes de Likka llevan un `contentDescription` con su estado: *"Likka molesto, nivel 2"*.
 - TalkBack anuncia el texto del roast al aparecer (`liveRegion = Polite` en los Niveles 1–2 y `Assertive` en el Nivel 3).
@@ -663,6 +721,8 @@ Nota de tono (§1.9): "Protegiendo", "En pausa" y "Desactivado" usan la voz de L
 // presentation/theme/Color.kt
 package com.likkapet.presentation.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 object LikkaColors {
@@ -693,24 +753,74 @@ object LikkaColors {
     val InverseSurface = Color(0xFFE3C9C4)
     val InverseOnSurface = Color(0xFF3D1B1C)
     val Scrim = Color(0xFF000000)
+
+    // Light theme (v3.6, COULD, §1.1 "Paleta clara"). App screens only — the overlay always
+    // uses the dark tokens above. Cocoa/Raspberry/Outline are reused as-is: the light palette
+    // was designed so the main text and the level-3/rest border colors match the existing
+    // brand hex values, verified in §1.1.
+    val LightBackground = Color(0xFFFFF4E6)
+    val LightSurface = Color(0xFFFFFFFF)
+    val LightSurfaceVariant = Color(0xFFF7E6DC)
+    val LightOnSurfaceVariant = Color(0xFF6B4A55)
+    val AmberDark = Color(0xFF8F5600)   // level 1 border / amber text accent in light; also colorScheme.primary in light
+    val OchreDark = Color(0xFF9A4A00)   // level 2 border / ochre text accent in light
 }
 
-/** Stage border and bubble color for an escalation level (0 = calm). */
-fun levelColor(level: Int): Color = when (level) {
-    1 -> LikkaColors.Amber
-    2 -> LikkaColors.Ochre
-    3 -> LikkaColors.RaspberryLight
-    else -> LikkaColors.Cream
+/** True in the light theme, false in dark; set by [LikkaTheme]. The overlay always sees `false`, since it always renders inside `LikkaTheme(ThemeMode.DARK)` (§9.1 of `likkapet_documentacion.md`). */
+val LocalLikkaIsLightTheme = compositionLocalOf { false }
+
+/** Stage border and bubble color for an escalation level (0 = calm); reads [LocalLikkaIsLightTheme] instead of taking a parameter, so callers can't forget to pass the active theme. */
+@Composable
+fun levelColor(level: Int): Color = if (LocalLikkaIsLightTheme.current) {
+    when (level) {
+        1 -> LikkaColors.AmberDark
+        2 -> LikkaColors.OchreDark
+        3 -> LikkaColors.Raspberry
+        else -> LikkaColors.Outline
+    }
+} else {
+    when (level) {
+        1 -> LikkaColors.Amber
+        2 -> LikkaColors.Ochre
+        3 -> LikkaColors.RaspberryLight
+        else -> LikkaColors.Cream
+    }
 }
+
+/**
+ * Filled-button colors (§1.8): Primary/Advertencia/Peligro keep the same brand fill in both
+ * themes, unlike `colorScheme.primary`/`secondary`/`tertiary` (which change in light so they stay
+ * usable as text/border colors, §1.1). Read via [LocalLikkaButtonColors] in `LikkaButton`, never
+ * `LikkaColors.X` directly, so the source of these colors stays swappable and testable like any
+ * other themed token.
+ */
+data class LikkaButtonColors(
+    val primaryContainer: Color, val onPrimaryContainer: Color,
+    val warningContainer: Color, val onWarningContainer: Color,
+    val dangerContainer: Color, val onDangerContainer: Color,
+)
+
+val LikkaDefaultButtonColors = LikkaButtonColors(
+    primaryContainer = LikkaColors.Amber, onPrimaryContainer = LikkaColors.Cocoa,
+    warningContainer = LikkaColors.Ochre, onWarningContainer = LikkaColors.Cocoa,
+    dangerContainer = LikkaColors.Raspberry, onDangerContainer = LikkaColors.Cream,
+)
+
+val LocalLikkaButtonColors = compositionLocalOf { LikkaDefaultButtonColors }
 ```
 
 ```kotlin
-// presentation/theme/Theme.kt — Material 3 scheme (dark only)
+// presentation/theme/Theme.kt — Material 3 schemes
 val LikkaDarkColorScheme = darkColorScheme(
     primary = LikkaColors.Amber, onPrimary = LikkaColors.Cocoa,
     primaryContainer = LikkaColors.Ochre, onPrimaryContainer = LikkaColors.Cocoa,
     secondary = LikkaColors.Ochre, onSecondary = LikkaColors.Cocoa,
+    // secondaryContainer: SegmentedButton's selected-segment fill (§2.5 "Apariencia"), so it needs
+    // its own AA-verified pair, not Material's default (purple) tonal derivation.
+    secondaryContainer = LikkaColors.SurfaceHigh, onSecondaryContainer = LikkaColors.Cream, // 10.21:1
     tertiary = LikkaColors.RaspberryLight, onTertiary = LikkaColors.Cocoa,
+    // tertiaryContainer mirrors errorContainer/onErrorContainer: same raspberry semantics.
+    tertiaryContainer = LikkaColors.Raspberry, onTertiaryContainer = LikkaColors.Cream, // 6.17:1
     // RaspberryLight (not the pure Raspberry fill) so text/icons on the container stay AA (§1.1).
     error = LikkaColors.RaspberryLight, onError = LikkaColors.Cocoa,
     errorContainer = LikkaColors.Raspberry, onErrorContainer = LikkaColors.Cream,
@@ -727,6 +837,83 @@ val LikkaDarkColorScheme = darkColorScheme(
     outline = LikkaColors.Outline, outlineVariant = LikkaColors.SurfaceHigh,
     scrim = LikkaColors.Scrim
 )
+
+// v3.6: light theme (COULD). Every role the dark scheme defines is set here too, so Material 3
+// never falls back to its own purples (same reasoning as LikkaDarkColorScheme's extra roles).
+// Only used by app screens; the overlay always applies LikkaDarkColorScheme (§1.1).
+val LikkaLightColorScheme = lightColorScheme(
+    // AmberDark, not the brand.amber (#FCA30B) button fill: colorScheme.primary is also used as
+    // TextButton/OutlinedButton text, the checked Switch track, checkbox fill and the focused
+    // field border — #FCA30B only reaches 1.86:1/2.02:1 there (§1.1). The filled Primary button
+    // keeps #FCA30B via LikkaButtonColors below, which does not read colorScheme.
+    primary = LikkaColors.AmberDark, onPrimary = LikkaColors.LightSurface, // 6.00:1
+    primaryContainer = LikkaColors.Ochre, onPrimaryContainer = LikkaColors.Cocoa,
+    // OchreDark, not brand.ochre (#D17B0F): colorScheme.secondary is also used as text/icon color
+    // in some components, and #D17B0F doesn't clear AA there either (§1.1 "Paleta clara", regla 1).
+    secondary = LikkaColors.OchreDark, onSecondary = LikkaColors.LightSurface, // 6.26:1
+    secondaryContainer = LikkaColors.LightSurfaceVariant, onSecondaryContainer = LikkaColors.OchreDark, // 5.16:1
+    tertiary = LikkaColors.Raspberry, onTertiary = LikkaColors.LightBackground,
+    tertiaryContainer = LikkaColors.LightSurfaceVariant, onTertiaryContainer = LikkaColors.Raspberry, // 5.52:1
+    // Pure Raspberry text/borders are AA-compliant in light (§1.1), unlike in dark.
+    error = LikkaColors.Raspberry, onError = LikkaColors.LightBackground,
+    errorContainer = LikkaColors.LightSurfaceVariant, onErrorContainer = LikkaColors.Raspberry, // 5.52:1
+    background = LikkaColors.LightBackground, onBackground = LikkaColors.Cocoa,
+    surface = LikkaColors.LightSurface, onSurface = LikkaColors.Cocoa,
+    surfaceVariant = LikkaColors.LightSurfaceVariant, onSurfaceVariant = LikkaColors.LightOnSurfaceVariant,
+    surfaceDim = LikkaColors.LightSurfaceVariant, surfaceBright = LikkaColors.LightSurface,
+    surfaceContainerLowest = LikkaColors.LightSurface,
+    surfaceContainerLow = LikkaColors.LightSurface,
+    surfaceContainer = LikkaColors.LightSurfaceVariant,
+    surfaceContainerHigh = LikkaColors.LightSurfaceVariant,
+    surfaceContainerHighest = LikkaColors.LightSurfaceVariant,
+    inverseSurface = LikkaColors.Cocoa, inverseOnSurface = LikkaColors.LightBackground,
+    outline = LikkaColors.Outline, outlineVariant = LikkaColors.LightSurfaceVariant,
+    scrim = LikkaColors.Scrim
+)
+```
+
+```kotlin
+// presentation/theme/Theme.kt — theme entry point (v3.6)
+package com.likkapet.presentation.theme
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.MaterialTheme
+import com.likkapet.domain.model.ThemeMode
+// ThemeMode itself lives in domain/model/ThemeMode.kt (Kotlin puro), not here: data/preferences/
+// DataStoreStatsStore and the StatsStore port need it, and data/ cannot depend on presentation/
+// (§10.1 of likkapet_documentacion.md). This file only resolves it to a ColorScheme.
+
+@Composable
+fun LikkaTheme(themeMode: ThemeMode, content: @Composable () -> Unit) {
+    val isLight = when (themeMode) {
+        ThemeMode.LIGHT -> true
+        ThemeMode.DARK -> false
+        ThemeMode.SYSTEM -> !isSystemInDarkTheme()
+    }
+    CompositionLocalProvider(
+        LocalLikkaIsLightTheme provides isLight,
+        LocalLikkaButtonColors provides LikkaDefaultButtonColors
+    ) {
+        MaterialTheme(
+            colorScheme = if (isLight) LikkaLightColorScheme else LikkaDarkColorScheme,
+            typography = LikkaMaterialTypography,
+            shapes = LikkaMaterialShapes,
+            content = content
+            // dynamicColor is not a MaterialTheme parameter: Material You is never wired in,
+            // so the scheme above is always the Likka palette (dynamicColor = false, effectively).
+        )
+    }
+}
+```
+
+```kotlin
+// domain/model/ThemeMode.kt — Kotlin puro, sin imports de android.* ni Compose (§10.1)
+package com.likkapet.domain.model
+
+/** DataStore-backed choice from Settings (§2.5 of this document); SYSTEM is resolved to light/dark in presentation (`LikkaTheme`, `isSystemInDarkTheme()`). */
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
 ```
 
 ```kotlin
@@ -873,3 +1060,10 @@ object LikkaMotion {
 | **v3.4** | Nueva subsección "Guía corta para quien dibuja" en §1.7 | El equipo dibuja los sprites por primera vez a mano; necesitaban una guía mínima de proceso (onion skin, línea de pies, un tag por animación, exportación). |
 | **v3.5** | Regla de escalado unificada a **solo `floor(targetPx / 48)`** en la tabla de escalas (se quita la mención a `round`, que contradecía la regla de renderizado justo arriba); nueva columna "Objetivo (dp)" (56/144/196/160/108 para N1/N2/N3/Dashboard/Onboarding) como tokens `LikkaSpriteSize` (§5) | La tabla de escalas usaba `round` mientras la regla de renderizado ya decía `floor`: dos fórmulas distintas para el mismo cálculo. Los objetivos en dp tampoco tenían dónde vivir como token del tema. |
 | **v3.5** | §1.7 documenta que `sprites/` y `app/src/main/assets/sprites/` son carpetas locales (ignoradas por git): si faltan, la prueba unitaria de sprites se salta explícitamente en vez de pasar en silencio | Evitar que alguien sin la carpeta de sprites (nunca versionada) crea que la prueba pasó cuando en realidad no llegó a correr. |
+| **v3.6** | Tema claro opcional (COULD): nueva subsección "Paleta clara" en §1.1 con la tabla de colores, la tabla de contraste verificada (WCAG 2.1) y los colores de nivel en claro; §0 y el encabezado aclaran que el oscuro sigue siendo el tema de marca | La dueña del proyecto pidió un tema claro elegible en Ajustes sin perder la identidad visual de Likka. |
+| **v3.6** | §1.7 (reglas de renderizado): en pantallas de la app con tema claro, el escenario usa relleno `#FFFFFF` y borde de reposo `outline`; el overlay no cambia, siempre usa la paleta oscura | El overlay flota sobre apps ajenas y su escenario crema ya estaba pensado para cualquier fondo; solo las pantallas de la app necesitan la variante clara. |
+| **v3.6** | §2.5 (Plantilla de Ajustes): nueva fila "Apariencia" con control segmentado Oscuro/Claro/Sistema, en su propio grupo, etiqueta arriba y control a todo el ancho debajo | No encajaba en LIKKA (ajustes del personaje), APPS VIGILADAS ni IA; el diseño en una sola fila no dejaba margen para que el control creciera con fuente al 200% (RNF-U03). |
+| **v3.6** | §4: el contraste AA se declara verificado en ambos temas | Coherencia con la nueva paleta clara. |
+| **v3.6** | §1.8 (Botones): Secundario/Texto pasan a leer `colorScheme.primary` (que cambia por tema) en vez de `brand.amber` fijo; Primario/Advertencia/Peligro (relleno) se documentan como invariantes de tema, resueltos por `LikkaButtonColors` | En claro, `#FCA30B` no cumple 3:1 como texto/borde (1.86–2.02); los botones de relleno debían seguir siendo ámbar/ocre/frambuesa en ambos temas sin heredar el cambio de `primary`. |
+| **v3.6** | §5: `LikkaColors` gana los tokens del tema claro (`LightBackground`, `LightSurface`, `LightSurfaceVariant`, `LightOnSurfaceVariant`, `AmberDark`, `OchreDark`); nuevo `LikkaLightColorScheme` con `primary = AmberDark` y `secondary = OchreDark` (no `brand.amber`/`brand.ochre`) y `secondaryContainer`/`tertiaryContainer` propios en ambos esquemas; `levelColor` pasa a `@Composable` sin parámetro, leyendo `LocalLikkaIsLightTheme`; nuevo `LikkaButtonColors`/`LocalLikkaButtonColors` para los botones de relleno; `ThemeMode` se mueve a `domain/model/ThemeMode.kt`; `LikkaTheme(themeMode)` provee ambos `CompositionLocal` | `colorScheme.primary` y `colorScheme.secondary` se usan como texto/pista/borde/ícono en varios componentes de Material y `#FCA30B`/`#D17B0F` no son AA ahí en claro; sin `secondaryContainer`/`tertiaryContainer` propios, `SegmentedButton` habría salido morado (color por defecto de Material); `levelColor` con un parámetro por defecto permitía olvidarlo sin error de compilación; `ThemeMode` en `presentation/theme` violaba la regla de capas del §10.1 de `likkapet_documentacion.md`. |
+| **v3.6** | §9.1 de `likkapet_documentacion.md`: `ComposeOverlayHelper.create` envuelve el contenido en `LikkaTheme(ThemeMode.DARK)` | Deja explícito en el código que el overlay siempre renderiza en oscuro, sin depender de que cada composable del overlay lo recuerde por su cuenta. |

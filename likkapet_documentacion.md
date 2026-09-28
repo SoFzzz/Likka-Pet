@@ -1,4 +1,4 @@
-# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.5
+# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.6
 
 > **Mascota virtual anti-procrastinación y guardián físico contra el dolor cervical.**  
 > *El trinomio core: Postura Física + Overlay Flotante + IA Sarcástica (DeepSeek vía backend propio).*  
@@ -458,7 +458,7 @@ Dos frases de referencia por nivel (voz de Likka, §1.9 del design system; el ar
 | RF-D04 | Definición de racha (`streak_days`): un día suma si `likka_enabled = true` todo el día (las pausas no la rompen, `PAUSED` sigue siendo servicio activo, §3.3) y no se llegó al Nivel 3 ese día. Un día sin abrir la app **no** califica salvo que `last_streak_date` sea ayer al verificar. | MUST | Dado un día con 2 pausas y sin Nivel 3, la racha sube en 1. Dado un día con un Nivel 3, la racha vuelve a 0. Dado 2 días sin abrir la app, al abrir al tercer día la racha vuelve a 0. | §12.1 "Racha". |
 | RF-D05 | El dashboard refleja los 6 estados globales del design system §3.5 (Protegiendo, En pausa, Desactivado, Falta permiso, Sin internet/saldo, IA desactivada), cada uno con su pose y mensaje. | MUST | Dado `ai_enabled = false`, el dashboard no muestra ningún aviso de IA (es una elección del usuario, no un error). Dado un permiso revocado, muestra `worried` y "Conceder permiso". | §12.3 manual (uno por estado). |
 
-Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_completed`, `ai_enabled`, `vibration_enabled`, `watched_apps` (set), `paused_until` (epoch ms), `likka_enabled` (interruptor maestro, RF-S04; lo lee `BootReceiver` para decidir si reinicia el servicio, y el estado "Desactivado" del dashboard, design system §3.5), y `miui_autostart_confirmed` / `miui_battery_confirmed` / `miui_popup_confirmed` (las tres casillas "Ya lo activé" de RF-A05, porque esos ajustes de MIUI no se pueden leer por código).
+Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_completed`, `ai_enabled`, `vibration_enabled`, `watched_apps` (set), `paused_until` (epoch ms), `likka_enabled` (interruptor maestro, RF-S04; lo lee `BootReceiver` para decidir si reinicia el servicio, y el estado "Desactivado" del dashboard, design system §3.5), `miui_autostart_confirmed` / `miui_battery_confirmed` / `miui_popup_confirmed` (las tres casillas "Ya lo activé" de RF-A05, porque esos ajustes de MIUI no se pueden leer por código), y `theme_mode` (enum `ThemeMode { SYSTEM, LIGHT, DARK }`, definido en `domain/model/ThemeMode.kt` — Kotlin puro, §10.2 — porque `DataStoreStatsStore` y el puerto `StatsStore` lo necesitan y `data/` no puede depender de `presentation/`, §10.1; RF-S08; valor por defecto `DARK`; a diferencia de las estadísticas de arriba, **no** se reinicia con el cambio de `today_date`).
 
 ---
 
@@ -473,6 +473,7 @@ Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_c
 | RF-S05 | Interruptor de vibración (`vibration_enabled`). | SHOULD | Con el interruptor apagado, ningún nivel dispara `VibrationEffect`. | §12.3 manual. |
 | RF-S06 | Agregar cualquier app instalada a la lista de vigiladas (`<queries>` para intents de launcher). | **WON'T (MVP)** | Fuera de alcance: el equipo confirmó que no es compatible con el enum `TargetApp` (§3.4) ni con la lista blanca fija del Worker (§8), y no vale la pena rediseñar ambos para una prioridad que ya era COULD. Queda documentado para una iteración futura. | — |
 | RF-S07 | Pantalla "Acerca de y créditos" (design system §2.5/§3.1), accesible desde Ajustes, con crédito del equipo y versión de la app. | MUST | Abrir "Acerca de y créditos" muestra el nombre del equipo/materia y el `versionName` actual. | §12.3 manual. |
+| RF-S08 | Tema de la app (Oscuro / Claro / Sistema), elegible en Ajustes con un control segmentado (`theme_mode`, RF-D01); "Sistema" sigue `isSystemInDarkTheme()`; color dinámico de Material You desactivado en ambos temas (la paleta es siempre la de Likka, design system §5). Alcance: solo pantallas de la app (onboarding, dashboard, hoja de pausa, ajustes y subpantallas); el overlay siempre renderiza con el esquema oscuro (`LikkaTheme(ThemeMode.DARK)`, §9.1), y la notificación persistente no depende de `theme_mode` (la dibuja el sistema, no la app). | COULD | Dado `theme_mode = LIGHT`, el dashboard usa la paleta clara del design system §1.1 y el overlay del Nivel 1–3 sigue oscuro. Dado `theme_mode = SYSTEM` con el sistema en modo claro, la app se ve en claro. Al reiniciar la app, se mantiene el `theme_mode` elegido (no depende de `today_date`). | §12.1 `DataStoreStatsStore`; §12.3 manual (revisar las pantallas de la app en ambos temas en el Redmi 9, sin escenario numerado nuevo). |
 
 ---
 
@@ -770,6 +771,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.likkapet.domain.model.ThemeMode
+import com.likkapet.presentation.theme.LikkaTheme
 
 class OverlayLifecycleOwner : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
     private val lifecycleRegistry = LifecycleRegistry(this)
@@ -799,7 +802,8 @@ object ComposeOverlayHelper {
             setViewTreeLifecycleOwner(owner)
             setViewTreeViewModelStoreOwner(owner)
             setViewTreeSavedStateRegistryOwner(owner)
-            setContent { content() }
+            // Always dark: the overlay floats over other apps, regardless of theme_mode (RF-S08, design system §1.1).
+            setContent { LikkaTheme(ThemeMode.DARK) { content() } }
         }
         return OverlayViewHolder(composeView, owner)
     }
@@ -963,7 +967,7 @@ Likka-Pet/
     │   ├── java/com/likkapet/
     │   │   ├── LikkaApplication.kt        # Inyección manual: expone las interfaces de domain/port
     │   │   ├── domain/
-    │   │   │   ├── model/                 # LikkaOverlayState, LikkaState, TargetApp, TriggerReason, PostureReading
+    │   │   │   ├── model/                 # LikkaOverlayState, LikkaState, TargetApp, TriggerReason, PostureReading, ThemeMode
     │   │   │   ├── port/                  # PostureSource, ForegroundAppSource, RoastGenerator, StatsStore, Clock
     │   │   │   ├── EscalationCoordinator.kt   # Máquina de estados (§3.3)
     │   │   │   ├── EscalationConfig.kt        # Única fuente de umbrales y tiempos
@@ -1018,7 +1022,7 @@ Likka-Pet/
 
 1. **Nombres que explican**: `level3SecondsLeft`, no `t3`; `isOnTable`, no `flag`. Booleanos con `is`/`has`/`should`.
 2. **Funciones cortas y de un solo propósito** (≈ 20 líneas como guía). Si hace falta un comentario para separar "pasos", son varias funciones.
-3. **Sin números mágicos**: umbrales y tiempos en `EscalationConfig`; medidas visuales en los tokens del tema.
+3. **Sin números mágicos**: umbrales y tiempos en `EscalationConfig`; medidas visuales en los tokens del tema. Los colores se leen del tema activo: `MaterialTheme.colorScheme` y funciones `@Composable` propias de Likka que leen sus propios `CompositionLocal` (como `levelColor`, que lee `LocalLikkaIsLightTheme`), nunca `LikkaColors.X` directo en un Composable (`LikkaColors` queda solo como la paleta de origen que arman los `ColorScheme`, design system §5). Excepción: los Composables del overlay siempre renderizan dentro de `LikkaTheme(ThemeMode.DARK)` (§9.1), sin importar `theme_mode` (RF-S08), porque flotan sobre apps ajenas.
 4. **Inmutabilidad**: `val` por defecto, `data class` inmutables para estados, `StateFlow` expuesto como solo lectura (`asStateFlow()`).
 5. **Sin lógica en los Composables**: los Composables reciben estado y lambdas; la lógica va en el ViewModel o en `domain`. Cada pantalla tiene un `Screen` con estado (conectado al ViewModel) y un `Content` sin estado con `@Preview`.
 6. **Errores explícitos**: `Result`/`sealed interface` para las respuestas de red; nunca `catch (e: Exception) {}` vacío (salvo el caso documentado de `removeView`).
@@ -1126,7 +1130,7 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 | `roasts_fallback.json` | Estructura válida, ≥ 7 frases por combinación, todas con ≤ 25 palabras. |
 | `reactions.json` | Estructura válida, claves `drag`/`poke` con ≥ 7 frases cada una, todas con ≤ 12 palabras. |
 | `OverlayMotionPlanner` (con `Clock` falso, §9.6) | N1: cambia a un borde/altura distinto cada `LEVEL_1_HOP_INTERVAL_SEC`. N2: alterna "caminando" (`LEVEL_2_WALK_SEC`) / "detenido" (`LEVEL_2_STOP_SEC`) en ciclo. N2: tras un arrastre, vuelve a caminar hacia el centro a los `LEVEL_2_RETURN_DELAY_SEC`. Ninguna posición generada cae dentro de los *insets* de sistema pasados como límite. Con `ANIMATOR_DURATION_SCALE = 0`, la posición no cambia tras varios ciclos. Reacciones: arrastrar dispara `drag`; exactamente `POKE_REACTION_TAPS` (3) toques en `POKE_REACTION_WINDOW_SEC` ya disparan `poke` (el umbral es inclusivo, no hace falta un cuarto toque); 2 toques no disparan nada. **Dirección del sprite**: un vector recto hacia cada uno de los 4 ejes (`walk_down`/`walk_up`/`walk_right`/`walk_left`) y hacia cada diagonal inferior (`walk_diag_down_right`/`walk_diag_down_left`) elige el tag esperado según la tabla de sectores de §9.6; un vector diagonal hacia arriba (p. ej. 315°) elige `walk_up`. |
-| `DataStoreStatsStore` | Cambio de fecha reinicia contadores. Racha: día sin N3 suma, día con N3 reinicia. |
+| `DataStoreStatsStore` | Cambio de fecha reinicia contadores. Racha: día sin N3 suma, día con N3 reinicia. `theme_mode` (RF-S08): sin un valor guardado, se lee `DARK` por defecto; al guardar `LIGHT` o `SYSTEM` y volver a leer, persiste el valor elegido; un cambio de `today_date` **no** reinicia `theme_mode` (a diferencia de los contadores del día). |
 | Sprites (`likka.json` + `likka_poses.json`, §1.7 de `likkapet_design_system.md`) | `likka.json` contiene los 9 tags P1 dibujados (`idle`, `blink`, `walk_right`, `walk_down`, `walk_up`, `peek`, `annoyed`, `fury`, `happy`; `walk_left` es un espejo de `walk_right` en `likka_poses.json`, no un tag propio). Cada pose de `likka_poses.json` apunta a un `tag` presente en `likka.json`. Todos los cuadros de `likka.json` miden 64×64 px. **`sprites/` y `app/src/main/assets/sprites/` son carpetas locales, ignoradas por git (§10.2): si falta la carpeta completa de sprites, la prueba se SALTA (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio; si la carpeta existe, se valida todo lo anterior.** |
 
 ### 12.2 Pruebas del Worker
@@ -1149,6 +1153,8 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 | M6 | Crear y destruir el overlay 50 veces | Sin fugas (LeakCanary en build debug) |
 | M7 | Modo avión | Roasts del fallback, sin errores visibles |
 | M8 | Sesión de uso normal de TikTok de al menos 30 min (mismo umbral que RNF-P02): durante un Nivel 2 de la sesión, verificar que Likka camina y se detiene en ciclo, que los toques fuera de su silueta llegan a TikTok, y que tras arrastrarlo y soltarlo vuelve caminando al centro | El ciclo caminar/detenerse no bloquea los toques de TikTok fuera de la silueta de Likka; a los `LEVEL_2_RETURN_DELAY_SEC` (5 s) de soltar un arrastre, vuelve caminando hacia el centro; al terminar la sesión, batería < 2.5%/h con la pantalla encendida (Configuración → Batería) |
+
+**Nota de verificación manual (RF-S08, sin escenario numerado nuevo):** revisar el onboarding, el dashboard, la hoja de pausa y Ajustes (y sus subpantallas) en el Redmi 9 con `theme_mode = LIGHT` y con `theme_mode = DARK`, confirmando que el overlay de los tres niveles se ve siempre en oscuro sin importar el tema elegido (la notificación persistente no forma parte de esta revisión: la dibuja el sistema, no la app, así que no depende de `theme_mode`).
 
 #### En el emulador API 35 (lo que el Redmi 9 no puede probar por versión de Android)
 
@@ -1401,3 +1407,9 @@ Configuración mínima de Claude Code para este proyecto (más que esto sería s
 | 63 | **v5.5** · Tabla de escalas de sprites (design system §1.7) unificada a **solo `floor(targetPx / 48)`** (se quita la mención a `round`); nueva columna "Objetivo (dp)" (56/144/196/160/108 para N1/N2/N3/Dashboard/Onboarding) como tokens `LikkaSpriteSize` (§5) | La regla de renderizado ya decía `floor`, pero la tabla de escalas debajo decía `round`: dos fórmulas distintas para el mismo cálculo. Los objetivos en dp tampoco tenían dónde vivir como token, contra la regla de "sin números sueltos" de `CLAUDE.md`. |
 | 64 | **v5.5** · §10.2 marca `CLAUDE.md`, `.claude/` y `sprites/` como "(local, no versionado)" en el árbol de carpetas | Esos tres ya estaban en `.gitignore`, pero el árbol de carpetas no lo dejaba claro a quien lee la documentación por primera vez. |
 | 65 | **v5.5** · §13.2 documenta la versión de JDK requerida (JDK 21, mínimo 17) y la advertencia de no usar el JBR de Android Studio si es Java 25, sin rutas personales (las rutas locales de cada máquina viven en `CLAUDE.md` y en la skill `release-apk`) | El equipo tuvo problemas compilando con un JBR de Java 25 que Gradle no soporta; la documentación versionada necesitaba la regla general sin exponer rutas de una máquina específica. |
+| 66 | **v5.6** · Nuevo RF-S08 "Tema de la app (Oscuro / Claro / Sistema)", prioridad **COULD** (Módulo 6), elegible en Ajustes; `theme_mode` agregado a los campos de `RF-D01`, con valor por defecto `DARK` y sin reinicio diario | La dueña del proyecto pidió un tema claro elegible en Ajustes, manteniendo el oscuro como comportamiento por defecto. |
+| 67 | **v5.6** · §10.4 agrega la regla de que los colores se leen del tema activo (`MaterialTheme.colorScheme` y funciones `@Composable` de Likka que leen sus propios `CompositionLocal`, como `levelColor`), nunca `LikkaColors.X` directo en un Composable, con la excepción de que el overlay siempre renderiza dentro de `LikkaTheme(ThemeMode.DARK)` | Coherencia con la arquitectura de colores del design system §5 (`LikkaLightColorScheme`, `levelColor` leyendo `LocalLikkaIsLightTheme`); sin esta regla, nada impedía que un componente nuevo ignorara el tema activo. |
+| 68 | **v5.6** · §12.1 agrega una fila de prueba JVM para `theme_mode` (por defecto `DARK`, persiste el valor elegido, no se reinicia con `today_date`); §12.3 agrega una nota de verificación manual de las pantallas de la app en ambos temas en el Redmi 9 (sin escenario numerado nuevo, siguen siendo M1–M8 + E1) | RF-S08 es un requisito nuevo y necesitaba su propia verificación, sin inflar el conteo de escenarios manuales que la v5.5 acababa de consolidar. |
+| 69 | **v5.6** · `ThemeMode` se define en `domain/model/ThemeMode.kt` (Kotlin puro), no en `presentation/theme`; §10.2 lo agrega al listado de `domain/model/` | `data/preferences/DataStoreStatsStore` y el puerto `StatsStore` necesitan leer/escribir `theme_mode`, y `data/` no puede depender de `presentation/` (§10.1). |
+| 70 | **v5.6** · §9.1: `ComposeOverlayHelper.create` envuelve el contenido en `LikkaTheme(ThemeMode.DARK) { content() }` en vez de `content()` a secas | Deja explícito en el código, no solo en la documentación, que el overlay siempre renderiza en oscuro sin importar `theme_mode`. |
+| 71 | **v5.6** · La nota de §12.3 y RF-S08 ya no dicen que la notificación persistente "usa la paleta oscura": pasa a "no depende de `theme_mode`" | La notificación la dibuja el sistema (`NotificationCompat`), no un Composable de la app: no tiene una paleta que "usar". |
