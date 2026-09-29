@@ -54,6 +54,12 @@ object EscalationConfig {
     const val POKE_REACTION_TAPS = 3 // Taps within the window below that trigger a "poke" reaction
     const val POKE_REACTION_WINDOW_SEC = 5 // Window to count taps for the "poke" reaction
 
+    // Also pending in §3.4: the Level 2 "central zone" of the content, as the fraction of the safe
+    // area (per axis) where the window's center may stop, and the walking step in sprite pixels,
+    // kept here so scenario M8 can tune Likka's speed without touching code.
+    const val LEVEL_2_CENTER_ZONE_FRACTION = 0.5
+    const val LEVEL_2_WALK_STEP_SPRITE_PX = 1
+
     // Default watched apps (user can disable them in Settings)
     val DEFAULT_TARGET_PACKAGES =
         mapOf(

@@ -17,6 +17,17 @@ internal object EscalationTimings {
     val QUICK_RETURN_WINDOW_MS = EscalationConfig.QUICK_RETURN_WINDOW_MIN.minutes.inWholeMilliseconds
     val EJECTION_EXIT_TIMEOUT_MS = EscalationConfig.EJECTION_EXIT_TIMEOUT_SEC.seconds.inWholeMilliseconds
     val FAREWELL_MS = EscalationConfig.FAREWELL_SEC.seconds.inWholeMilliseconds
+    val LEVEL_1_HOP_INTERVAL_MS = EscalationConfig.LEVEL_1_HOP_INTERVAL_SEC.seconds.inWholeMilliseconds
+    val LEVEL_2_WALK_MS = EscalationConfig.LEVEL_2_WALK_SEC.seconds.inWholeMilliseconds
+    val LEVEL_2_STOP_MS = EscalationConfig.LEVEL_2_STOP_SEC.seconds.inWholeMilliseconds
+    val LEVEL_2_RETURN_DELAY_MS = EscalationConfig.LEVEL_2_RETURN_DELAY_SEC.seconds.inWholeMilliseconds
+    val MOVEMENT_STEP_MS = 1.seconds.inWholeMilliseconds / EscalationConfig.MOVEMENT_STEP_FPS
+    val POKE_REACTION_WINDOW_MS = EscalationConfig.POKE_REACTION_WINDOW_SEC.seconds.inWholeMilliseconds
     val MILLIS_PER_SECOND = 1.seconds.inWholeMilliseconds
     val MILLIS_PER_MINUTE = 1.minutes.inWholeMilliseconds
+
+    init {
+        // OverlayMotionPlanner's time slicing needs a positive step to make progress.
+        require(MOVEMENT_STEP_MS > 0) { "MOVEMENT_STEP_FPS must be at most 1000" }
+    }
 }
