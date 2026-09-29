@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Likka-Pet</string>
+
+    <!-- Temporary service control screen (spike) -->
+    <string name="service_start_button">Activar a Likka</string>
+    <string name="service_stop_button">Desactivar a Likka</string>
+
+    <!-- Foreground service notification (design system §1.8) -->
+    <string name="notification_channel_name">Protección de Likka</string>
+    <string name="notification_channel_description">Aviso fijo mientras Likka cuida tu postura.</string>
+    <string name="notification_title">Likka está cuidando tu cuello</string>
+</resources>
