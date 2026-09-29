@@ -1,4 +1,4 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.7
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.8
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
 > *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
@@ -185,6 +185,8 @@ Reglas:
 - Máximo **4 tamaños por pantalla** (el dashboard, la pantalla más densa, ya usa `display` + `headline`/`title` + `bodyMedium` + `caption`: ver §2.4). En el resto de las pantallas, 3 alcanza.
 - Nunca texto en mayúsculas sostenidas: se lee como un grito. Dos excepciones, ambas cortas a propósito: el Nivel 3 (intencional, refuerza la alerta) y los **encabezados de grupo de Ajustes** (`caption`, 1–2 palabras, §2.5) — un uso tipográfico convencional para separar secciones, no para gritar.
 - Siempre `sp`, para respetar el tamaño de fuente del sistema.
+
+**Implementación (`presentation/theme/Type.kt`):** Baloo 2 y Nunito se usan como **fuentes variables** (`res/font/baloo2_variable.ttf`, `res/font/nunito_variable.ttf`), descargadas de Google Fonts bajo licencia SIL OFL 1.1 (textos de licencia en `assets/licenses/baloo2_OFL.txt` y `assets/licenses/nunito_OFL.txt`, créditos en la pantalla "Acerca de y créditos", RF-S07). Un archivo variable se renderiza en su peso por defecto salvo que cada `Font` fije el eje `wght` explícitamente, así que `Type.kt` declara cada peso usado (`FontVariation.Settings(FontVariation.weight(...))`) para `SemiBold`/`Bold`/`ExtraBold` de Baloo 2 y `Normal`/`SemiBold`/`Bold` de Nunito; ese `Font(...variationSettings = ...)` sigue marcado `@ExperimentalTextApi` en Compose 1.11, así que la función que las construye lleva `@OptIn(ExperimentalTextApi::class)`. Nunito no solo cubre cuerpo/botones/etiquetas: `Type.kt` también la usa como familia base del texto que no es de Likka (ver la tabla de arriba).
 
 ---
 
@@ -423,6 +425,7 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 - **Escalado solo entero**: el tamaño en pantalla se calcula en **píxeles físicos** a partir de la altura real de Likka dentro del lienzo (≈88 px de referencia, no los 96 px del lienzo completo): `scale = floor(targetPx / 88)`. Las escalas fraccionarias deforman los píxeles. La **ventana del overlay** (Niveles 1–2), en cambio, se dimensiona con el cuadro completo (`96 × escala` px) más el grosor del halo en cada lado (`2 × escala` px por lado) y el globo.
 - **Sin suavizado**: dibujar con `FilterQuality.None`.
 - **Escenario y halo**: en el **overlay de los Niveles 1 y 2 no hay círculo**: Likka se dibuja directamente sobre la app de fondo, con un **halo del color del nivel** (`levelColor`), de 2 píxeles del sprite de grosor, alrededor de su silueta —extra `halo` de Compose, nunca parte de la hoja— más la sombra de pies (otro extra de Compose). En el **dashboard, el onboarding y el panel del Nivel 3** se mantiene el **círculo crema** (`neutral.cream`) con un borde de 3dp del color del nivel; es solo un fondo, con diámetro **no menor que la altura de Likka mostrada** (sin tokens nuevos), y el sprite se dibuja encima y puede sobresalir en las esquinas (los cuernos, por ejemplo). Likka es oscuro (capa ciruela, cuerpo cacao): el círculo crema garantiza que se vea sobre cualquier fondo en esas pantallas, y en el overlay N1–N2 esa función la cumple el halo (si se ve demasiado fino, primero se prueba subirlo; si aun así no basta, se vuelve al círculo; ver §12.3 M8 en `likkapet_documentacion.md`). En pantallas de la app con el tema claro activo (§1.1 "Paleta clara"), el relleno del círculo pasa a `#FFFFFF` y el borde de reposo a `outline`; el overlay (que siempre usa la paleta oscura) no cambia.
+- **"Medio asomado" (`peek`, Nivel 1, bordes laterales)**: el efecto de Likka asomándose por el borde de la pantalla depende de que el propio arte de `peek` esté dibujado **cortado por uno de los lados del cuadro de 96×96 px** (no de recortar la ventana del overlay). El código expone el borde donde está Likka (`OverlayMotionPlanner`, campo `edge`: izquierdo, derecho o inferior) para que la UI sepa qué lado mostrar y, si `peek` solo se dibuja cortado por un lado, refleje (mirror) el cuadro en el borde contrario — el mismo mecanismo de `mirror` que ya usa `walk_left`/`walk_diag_down_left` (más arriba). Este es un requisito para el arte de `peek`, no solo de código.
 - **Retrato**: no existe un archivo de retrato aparte. La bienvenida del onboarding usa el **cuadro 0 de `idle`** a escala entera, igual que cualquier otro uso del sprite.
 - **Accesibilidad**: `contentDescription` con el estado (*"Likka molesto, nivel 2"*).
 - El código lee la posición de cada cuadro solo de `likka.json` y el mapeo pose→tag solo de `likka_poses.json`; ningún offset va hardcodeado.
@@ -459,7 +462,7 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 **Secundario** y **Texto** leen `colorScheme.primary`, que cambia por tema: `brand.amber` (`#FCA30B`) en oscuro, `AmberDark` (`#8F5600`) en claro — sobre fondo claro, el ámbar de marca no llega a 3:1 como borde ni texto (§1.1 "Paleta clara"). **Primario**, **Advertencia** y **Peligro** son botones de relleno y no cambian con el tema: sus colores vienen de `LikkaButtonColors` (§5), no de `colorScheme`, precisamente para no heredar el cambio de `primary`/`secondary`/`tertiary` en claro.
 
-Alto de 52dp, forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
+Alto de 52dp (token `LikkaComponentSize.buttonHeight`, `presentation/theme/ComponentSize.kt`, §5 — pendiente de agregar al código, ver nota de v3.8 en el registro de cambios; hoy los botones de relleno miden los ~40dp por defecto de Material 3 porque el token todavía no existe), forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
 
 #### Tarjeta de permiso (onboarding)
 
@@ -703,8 +706,10 @@ flowchart TD
     HOME <--> SET["⚙️ Ajustes\nLikka, vibración, apps vigiladas, IA"]
     SET --> PRIV["Qué datos se envían\n(reusa la pantalla 3)"]
     SET --> PERM["Revisar permisos\n(reusa la pantalla 4)"]
-    SET --> ABOUT["Acerca de y créditos\n(equipo y materia)"]
+    SET --> ABOUT["Acerca de y créditos\n(equipo, materia, tipografías)"]
 ```
+
+**Contenido de "Acerca de y créditos" (v3.8):** nombre del equipo y la materia, `versionName` de la app (RF-S07), y los créditos de licencia de las dos fuentes usadas (§1.2): **Baloo 2** y **Nunito**, ambas de Google Fonts bajo licencia **SIL Open Font License 1.1**, con el texto completo de cada licencia disponible desde ahí (`assets/licenses/baloo2_OFL.txt`, `assets/licenses/nunito_OFL.txt`).
 
 ### 3.2 Patrón de navegación
 
@@ -981,6 +986,19 @@ object LikkaSpacing {
 ```
 
 ```kotlin
+// presentation/theme/ComponentSize.kt — §1.8 (propuesto en v3.8, en paralelo a SpriteSize.kt/
+// LikkaSpriteSize; no existe todavía en el código, ver registro de cambios: el código se
+// actualiza en la tarea 4)
+package com.likkapet.presentation.theme
+
+import androidx.compose.ui.unit.dp
+
+object LikkaComponentSize {
+    val buttonHeight = 52.dp
+}
+```
+
+```kotlin
 // presentation/theme/SpriteSize.kt — §1.7
 package com.likkapet.presentation.theme
 
@@ -1022,10 +1040,38 @@ val LikkaMaterialShapes = Shapes(small = LikkaShapes.s, medium = LikkaShapes.m, 
 // presentation/theme/Type.kt — §1.2
 package com.likkapet.presentation.theme
 
+import androidx.annotation.FontRes
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.likkapet.R
+
+// Baloo 2 and Nunito are variable fonts from Google Fonts under SIL OFL 1.1 (license texts in
+// assets/licenses/). A variable file renders at its default weight unless each Font sets the wght
+// axis, so every weight used below is declared explicitly.
+val Baloo2 = FontFamily(
+    variableFont(R.font.baloo2_variable, FontWeight.SemiBold),
+    variableFont(R.font.baloo2_variable, FontWeight.Bold),
+    variableFont(R.font.baloo2_variable, FontWeight.ExtraBold),
+)
+
+val Nunito = FontFamily(
+    variableFont(R.font.nunito_variable, FontWeight.Normal),
+    variableFont(R.font.nunito_variable, FontWeight.SemiBold),
+    variableFont(R.font.nunito_variable, FontWeight.Bold),
+)
+
+// The Font overload that takes variationSettings is still @ExperimentalTextApi in Compose 1.11.
+@OptIn(ExperimentalTextApi::class)
+private fun variableFont(@FontRes resId: Int, weight: FontWeight): Font = Font(
+    resId = resId, weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+)
 
 object LikkaTypography {
     val display = TextStyle(fontSize = 40.sp, lineHeight = 48.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Baloo2)
@@ -1128,3 +1174,8 @@ object LikkaMotion {
 | **v3.7** | §1.7: nuevas poses `sit` (P2, "En pausa" del dashboard; §3.5 cambia de `sleeping` a `sit`, "Desactivado" sigue con `sleeping`) y `perch` (P3, Nivel 1 en el borde inferior; provisional `peek`); `dragged` provisional `annoyed`; ejemplo de `likka_poses.json` actualizado. Los 9 tags P1 no cambian; la tabla pasa a 19 tags (más los 2 espejos derivados en código) | "En pausa" y el Nivel 1 en el borde inferior pedían una pose propia. |
 | **v3.7** | §1.7: nueva tabla única "Qué hace Likka en cada momento" (momento → pose → posición → ¿se mueve? → referencia) | Reunir en un solo lugar lo que estaba repartido en §1.7, §1.8, §3.5 y `likkapet_documentacion.md` §9.6. |
 | **v3.7** | §1.5 y §1.8: definidos el ícono de la app (adaptativo, fondo cacao `#3D1B1C`, primer plano recortado del cuadro 0 de `idle`, escala entera en xxhdpi/xxxhdpi) y el ícono pequeño de la notificación (vector monocromo de 24dp, sin ícono grande) | No estaban definidos. |
+| **v3.8** | §1.7 agrega que el efecto "medio asomado" de `peek` depende de que el arte esté dibujado cortado por un lado del cuadro de 96×96, y que `OverlayMotionPlanner` expone el borde (`edge`) para que la UI lo refleje (mismo mecanismo de `mirror` que `walk_left`) | Requisito de arte que no estaba escrito; el código de la tarea 3 ya expone `edge` para esto. |
+| **v3.8** | §1.2 y §5 documentan la implementación real de la tipografía: Baloo 2 y Nunito como fuentes variables (`res/font/*_variable.ttf`), `FontVariation.Settings` por peso (`@OptIn(ExperimentalTextApi::class)`, sigue experimental en Compose 1.11), licencias SIL OFL 1.1 en `assets/licenses/` | La sección solo mencionaba "Google Fonts" en general; el código de la tarea 1 (esqueleto y tema) ya implementa las fuentes variables y trae las licencias. |
+| **v3.8** | §1.8 y §5 documentan el token de alto de botón `LikkaComponentSize.buttonHeight = 52.dp` en `presentation/theme/ComponentSize.kt` (en paralelo a `SpriteSize.kt`/`LikkaSpriteSize`), hoy sin implementar (§1.8 ya pedía 52dp, pero no existía el token; los botones de relleno miden los ~40dp por defecto de Material 3). El código se agrega en la tarea 4, no en esta revisión de documentación | El botón de relleno no tenía token propio, contra la regla de "sin números sueltos" de `CLAUDE.md`. |
+| **v3.8** | §3.1 y RF-S07 (`likkapet_documentacion.md`): "Acerca de y créditos" agrega los créditos y licencias SIL OFL 1.1 de Baloo 2 y Nunito | Las fuentes usadas necesitan atribución de licencia visible en la app. |
+| **v3.8** | Nota pendiente: `presentation/theme/Motion.kt` (`LikkaMotion`, §5) todavía no existe en el código (solo `Color.kt`, `Shape.kt`, `Spacing.kt`, `SpriteSize.kt`, `Theme.kt`, `Type.kt`); se deja documentado como diseño objetivo, igual que otras piezas de la arquitectura completa que las tareas 1–3 todavía no cubren | Verificado contra el código de las tareas 1–3 al actualizar esta documentación; queda anotado para no perderlo de vista. |

@@ -1,4 +1,4 @@
-# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.7
+# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.8
 
 > **Mascota virtual anti-procrastinación y guardián físico contra el dolor cervical.**  
 > *El trinomio core: Postura Física + Overlay Flotante + IA Sarcástica (DeepSeek vía backend propio).*  
@@ -48,7 +48,7 @@
 | **Plataforma Objetivo** | Android nativo (Kotlin, Jetpack Compose, Coroutines/Flow) |
 | **Versión de Android** | Mínima: Android 10 (API 29) \| Objetivo: Android 15 (API 35) |
 | **Dispositivo de Prueba Real** | **Xiaomi Redmi 9 (MIUI 12.x, Android 10/11 — no recibe HyperOS)** — requiere validación temprana de restricciones de batería/autostart. Probablemente **sin giroscopio** (a confirmar en el spike, §14): si falta, no existe `TYPE_GRAVITY` y aplica el fallback de RF-P01. |
-| **Emulador de Prueba** | **API 35 (Android 15), AOSP** — cubre lo que el Redmi 9 no puede probar por su versión: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE_TYPE_HEALTH` y la restricción de actividades en segundo plano de Android 15 (RF-O03). Ver §12.3. |
+| **Emulador de Prueba** | **API 35 (Android 15), imagen `google_apis` x86_64 (no AOSP)** — cubre lo que el Redmi 9 no puede probar por su versión: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE_TYPE_HEALTH` y la restricción de actividades en segundo plano de Android 15 (RF-O03). Ver §12.3. |
 | **Distribución** | **Sideload (APK directo)** — sin revisión de Google Play |
 | **Idioma** | **100% Español** (interfaz, onboarding, prompts y fallback local) |
 | **Cerebro de IA** | **DeepSeek API** (`deepseek-flash`, formato OpenAI), llamada **solo desde el backend** |
@@ -151,14 +151,16 @@ stateDiagram-v2
     EJECTED --> IDLE: 5 min fuera (fin de sesión; ambas pistas vuelven a 0)
     WATCHING --> SUSPENDED: Llamada o pantalla apagada
     SUSPENDED --> WATCHING: Termina la causa; cada pista retoma su propio nivel y tiempo restante
+    IDLE --> PAUSED: Pausa manual (sin sesión activa)
     WATCHING --> PAUSED: Pausa manual (Nivel 0–2 de ambas pistas; nunca en Nivel 3)
-    PAUSED --> WATCHING: Vence `paused_until` o el usuario reanuda antes
+    PAUSED --> WATCHING: Vence `paused_until` con la sesión de USAGE_TIME todavía viva, o el usuario reanuda antes
+    PAUSED --> IDLE: Vence `paused_until` y la sesión ya terminó (5 min fuera durante la pausa)
 ```
 
 - Los identificadores en mayúsculas son los valores de los enums `LikkaState` (global) y `ReasonLevel` (por pista) en el código.
 - **Un nivel por motivo.** `POSTURE` y `USAGE_TIME` tienen cada uno su propio nivel (0–3) y su propio temporizador Nivel 1→2→3. El overlay muestra el máximo; el roast que se pide y se muestra corresponde al motivo con el nivel más alto (empate → se prioriza el que lleva más tiempo activo).
 - **Gracia (regla B) solo existe en la pista `POSTURE`.** Resolver `USAGE_TIME` termina la sesión de ocio y, si `POSTURE` también está en 0, el estado global vuelve a `IDLE` directamente (sin Gracia).
-- **Salir de la app vigilada en Nivel 1–3 sin llegar a expulsión** (botón Inicio, cambiar a una app no vigilada, minimizar): el overlay se oculta y **los temporizadores de escalamiento y de resolución de ambas pistas se congelan** en el estado global `WATCHING` (no hay una transición de estado nueva; es una bandera `isForeground` que la UI usa para decidir si dibuja el overlay). Si pasan 5 min fuera de todas las apps vigiladas, la sesión termina (`WATCHING → IDLE`, igual que el fin de sesión de `USAGE_TIME`) y ambas pistas se reinician a 0. Si el usuario vuelve antes, se retoma cada pista con su nivel y tiempo restante — no aplica la regla D (esa es solo para expulsiones forzadas del Nivel 3).
+- **Salir de la app vigilada en Nivel 1–2 sin llegar a expulsión** (botón Inicio, cambiar a una app no vigilada, minimizar): el overlay se oculta y **los temporizadores de escalamiento y de resolución de ambas pistas se congelan** en el estado global `WATCHING` (no hay una transición de estado nueva; es una bandera `isForeground` que la UI usa para decidir si dibuja el overlay). Si pasan 5 min fuera de todas las apps vigiladas, la sesión termina (`WATCHING → IDLE`, igual que el fin de sesión de `USAGE_TIME`) y ambas pistas se reinician a 0. Si el usuario vuelve antes, se retoma cada pista con su nivel y tiempo restante — no aplica la regla D (esa es solo para expulsiones forzadas del Nivel 3). Cualquier salida con el nivel global en Nivel 3 **no** es este caso: cuenta como expulsión (`EJECTED`), igual que "Me rindo" (RF-O03, RF-O07, decisión 44 del registro de cambios).
 - **Tres conceptos separados que en v4 estaban mezclados en `SUSPENDED`:**
   - **Suspendido** (`SUSPENDED`): llamada (`AudioManager.getMode()`, §4.2) o pantalla apagada. Congela **todo** (ambas pistas, incluida la cuenta regresiva de 20 s del Nivel 3) y oculta el overlay. Al volver, cada pista retoma su nivel y su tiempo restante.
   - **En mesa** (`PTABLE`, dentro de `POSTURE_TRACK`): solo congela la pista `POSTURE` (detección y temporizadores); `USAGE_TIME` sigue corriendo normalmente y el overlay del motivo `USAGE_TIME` (si está activo) sigue visible. No es un estado global.
@@ -166,6 +168,23 @@ stateDiagram-v2
 - **Al volver de `SUSPENDED`** se retoma el mismo nivel en cada pista (no hay una transición genérica `SUSPENDED → WATCHING` que reinicie nada): el coordinador guarda el nivel y el tiempo restante de cada pista al entrar en `SUSPENDED` y los restaura al salir.
 - **Regla C (reincidencia)** vive dentro de `PGRACE → P0`: si `POSTURE` se vuelve a disparar dentro de `RELAPSE_WINDOW_MIN` (10 min) desde que se entró a Gracia, en vez de reiniciar en `P0` se reingresa directo al nivel de postura que tenía antes de resolverse (mínimo Nivel 1).
 - **Pantalla apagada cuenta como "tiempo fuera" para terminar la sesión de `USAGE_TIME`**: al apagarse la pantalla el estado pasa a `SUSPENDED` (no se congela el reloj de la sesión, solo la detección), así que si pasan los 5 min de `SESSION_END_AWAY_MIN` con la pantalla apagada, la sesión también termina al reactivarse. Ver también la nota sobre `PTABLE` — el teléfono en mesa **no** apaga la pantalla ni suspende `USAGE_TIME`.
+- **Una llamada congela absolutamente todo, sin excepción**, incluida la ventana de 5 min tras una expulsión (`EJECTED`) y el plazo `EJECTION_EXIT_TIMEOUT_SEC` de la regla D: mientras `AudioManager` reporta una llamada, ninguno de esos conteos avanza, sin importar el estado global. La pantalla apagada, en cambio, **no** congela esas dos ventanas: cuenta como tiempo fuera, igual que cualquier otro momento sin la app vigilada en primer plano.
+
+**Reglas de detalle (interpretaciones aprobadas por la dueña del proyecto, sin cambiar el resto de §3.2/§3.3):**
+
+- La regla C (reincidencia) también aplica sin que haya habido Gracia (regla B): la ventana de `RELAPSE_WINDOW_MIN` (10 min) cuenta siempre desde el instante en que `POSTURE` se resuelve, haya o no Gracia.
+- Una reincidencia (regla C) que retoma desde Nivel 3 vuelve a Nivel 3 con los 20 s de `LEVEL_3_AUTO_HOME_SEC` contados de nuevo, no con el tiempo que ya llevaba antes de resolverse.
+- Al retomar un nivel por la regla C o por la regla D, el temporizador de escalamiento de ese nivel (2 min / 3 min) empieza de cero, no continúa donde iba antes de resolverse o de la expulsión.
+- Regla D: una pista que solo llegó a Nivel 1 al momento de la expulsión también vuelve en Nivel 2 al regresar dentro de la ventana (no solo las que llegaron a Nivel 2–3). La regla exige una salida real de la app vigilada, **o** que la app siga reportándose en primer plano por más de `EJECTION_EXIT_TIMEOUT_SEC` tras la expulsión (más de dos ciclos del poller de 2 s, para no contar un poll rezagado): eso también cuenta como "regreso" a efectos de la regla D. La ventana de `QUICK_RETURN_WINDOW_MIN` (5 min) corre desde el instante de la expulsión, no desde que el usuario finalmente sale.
+- Los 15 s de buena postura que resuelven `POSTURE` cuentan igual estando en Nivel 3: si se cumplen y `USAGE_TIME` no está también en Nivel 3, la cuenta regresiva de `LEVEL_3_AUTO_HOME_SEC` se cancela (vuelve a 0) en vez de seguir corriendo o expulsar.
+- La Gracia (regla B) y la ventana de la regla C corren con reloj real (no se congelan si el teléfono queda suspendido o en pausa mientras tanto). En cambio, los contadores de postura continua (`POSTURE_TRIGGER_SEC` = 10 s, `POSTURE_RESET_SEC` = 15 s) se reinician cada vez que la detección se interrumpe: al salir de la app, al suspenderse (llamada o pantalla apagada), al entrar en pausa y al clasificarse el teléfono como en mesa.
+- La suspensión (llamada o pantalla apagada) solo congela mientras el estado global es `WATCHING`; la única excepción es la llamada, que congela también la ventana de 5 min de una expulsión y el plazo de la regla D (ver arriba) — la pantalla apagada no.
+- En la mesa, el nivel de `POSTURE` no cuenta para el nivel mostrado (el overlay de `POSTURE` se oculta), pero por debajo la pista sigue existiendo: una cuenta hacia Nivel 3 que viene de `POSTURE` se congela (ni avanza ni se reinicia) mientras el teléfono está en mesa, y en Nivel 0 la mesa impide que `POSTURE` llegue a dispararse. Salir de la app vigilada con un Nivel 3 de `POSTURE` oculto por estar en la mesa cuenta igual como expulsión. Si, en ese mismo momento, `USAGE_TIME` alcanza también Nivel 3, hereda la cuenta regresiva ya congelada de `POSTURE` en vez de arrancar una nueva (caso raro, aceptado por diseño).
+- Pausa: se permite desde `IDLE` o desde `WATCHING` (ver el diagrama actualizado, que agrega `IDLE → PAUSED`), nunca desde `EJECTED` ni con alguna pista en Nivel 3. Al vencer `paused_until`, se vuelve a `WATCHING` si la sesión de `USAGE_TIME` sigue viva, o a `IDLE` si ya terminó (por ejemplo, si los 5 min de `SESSION_END_AWAY_MIN` se cumplieron mientras se estaba en pausa). La pausa congela ambas pistas y el contador de la sesión de `USAGE_TIME`, pero 5 min fuera de las apps vigiladas durante la pausa igual terminan la sesión. La pausa también se oculta durante una llamada o con la pantalla apagada (mismo `HIDDEN_SUSPENDED` que cualquier otro estado, §5).
+- En un empate de nivel entre las dos pistas, manda el motivo que lleva más tiempo activo (`activeSinceMs` más antiguo); la regla D conserva ese instante al retomar en Nivel 2, así que un empate resuelto antes de una expulsión se mantiene resuelto igual después de volver.
+- Entre 45° y 55° (zona neutra), `POSTURE` no dispara ni se resuelve, pero si la pista ya está activa, su temporizador de escalamiento sigue corriendo con normalidad — la zona neutra no congela el escalamiento, solo impide que la histéresis dispare o perdone.
+- Un evento reportado con el mismo valor que el anterior (misma app en primer plano, mismo ángulo/zona de postura) no tiene efecto adicional: las fuentes pueden reportar en cada ciclo de sondeo sin que eso reinicie o duplique nada.
+- Contrato con el servicio: el coordinador es síncrono y no programa nada por sí mismo; el servicio debe llamar a `onTick()` aproximadamente una vez por segundo para que los temporizadores avancen sin otros eventos. El servicio nunca debe reportar la pantalla apagada ni la pantalla de bloqueo como "salir de la app vigilada": eso se reporta solo a través de `onScreenStateChanged`, nunca como `onForegroundAppChanged(null)`.
 
 ### 3.4 Calibración centralizada (`EscalationConfig.kt`)
 
@@ -197,6 +216,19 @@ object EscalationConfig {
     const val QUICK_RETURN_WINDOW_MIN = 5          // Rule D
     const val MAX_PAUSES_PER_DAY = 3               // Rule E
 
+    // Not yet in this table before v5.8: the farewell animation length that bounds
+    // `LikkaOverlayState.isFarewell` (RF-O04), and the pause lengths offered by the
+    // dashboard and the notification action (RF-S01, RF-O08).
+    const val FAREWELL_SEC = 1
+    val PAUSE_OPTIONS_MIN = listOf(15, 30, 60)
+    const val NOTIFICATION_PAUSE_MIN = 30
+
+    // Also new in v5.8: after an ejection, a watched app still reported in the foreground for
+    // longer than this (more than two 2 s poller cycles, so not just a stale poll) means the user
+    // never left (HomeLauncher blocked, e.g. by MIUI, or reopened from recents): it counts as a
+    // return and rule D applies (§3.3 "Reglas de detalle").
+    const val EJECTION_EXIT_TIMEOUT_SEC = 5
+
     // Table detection (§4)
     const val TABLE_MIN_Z = 9.0                    // m/s²
     const val TABLE_MAX_ABS_Y = 2.0                // m/s²
@@ -211,6 +243,12 @@ object EscalationConfig {
     const val MOVEMENT_STEP_FPS = 10               // Movement updates per second (sprite-frame cadence, not 60fps)
     const val POKE_REACTION_TAPS = 3               // Taps within the window below that trigger a "poke" reaction
     const val POKE_REACTION_WINDOW_SEC = 5         // Window to count taps for the "poke" reaction
+
+    // Also new in v5.8: the Level 2 "central zone" of the content, as the fraction of the safe
+    // area (per axis) where the window's center may stop, and the walking step in sprite pixels,
+    // kept here so scenario M8 can tune Likka's speed without touching code.
+    const val LEVEL_2_CENTER_ZONE_FRACTION = 0.5
+    const val LEVEL_2_WALK_STEP_SPRITE_PX = 1
 
     // Default watched apps (user can disable them in Settings)
     val DEFAULT_TARGET_PACKAGES = mapOf(
@@ -320,7 +358,7 @@ data class LikkaOverlayState(
 enum class OverlayVisibility { SHOWN, HIDDEN_WHILE_AWAY, HIDDEN_SUSPENDED }
 ```
 
-- `HIDDEN_WHILE_AWAY` covers leaving a watched app in Level 1–3 without ejection (§3.3): the overlay disappears but the state (and its timers) is preserved for the UI to resume once `visibility` goes back to `SHOWN`.
+- `HIDDEN_WHILE_AWAY` covers leaving a watched app in Level 1–2 without ejection (§3.3): the overlay disappears but the state (and its timers) is preserved for the UI to resume once `visibility` goes back to `SHOWN`. Leaving with the global level at 3 is always an ejection instead (`EJECTED`), never `HIDDEN_WHILE_AWAY`.
 - `HIDDEN_SUSPENDED` covers `SUSPENDED` (call, screen off): same idea, different cause, kept separate so the service/notification text can tell them apart.
 - `isPaused` and `isFarewell` are mutually exclusive with a nonzero `level`: `isPaused` is only true while `LikkaState == PAUSED`, and `isFarewell` is only true for the ~1 s farewell animation right after a reason resolves.
 
@@ -347,7 +385,7 @@ enum class OverlayVisibility { SHOWN, HIDDEN_WHILE_AWAY, HIDDEN_SUSPENDED }
 
 | ID | Requisito | Prioridad | Criterio de aceptación | Verificación |
 | :--- | :--- | :---: | :--- | :--- |
-| RF-P01 | Leer `Sensor.TYPE_GRAVITY` a 5 Hz (200 ms) para el ángulo; si el sensor no existe, usar `TYPE_ACCELEROMETER` con filtro EMA ($\alpha = 0.15$). | MUST | Dado un equipo sin `TYPE_GRAVITY`, cuando arranca `AndroidPostureSource`, entonces usa `TYPE_ACCELEROMETER` filtrado y sigue emitiendo lecturas a ~200 ms. | Spike Día 1 (§14); confirma si el Redmi 9 tiene giroscopio. |
+| RF-P01 | Registrar `Sensor.TYPE_GRAVITY` (o `TYPE_ACCELEROMETER` con filtro EMA, $\alpha = 0.15$, si no existe) pidiendo un período de 200 ms (5 Hz); ese período es solo una **sugerencia** para Android, no una garantía (el spike del emulador entregó 20 Hz con esa misma petición), así que `AndroidPostureSource` debe **diezmar por timestamp de la muestra** antes de usarla, en vez de asumir que cada evento ya llega cada 200 ms. `TABLE_WINDOW_SAMPLES` (§3.4) asume que las muestras que llegan a `BiomechanicsCalculator` ya están a 5 Hz. | MUST | Dado un equipo sin `TYPE_GRAVITY`, cuando arranca `AndroidPostureSource`, entonces usa `TYPE_ACCELEROMETER` filtrado y sigue emitiendo lecturas a ~200 ms, sin importar la tasa real de entrega del sensor. | Spike Día 1 (§14); confirma si el Redmi 9 tiene giroscopio. |
 | RF-P02 | Calcular $\theta$ en grados aplicando `.coerceIn(-1.0, 1.0)` antes del arcocoseno. | MUST | Dado un vector cuyos componentes harían que el argumento de `acos` supere 1 o sea menor que -1, cuando se calcula $\theta$, entonces el resultado es un número válido, nunca `NaN`. | §12.1, `BiomechanicsCalculator`. |
 | RF-P03 | Detectar "Teléfono en Mesa" con la triple condición del §4.1 ($Z > 9.0$, $\lvert Y\rvert < 2.0$, desviación estándar < `TABLE_MAX_STDDEV` en `TABLE_WINDOW_SAMPLES` muestras de `TYPE_ACCELEROMETER` crudo). | MUST | Dado el teléfono plano y quieto, se clasifica `ON_TABLE`. Dado el teléfono plano pero con temblor (σ ≥ `TABLE_MAX_STDDEV`, ej. "en las piernas"), no se clasifica `ON_TABLE`. | §12.1 "Detección de mesa"; §12.3 escenario M3. |
 | RF-P04 | Histéresis de disparo/resolución de `POSTURE` con los umbrales de `EscalationConfig` (`POSTURE_DANGER_ANGLE`, `POSTURE_TRIGGER_SEC`, `POSTURE_RESET_ANGLE`, `POSTURE_RESET_SEC`). | MUST | Dado $\theta$ < `POSTURE_DANGER_ANGLE` sostenido `POSTURE_TRIGGER_SEC`, se dispara `POSTURE`; a `POSTURE_TRIGGER_SEC - 1` no se dispara. Dado $\theta$ > `POSTURE_RESET_ANGLE` sostenido `POSTURE_RESET_SEC`, se resuelve. Dado $\theta$ entre ambos umbrales, ni dispara ni resuelve. | §12.1, `EscalationCoordinator`. |
@@ -472,7 +510,7 @@ Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_c
 | RF-S04 | Interruptor maestro "Desactivar Likka" (`likka_enabled`) que detiene el servicio, con diálogo de confirmación. | MUST | Confirmar el diálogo detiene `LikkaService` y el dashboard pasa al estado "Desactivado" (design system §3.5). | §12.3 manual. |
 | RF-S05 | Interruptor de vibración (`vibration_enabled`). | SHOULD | Con el interruptor apagado, ningún nivel dispara `VibrationEffect`. | §12.3 manual. |
 | RF-S06 | Agregar cualquier app instalada a la lista de vigiladas (`<queries>` para intents de launcher). | **WON'T (MVP)** | Fuera de alcance: el equipo confirmó que no es compatible con el enum `TargetApp` (§3.4) ni con la lista blanca fija del Worker (§8), y no vale la pena rediseñar ambos para una prioridad que ya era COULD. Queda documentado para una iteración futura. | — |
-| RF-S07 | Pantalla "Acerca de y créditos" (design system §2.5/§3.1), accesible desde Ajustes, con crédito del equipo y versión de la app. | MUST | Abrir "Acerca de y créditos" muestra el nombre del equipo/materia y el `versionName` actual. | §12.3 manual. |
+| RF-S07 | Pantalla "Acerca de y créditos" (design system §2.5/§3.1), accesible desde Ajustes, con crédito del equipo, versión de la app y créditos de licencia de las tipografías Baloo 2 y Nunito (SIL OFL 1.1, design system §1.2). | MUST | Abrir "Acerca de y créditos" muestra el nombre del equipo/materia, el `versionName` actual y el crédito de licencia de ambas tipografías. | §12.3 manual. |
 | RF-S08 | Tema de la app (Oscuro / Claro / Sistema), elegible en Ajustes con un control segmentado (`theme_mode`, RF-D01); "Sistema" sigue `isSystemInDarkTheme()`; color dinámico de Material You desactivado en ambos temas (la paleta es siempre la de Likka, design system §5). Alcance: solo pantallas de la app (onboarding, dashboard, hoja de pausa, ajustes y subpantallas); el overlay siempre renderiza con el esquema oscuro (`LikkaTheme(ThemeMode.DARK)`, §9.1), y la notificación persistente no depende de `theme_mode` (la dibuja el sistema, no la app). | COULD | Dado `theme_mode = LIGHT`, el dashboard usa la paleta clara del design system §1.1 y el overlay del Nivel 1–3 sigue oscuro. Dado `theme_mode = SYSTEM` con el sistema en modo claro, la app se ve en claro. Al reiniciar la app, se mantiene el `theme_mode` elegido (no depende de `today_date`). | §12.1 `DataStoreStatsStore`; §12.3 manual (revisar las pantallas de la app en ambos temas en el Redmi 9, sin escenario numerado nuevo). |
 
 ---
@@ -699,10 +737,12 @@ npx wrangler deploy
    LIKKA_WORKER_URL=https://likka-worker.<tu-subdominio>.workers.dev/
    LIKKA_APP_TOKEN=<token aleatorio largo, el mismo que APP_TOKEN>
    ```
-2. En `app/build.gradle.kts`, una única variable `localProps` a nivel de archivo (la reutiliza también el firmado de release, §13.1):
+2. En `app/build.gradle.kts`, una única variable `localProps` a nivel de archivo (la reutiliza también el firmado de release, §13.1). Se importa `java.util.Properties` y se usa `Properties()` a secas, no `java.util.Properties()` inline: con AGP 9, la forma totalmente calificada choca con la extensión `java {}` que AGP agrega al DSL de `android {}`, y el archivo no compila.
    ```kotlin
    // app/build.gradle.kts — top level, read once
-   val localProps = java.util.Properties().apply {
+   import java.util.Properties
+
+   val localProps = Properties().apply {
        val f = rootProject.file("local.properties")
        if (f.exists()) f.inputStream().use { load(it) }
    }
@@ -846,6 +886,9 @@ fun launchHomeScreen(context: Context) {
 - `ServiceCompat.startForeground(service, id, notif, foregroundServiceType)`, con `foregroundServiceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH` **solo en API 34+** (el tipo `health` se introdujo en Android 14; en API 29–33 se llama sin ese argumento de tipo, y `ServiceCompat` ya maneja la diferencia entre versiones).
 - `onStartCommand` devuelve `START_STICKY`.
 - **Reinicio del teléfono**: un `BootReceiver` (`ACTION_BOOT_COMPLETED`) vuelve a iniciar el servicio si Likka estaba activado. En MIUI esto solo funciona con *Autostart* concedido (RF-A05).
+- **`MonitoringController.start()`/`stop()`** (`domain/port`, §10.1) envuelven el inicio y la parada del servicio para que `presentation/` no dependa de `service/`; por la razón de arriba, ambos solo deben llamarse desde primer plano (`MainActivity`), nunca desde un `BroadcastReceiver` en segundo plano que no sea la excepción de `BOOT_COMPLETED`.
+- **Edge-to-edge obligatorio (Android 15, `targetSdk = 35`)**: a partir de Android 15, el sistema fuerza el diseño de borde a borde: las pantallas de la app deben respetar los *insets* de las barras del sistema (`WindowInsets`) en su propio contenido, o el texto y los controles quedarán debajo de la barra de estado/navegación.
+- **Hipótesis a comprobar en el escenario E1 (§12.3, no confirmada todavía)**: en Android 12+, un reinicio de `LikkaService` vía `START_STICKY` que ocurra con la app en segundo plano podría ser rechazado por la misma restricción de "no iniciar servicios en primer plano desde segundo plano" que afecta a `start()`/`stop()` (arriba). A diferencia de esas dos llamadas (que siempre se hacen desde `MainActivity` o desde `BootReceiver`), un reinicio de `START_STICKY` lo dispara el propio sistema, no la app, así que conviene confirmar en el emulador si el sistema lo trata como una excepción a la restricción o si el servicio puede quedar sin reiniciarse en ese caso.
 
 ### 9.4 Inyección Manual de Dependencias (Sin Hilt)
 
@@ -882,7 +925,7 @@ class LikkaApplication : Application() {
 
 ### 9.5 Tiempo inyectable
 
-`EscalationCoordinator` y `AndroidPostureSource` reciben un `Clock` (interfaz en `domain/port`) por constructor en lugar de llamar a `System.currentTimeMillis()`. Esto permite probar minutos de escalamiento en milisegundos (§12).
+`EscalationCoordinator` y `AndroidPostureSource` reciben un `Clock` (interfaz en `domain/port`, `fun interface Clock { fun nowMillis(): Long }`) por constructor en lugar de llamar a `System.currentTimeMillis()`. Esto permite probar minutos de escalamiento en milisegundos (§12). La implementación Android de `Clock` debe usar `SystemClock.elapsedRealtime()` (monótono), no `System.currentTimeMillis()`: así, si el usuario cambia la hora del teléfono a mano, ningún temporizador de escalamiento se altera.
 
 ### 9.6 Movimiento del Overlay (Nivel 1 y 2)
 
@@ -896,22 +939,28 @@ Desde v5.1, Likka no solo crece por nivel: se mueve para "estorbar con cariño" 
 - **La lógica vive en `domain`, es pura y usa el `Clock` inyectado** (igual que `EscalationCoordinator`, §9.5): una clase de `domain` decide la siguiente posición/estado de movimiento (hop de Nivel 1, ciclo caminar/detenerse de Nivel 2, regreso tras arrastrar) a partir del nivel, el tiempo transcurrido y los límites de pantalla que le pasan; el `service` solo aplica las coordenadas resultantes a la ventana. Esto es lo que permite probar la lógica de posiciones en JVM sin Android (§12.1).
 - **Reacciones locales (RF-O12)** no dependen de esta clase de movimiento: son un contador de arrastres/toques con su propia ventana de tiempo (`POKE_REACTION_TAPS`, `POKE_REACTION_WINDOW_SEC`), también en `domain`, que elige una frase de `assets/reactions.json` sin tocar la red.
 - **Seis direcciones de sprite.** `OverlayMotionPlanner` no solo decide *dónde* se mueve Likka, también decide *qué tag de animación* usar (`likkapet_design_system.md` §1.7): `walk_down`, `walk_up`, `walk_right`, `walk_left` (espejo de `walk_right`), `walk_diag_down_right` y `walk_diag_down_left` (espejo de `walk_diag_down_right`). Las diagonales **hacia arriba** no tienen tag propio y reutilizan `walk_up`, porque la hoja no las incluye por separado.
-- **Sectores de 60°.** Dado el vector de movimiento `(dx, dy)` (coordenadas de pantalla, `y` crece hacia abajo), se calcula `θ = atan2(dy, dx)` en grados y se clasifica en seis sectores consecutivos de 60°:
+- **Sectores de 45°.** Dado el vector de movimiento `(dx, dy)` (coordenadas de pantalla, `y` crece hacia abajo), se calcula `θ = atan2(dy, dx)` en grados y se clasifica en ocho sectores consecutivos de 45°, centrados en los ejes y en las diagonales, empezando en -22.5° (cada sector incluye su límite inferior exacto):
 
   | Sector (θ) | Animación |
   | :--- | :--- |
-  | -30° a 30° | `walk_right` |
-  | 30° a 90° | `walk_diag_down_right` |
-  | 90° a 150° | `walk_down` |
-  | 150° a 210° | `walk_diag_down_left` (espejo) |
-  | 210° a 270° | `walk_left` (espejo) |
-  | 270° a 330° | `walk_up` |
+  | [-22.5°, 22.5°) | `walk_right` |
+  | [22.5°, 67.5°) | `walk_diag_down_right` |
+  | [67.5°, 112.5°) | `walk_down` |
+  | [112.5°, 157.5°) | `walk_diag_down_left` (espejo) |
+  | [157.5°, 202.5°) | `walk_left` (espejo) |
+  | [202.5°, 247.5°) | `walk_up` |
+  | [247.5°, 292.5°) | `walk_up` |
+  | [292.5°, 337.5°) | `walk_up` |
 
-  Al usar solo 6 sprites presentes (en vez de 8 direcciones reales), los sectores de `down`, `walk_diag_down_left`, `walk_left` y `walk_up` quedan corridos hasta 30° respecto a su ángulo "real" (p. ej. `walk_down` cubre de 90° a 150° en vez de estar centrado en 90°); es una aproximación deliberada, ver "Decisiones pendientes" más abajo.
+  La hoja no tiene diagonales hacia arriba, así que los tres sectores superiores (202.5°–337.5°) usan todos `walk_up`: un vector de diagonal-arriba exacta (225° o 315°) cae limpiamente en uno de esos tres sectores y siempre elige `walk_up`, sin el caso límite que tenía la tabla de sectores de 60° de v5.7 (con esa tabla, un vector recto hacia la izquierda (180°) caía siempre como `walk_diag_down_left` (sector 150°–210°), nunca como `walk_left`, contradiciendo §12.1). Esta tabla de 45° reemplaza la de 60° de v5.7 (registro de cambios, entrada 78; no se edita la entrada 59, que queda como el historial de la decisión original).
 - **La dirección no cambia el modo de movimiento.** El sector angular solo elige el *tag*; si Likka está en modo "detenido" (Nivel 2 parado) o "asomado" (Nivel 1), sigue usando `annoyed`/`peek`/`perch` sin importar hacia dónde miró la última vez.
-- **Pose del Nivel 1: `peek` o `perch`.** `OverlayMotionPlanner` elige `perch` solo cuando la posición del Nivel 1 cae en el **borde inferior**: Likka queda sentado sobre ese borde, justo encima de la barra de navegación y nunca dentro de los *insets* (RF-O13). En los bordes laterales sigue usando `peek`. Mientras `perch` no exista en la hoja, su pose apunta a `peek` (regla de provisionales, `likkapet_design_system.md` §1.7).
-
-> **Decisión pendiente:** con sectores uniformes de 60° para 6 direcciones presentes (en vez de 8), un vector de diagonal-arriba-izquierda "de libro" (exactamente 225°) cae en el sector de `walk_left` (210°–270°), no en el de `walk_up` — la regla "las diagonales hacia arriba usan `walk_up`" (RF-O nuevo, arriba) se cumple para la mayoría de los ángulos superiores pero no para ese caso límite exacto. Antes de implementar `OverlayMotionPlanner`, el equipo debe decidir si esto importa en la práctica (los arrastres reales rara vez caen en un ángulo exacto) o si conviene ensanchar el sector de `walk_up` a costa de `walk_left`/`walk_right`; los casos de la prueba unitaria (§12.1) deben fijar el comportamiento elegido.
+- **Pose del Nivel 1: `peek` o `perch`.** `OverlayMotionPlanner` elige `perch` solo cuando la posición del Nivel 1 cae en el **borde inferior**: Likka queda sentado sobre ese borde, justo encima de la barra de navegación y nunca dentro de los *insets* (RF-O13). En los bordes laterales sigue usando `peek`. Mientras `perch` no exista en la hoja, su pose apunta a `peek` (regla de provisionales, `likkapet_design_system.md` §1.7). El overlay de Nivel 1 solo usa los bordes izquierdo, derecho e inferior; el borde superior nunca se usa (coincide con `design system` §1.7).
+- **Cambios de posición siempre visibles.** Un hop de Nivel 1 hacia una posición "distinta" se mueve al menos una ventana completa de overlay en el eje X o en el eje Y respecto a la posición anterior, aunque las dos posiciones estén en bordes distintos cerca de una esquina (si no existiera ninguna posición así de distinta, por ejemplo en una pantalla diminuta, se mantiene la posición actual en vez de fallar).
+- **Ventana siempre entera dentro del área seguro.** Tanto en Nivel 1 como en Nivel 2, la esquina superior izquierda de la ventana del overlay se calcula (y se recorta a la cuadrícula de 1 píxel de sprite) para que la ventana completa quede siempre dentro del área segura (fuera de los *insets*), nunca parcialmente fuera de la pantalla.
+- **Arrastre en Nivel 1.** Al soltar, la ventana se coloca en el borde permitido (izquierdo, derecho o inferior) más cercano al punto donde se soltó, sin tocar el temporizador del próximo hop: si el hop vencía mientras se arrastraba, el cambio de posición queda pendiente y ocurre recién al soltar.
+- **Zona central de Nivel 2.** El objetivo de cada tramo de caminata es un punto tal que el **centro** de la ventana del overlay (no su esquina) cae dentro de la zona central de `LEVEL_2_CENTER_ZONE_FRACTION` del área segura, en cada eje; el paso de caminata avanza `LEVEL_2_WALK_STEP_SPRITE_PX` píxeles de sprite por actualización, en el eje dominante del vector hacia el objetivo (y la fracción proporcional en el otro eje, para no pasarse).
+- **Regreso tras arrastre (Nivel 2).** Tras `LEVEL_2_RETURN_DELAY_SEC`, Likka camina de vuelta hacia la zona central **sin el tope de `LEVEL_2_WALK_SEC`** que sí aplica al ciclo normal de caminar/detenerse (desde una esquina, el regreso puede tardar más de 4 s); al llegar, el ciclo termina detenido, igual que cualquier otro tramo de caminata.
+- **Colocar no es moverse.** Cuando el overlay se oculta, entra en la despedida (`isFarewell`) o el sistema tiene *Quitar animaciones* activado, el movimiento se congela (ni hops ni pasos de caminata). Sin embargo, la colocación inicial de Likka al entrar a un nivel, tras un cambio de geometría (rotación, tamaño de ventana por nivel o por un roast más largo) o al recuperar una posición pendiente, no cuenta como "movimiento": ocurre igual aunque el movimiento esté congelado en ese instante.
 
 ---
 
@@ -933,12 +982,14 @@ flowchart LR
 
 | Capa | Contiene | Puede depender de | **No** puede depender de |
 | :--- | :--- | :--- | :--- |
-| `domain` | `EscalationCoordinator`, `EscalationConfig`, `BiomechanicsCalculator`, modelos (`LikkaOverlayState`, `TargetApp`, `TriggerReason`) e **interfaces** (`PostureSource`, `ForegroundAppSource`, `RoastGenerator`, `StatsStore`, `Clock`) | Kotlin estándar y Coroutines/Flow | `android.*`, Compose, Retrofit, DataStore |
+| `domain` | `EscalationCoordinator`, `EscalationConfig`, `BiomechanicsCalculator`, `OverlayMotionPlanner`, modelos (`LikkaOverlayState`, `TargetApp`, `TriggerReason`) e **interfaces** (`PostureSource`, `ForegroundAppSource`, `RoastGenerator`, `StatsStore`, `Clock`, `MonitoringController`) | Kotlin estándar y Coroutines/Flow | `android.*`, Compose, Retrofit, DataStore |
 | `data` | **Implementaciones** de las interfaces: sensores, UsageStats, Worker, DataStore, JSON de respaldo | `domain`, SDK de Android, librerías | `presentation`, `service` |
 | `presentation` | Pantallas Compose, ViewModels, tema, componentes del overlay | `domain` | `data` directamente (recibe todo inyectado) |
-| `service` | `LikkaService`, `OverlayWindowManager`, `HomeLauncher`, `BootReceiver` | `domain`, `presentation` (componentes del overlay) | `data` directamente |
+| `service` | `LikkaService`, `OverlayWindowManager`, `HomeLauncher`, `BootReceiver`, `ServiceMonitoringController` | `domain`, `presentation` (componentes del overlay) | `data` directamente |
 
-**Flujo de datos unidireccional:** sensores y UsageStats → `Flow` → `EscalationCoordinator` → `StateFlow<LikkaOverlayState>` → UI. La UI solo **envía eventos** (`onSurrenderClick()`, `onPauseSelected(minutes)`) y nunca modifica el estado directamente.
+**`MonitoringController`** (`domain/port`, `fun start()` / `fun stop()`) es lo que le permite a `presentation/MainActivity` arrancar y detener `LikkaService` sin depender de `service/` directamente: `service/ServiceMonitoringController` lo implementa y `LikkaApplication` lo expone ya como la interfaz. `stop()` también llama a `ContextCompat.startForegroundService()` (con una acción de parada en el Intent) en vez de `stopService()`, para pasar por la misma cola de comandos que `start()`: un `stop()` que llegara antes de que `onStartCommand` termine `startForeground()` destruiría el servicio a medio arrancar y provocaría un *crash*. Por esto mismo, tanto `start()` como `stop()` solo deben llamarse desde primer plano (§9.3): en Android 12+, `startForegroundService()` lanza una excepción si se llama desde segundo plano.
+
+**Flujo de datos unidireccional:** sensores y UsageStats → `Flow` → `EscalationCoordinator` → `StateFlow<LikkaOverlayState>` → UI. La UI solo **envía eventos** (`onSurrenderClick()`, `onPauseSelected(minutes: Int, pausesUsedToday: Int): PauseResult`) y nunca modifica el estado directamente. Quien llama a `onPauseSelected` es responsable de incrementar `pauses_today` **solo** cuando el resultado es `PauseResult.ACCEPTED` (el coordinador no persiste el conteo diario).
 
 > **Cambio respecto a v2:** `AppMinimizer` (usaba `Context` e `Intent`) salió de `domain` y ahora es `service/HomeLauncher.kt`. `BiomechanicsHelper` pasa a llamarse `BiomechanicsCalculator` porque solo contiene cálculo puro.
 
@@ -968,12 +1019,22 @@ Likka-Pet/
     │   ├── java/com/likkapet/
     │   │   ├── LikkaApplication.kt        # Inyección manual: expone las interfaces de domain/port
     │   │   ├── domain/
-    │   │   │   ├── model/                 # LikkaOverlayState, LikkaState, TargetApp, TriggerReason, PostureReading, ThemeMode
-    │   │   │   ├── port/                  # PostureSource, ForegroundAppSource, RoastGenerator, StatsStore, Clock
+    │   │   │   ├── model/                 # LikkaOverlayState, LikkaState, TargetApp, TriggerReason, PostureReading, ThemeMode,
+    │   │   │   │                          # LocalReaction, OverlayGeometry, OverlayMotion, PauseResult, ReasonLevel, Vector3
+    │   │   │   ├── port/                  # Clock, MonitoringController (PostureSource, ForegroundAppSource, RoastGenerator,
+    │   │   │   │                          # StatsStore: interfaces todavía por escribir, junto con data/)
     │   │   │   ├── EscalationCoordinator.kt   # Máquina de estados (§3.3)
     │   │   │   ├── EscalationConfig.kt        # Única fuente de umbrales y tiempos
+    │   │   │   ├── EscalationTimings.kt       # EscalationConfig convertido una vez a milisegundos
+    │   │   │   ├── PostureTrack.kt            # Pista POSTURE: histéresis, Gracia (regla B), reincidencia (regla C), mesa
+    │   │   │   ├── ReasonTrack.kt             # Nivel y temporizador 1→2→3 de una pista (usado por ambas)
+    │   │   │   ├── UsageTimeTrack.kt          # Pista USAGE_TIME: sesión de ocio y su nivel
     │   │   │   ├── BiomechanicsCalculator.kt  # Ángulo, desviación estándar, detección de mesa
-    │   │   │   └── OverlayMotionPlanner.kt    # Posición/estado de movimiento del overlay, puro (§9.6)
+    │   │   │   ├── OverlayMotionPlanner.kt    # Posición/estado de movimiento del overlay, puro (§9.6)
+    │   │   │   ├── WalkPlanning.kt             # Nivel 2: objetivo en la zona central, paso y pose de caminata (§9.6)
+    │   │   │   ├── EdgePlacement.kt            # Nivel 1: posiciones en los bordes permitidos (§9.6)
+    │   │   │   ├── SafeArea.kt                 # Rango de posiciones fuera de los *insets*, en la cuadrícula de sprite
+    │   │   │   └── LocalReactionTracker.kt     # Reacciones locales sin IA (RF-O12)
     │   │   ├── data/
     │   │   │   ├── sensor/                # AndroidPostureSource (Gravity + Accel 5 Hz)
     │   │   │   ├── usage/                 # UsageStatsForegroundAppSource (+ AudioManager)
@@ -987,7 +1048,7 @@ Likka-Pet/
     │   │   │   ├── overlay/               # LikkaOverlay, RoastBubble, SurrenderPanel
     │   │   │   ├── components/            # LikkaSprite, StatCard, PermissionCard, LikkaButton
     │   │   │   ├── navigation/            # LikkaNavHost, Routes
-    │   │   │   ├── theme/                 # Color.kt, Type.kt, Shape.kt, Spacing.kt, Theme.kt
+    │   │   │   ├── theme/                 # Color.kt, Type.kt, Shape.kt, Spacing.kt, SpriteSize.kt, Theme.kt
     │   │   │   └── MainActivity.kt
     │   │   └── service/
     │   │       ├── LikkaService.kt        # ÚNICO Foreground Service
@@ -1123,7 +1184,7 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 
 | Clase | Casos obligatorios |
 | :--- | :--- |
-| `BiomechanicsCalculator` | θ = 90° vertical; θ = 0° plano; vector con componentes que harían `acos` > 1 **no produce `NaN`**; desviación estándar de muestras constantes = 0. |
+| `BiomechanicsCalculator` | θ = 90° vertical; θ = 0° plano; vector con componentes que harían `acos` > 1 **no produce `NaN`**; desviación estándar de muestras constantes = 0; un vector de longitud cero o no finita no produce un θ inventado: la muestra se descarta (devuelve `null`), y la fuente no debe reportarla al coordinador. |
 | Detección de mesa | Plano + quieto → `ON_TABLE`. Plano + temblor (σ = 0.15) → **no** es mesa (caso "en las piernas"). Inclinado + quieto → no es mesa. |
 | `EscalationCoordinator` (con `Clock` falso) | Disparo de `POSTURE` a los 10 s, **no** a los 9 s. Perdón a los 15 s de θ > 55°. Histéresis: θ = 50° no dispara ni perdona. N1 → N2 a los 2 min y N2 → N3 a los 3 min, **en cada pista por separado**. |
 | Pistas independientes (§3.3) | Con `POSTURE` en N2 y `USAGE_TIME` en N1 activos a la vez, el overlay muestra N2 (`max`). Resolver `POSTURE` mientras `USAGE_TIME` sigue activo **no** manda a Gracia ni baja el nivel mostrado: se queda en el nivel de `USAGE_TIME`. Resolver `USAGE_TIME` (fin de sesión) con `POSTURE` en 0 manda a `IDLE`. |
@@ -1133,7 +1194,7 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 | `WorkerRoastGenerator` (MockWebServer) | `200` → pool. Timeout/`502`/`504` → fallback, reintenta en el siguiente prefetch. `402 {"error":"no_credit"}` → sin llamadas hasta mañana. `401` → fallback, reintenta como cualquier otro error (no bloquea el día). `429` → sin reintento por 10 min. IA desactivada → **cero peticiones**. Un roast del pool no se usa dos veces. Prefetch de Nivel 1 pide ambos motivos. Payload de un prefetch usa el valor proyectado del umbral, no un valor en tiempo real. |
 | `roasts_fallback.json` | Estructura válida, ≥ 7 frases por combinación, todas con ≤ 25 palabras. |
 | `reactions.json` | Estructura válida, claves `drag`/`poke` con ≥ 7 frases cada una, todas con ≤ 12 palabras. |
-| `OverlayMotionPlanner` (con `Clock` falso, §9.6) | N1: cambia a un borde/altura distinto cada `LEVEL_1_HOP_INTERVAL_SEC`. N2: alterna "caminando" (`LEVEL_2_WALK_SEC`) / "detenido" (`LEVEL_2_STOP_SEC`) en ciclo. N2: tras un arrastre, vuelve a caminar hacia el centro a los `LEVEL_2_RETURN_DELAY_SEC`. Ninguna posición generada cae dentro de los *insets* de sistema pasados como límite. Con `ANIMATOR_DURATION_SCALE = 0`, la posición no cambia tras varios ciclos. Reacciones: arrastrar dispara `drag`; exactamente `POKE_REACTION_TAPS` (3) toques en `POKE_REACTION_WINDOW_SEC` ya disparan `poke` (el umbral es inclusivo, no hace falta un cuarto toque); 2 toques no disparan nada. **Pose del Nivel 1**: una posición en el borde inferior elige `perch` (con su `y` por encima del *inset* de la barra de navegación); una posición en un borde lateral elige `peek`; en el Nivel 2 nunca elige `perch`. **Dirección del sprite**: un vector recto hacia cada uno de los 4 ejes (`walk_down`/`walk_up`/`walk_right`/`walk_left`) y hacia cada diagonal inferior (`walk_diag_down_right`/`walk_diag_down_left`) elige el tag esperado según la tabla de sectores de §9.6; un vector diagonal hacia arriba (p. ej. 315°) elige `walk_up`. |
+| `OverlayMotionPlanner` (con `Clock` falso, §9.6) | N1: cambia a un borde/altura distinto cada `LEVEL_1_HOP_INTERVAL_SEC`, siempre a una posición al menos una ventana distinta de la anterior, y siempre con la ventana completa dentro del área segura. Un arrastre en N1 se suelta en el borde permitido más cercano, sin tocar el temporizador del próximo hop. N2: alterna "caminando" (`LEVEL_2_WALK_SEC`) / "detenido" (`LEVEL_2_STOP_SEC`) en ciclo, con el **centro** de la ventana cayendo en la zona central (`LEVEL_2_CENTER_ZONE_FRACTION`) y cada paso avanzando `LEVEL_2_WALK_STEP_SPRITE_PX`. N2: tras un arrastre, vuelve a caminar hacia el centro a los `LEVEL_2_RETURN_DELAY_SEC`, sin el tope de `LEVEL_2_WALK_SEC` (puede tardar más si arranca lejos), y termina detenido. Ninguna posición generada cae dentro de los *insets* de sistema pasados como límite. Con `ANIMATOR_DURATION_SCALE = 0`, la posición no cambia tras varios ciclos, pero colocar a Likka al entrar a un nivel o tras un cambio de geometría sí ocurre. Reacciones: arrastrar dispara `drag`; exactamente `POKE_REACTION_TAPS` (3) toques en `POKE_REACTION_WINDOW_SEC` ya disparan `poke` (el umbral es inclusivo, no hace falta un cuarto toque); 2 toques no disparan nada. **Pose del Nivel 1**: una posición en el borde inferior elige `perch` (con su `y` por encima del *inset* de la barra de navegación); una posición en un borde lateral elige `peek`; en el Nivel 2 nunca elige `perch`. **Dirección del sprite**: con los 8 sectores de 45° de §9.6, un vector recto hacia cada uno de los 4 ejes (`walk_down`/`walk_up`/`walk_right`/`walk_left`) y hacia cada diagonal inferior (`walk_diag_down_right`/`walk_diag_down_left`) elige el tag esperado; cada sector incluye su límite inferior exacto (p. ej. exactamente -22.5° ya es `walk_right`, no el sector anterior); un vector diagonal hacia arriba (225° o 315°) elige `walk_up`. |
 | `DataStoreStatsStore` | Cambio de fecha reinicia contadores. Racha: día sin N3 suma, día con N3 reinicia. `theme_mode` (RF-S08): sin un valor guardado, se lee `DARK` por defecto; al guardar `LIGHT` o `SYSTEM` y volver a leer, persiste el valor elegido; un cambio de `today_date` **no** reinicia `theme_mode` (a diferencia de los contadores del día). |
 | Sprites (`likka.json` + `likka_poses.json`, §1.7 de `likkapet_design_system.md`) | `likka.json` contiene los 9 tags P1 presentes (`idle`, `blink`, `walk_right`, `walk_down`, `walk_up`, `peek`, `annoyed`, `fury`, `happy`; `walk_left` es un espejo de `walk_right` en `likka_poses.json`, no un tag propio). Cada pose de `likka_poses.json` apunta a un `tag` presente en `likka.json`. Todos los cuadros de `likka.json` miden 96×96 px. **`sprites/` y `app/src/main/assets/sprites/` son carpetas locales, ignoradas por git (§10.2): si falta la carpeta completa de sprites, la prueba se SALTA (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio; si la carpeta existe, se valida todo lo anterior.** |
 
@@ -1227,6 +1288,8 @@ El entregable del proyecto es un **APK de release firmado** que se instala por s
 - Verificar la firma: `apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk`.
 - Versión: `versionCode` +1 y `versionName` (`1.0.0`, `1.0.1`…) en **cada** APK que se entregue.
 - Requisitos: **JDK 21 (mínimo 17)**. No usar el JBR de Android Studio si es Java 25: el Gradle del proyecto puede no soportarlo. En Android Studio: Settings → Build Tools → Gradle → Gradle JDK = JDK 21. Nunca fijar `org.gradle.java.home` en el `gradle.properties` del proyecto (se versiona; las rutas de JDK son locales a cada máquina). La versión de Gradle la fija el Wrapper del proyecto.
+- Compilar desde la terminal sin `local.properties` también requiere que el SDK de Android sea localizable: con la variable de entorno `ANDROID_HOME` apuntando al SDK, o con un `sdk.dir=` en `local.properties` (nunca versionado; cada máquina tiene el suyo).
+- Versiones reales del proyecto (`gradle/wrapper/gradle-wrapper.properties`, `gradle/libs.versions.toml`): Gradle **9.7.0**, AGP **9.3.1**, Kotlin **2.4.20**, Compose BOM **2026.06.01**, `androidx.core:core-ktx` **1.16.0**, `androidx.activity:activity-compose` **1.10.1**, `kotlinx-coroutines-core` **1.9.0** (misma versión que ya trae AndroidX de forma transitiva), plugin de ktlint (`org.jlleitschuh.gradle.ktlint`) **14.2.0** con motor ktlint **1.8.0**. `compileSdk` se mantiene en **35**: verificado en los metadatos de Google Maven, los lanzamientos más nuevos de estas librerías exigen un `compileSdk` mayor (`androidx.core:core-ktx` 1.17.0 y `androidx.activity:activity-compose` 1.11.0 declaran `minCompileSdk = 36`; `androidx.compose.ui:ui` 1.12.0 declara `minCompileSdk = 37`), así que las versiones de arriba son las más recientes compatibles con `compileSdk = 35` en el momento de escribir esto.
 
 ### 13.3 Instalación en el Redmi 9
 
@@ -1425,4 +1488,13 @@ Configuración mínima de Claude Code para este proyecto (más que esto sería s
 | 75 | **v5.7** · Nuevas poses `sit` ("En pausa"; el comentario de `isPaused` en §5 pasa a `sit`) y `perch` (Nivel 1, borde inferior); §9.6 agrega que `OverlayMotionPlanner` elige `perch` solo en el borde inferior del Nivel 1, y §12.1 agrega el caso de prueba | Los 9 tags P1 de la prueba no cambian. |
 | 76 | **v5.7** · §9.6 y §12.1: "dibujados" pasa a "presentes" al hablar de tags y direcciones del sprite | La hoja ya no se dibuja a mano. |
 | 77 | **v5.7** · §10.2 (árbol de `res/`) y §13.4 (checklist): ícono adaptativo de la app e ícono pequeño monocromo de la notificación, definidos en design system §1.5 | No estaban definidos. |
+| 78 | **v5.8** · §9.6 reemplaza la tabla de sectores de 60° (6 direcciones) por 8 sectores de 45° centrados en ejes y diagonales, con límite inferior inclusivo; se elimina la "Decisión pendiente" sobre el caso límite de 225°/315° (queda resuelta: esos ángulos caen limpiamente en `walk_up`); §12.1 actualiza la fila de `OverlayMotionPlanner` | Al implementar `OverlayMotionPlanner` (tarea 3), la tabla de 60° hacía que un vector recto hacia la izquierda cayera como `walk_diag_down_left`, contradiciendo la regla ya escrita en §12.1; se adoptaron 8 sectores parejos en su lugar (no se edita la entrada 59, que documenta la decisión original). |
+| 79 | **v5.8** · §9.6 agrega las reglas de detalle del movimiento ya implementado: ventana siempre entera dentro del área segura, bordes de Nivel 1 limitados a izquierdo/derecho/inferior, un hop distinto se mueve al menos una ventana, arrastre en Nivel 1 sin tocar el temporizador del hop, zona central de Nivel 2 medida sobre el centro de la ventana, regreso tras arrastre sin tope de `LEVEL_2_WALK_SEC`, y que colocar a Likka no cuenta como "moverse" | El código de `OverlayMotionPlanner`/`WalkPlanning`/`EdgePlacement` (tarea 3) fijó varios detalles que §9.6 no especificaba. |
+| 80 | **v5.8** · §3.4 agrega a `EscalationConfig` las constantes ya implementadas en el código: `FAREWELL_SEC`, `PAUSE_OPTIONS_MIN`, `NOTIFICATION_PAUSE_MIN` y `EJECTION_EXIT_TIMEOUT_SEC` (tarea 2, `EscalationCoordinator` y las reglas), y `LEVEL_2_CENTER_ZONE_FRACTION` y `LEVEL_2_WALK_STEP_SPRITE_PX` (tarea 3, `OverlayMotionPlanner`) | Existían en el código desde las tareas 2 y 3 pero no en la tabla de §3.4, la única fuente de verdad documentada de umbrales y tiempos. |
+| 81 | **v5.8** · §3.3 corrige "Nivel 1–3" a "Nivel 1–2" (dos apariciones, incluida la nota de `HIDDEN_WHILE_AWAY` en §5): salir de la app vigilada sin expulsión solo es posible en Nivel 1–2; cualquier salida con el nivel global en Nivel 3 ya es una expulsión (`EJECTED`), coherente con RF-O03/RF-O07 y la decisión 44 | El texto contradecía la propia RF-O07 y la decisión 44, que ya decían "Nivel 1–2". |
+| 82 | **v5.8** · §3.2/§3.3 agregan una lista de "Reglas de detalle" con las interpretaciones de las reglas A–E aprobadas por la dueña del proyecto: la regla C corre su ventana de 10 min también sin Gracia; una reincidencia desde Nivel 3 reinicia los 20 s; retomar por la regla C o D reinicia el temporizador del nivel; la regla D también aplica a una pista que solo llegó a Nivel 1, y se dispara también si la app sigue en primer plano más de `EJECTION_EXIT_TIMEOUT_SEC` tras la expulsión; los 15 s de buena postura en Nivel 3 cancelan la cuenta regresiva si `USAGE_TIME` no está también en Nivel 3; Gracia y la ventana de la regla C corren con reloj real mientras los contadores continuos de 10 s/15 s se reinician al interrumpirse la detección; una llamada congela también la ventana de 5 min de una expulsión y el plazo de la regla D (la pantalla apagada no); el comportamiento de `POSTURE` en la mesa respecto al Nivel 3 oculto y heredado; Pausa permitida desde `IDLE` (diagrama actualizado) con su regreso a `WATCHING` o `IDLE` según la sesión; el desempate de nivel por el motivo más antiguo se conserva a través de la regla D; la zona neutra 45°–55° no congela el escalamiento; eventos repetidos son inofensivos; y el contrato de que el servicio nunca reporta pantalla apagada/bloqueada como salida de la app | El equipo confirmó estas interpretaciones durante la tarea 2, ya reflejadas en `EscalationCoordinator`/`PostureTrack`, pero no estaban escritas en la documentación. |
+| 83 | **v5.8** · §9.5 exige que la implementación de `Clock` use `SystemClock.elapsedRealtime()` (monótono), no `System.currentTimeMillis()`; §10.1 documenta el puerto `MonitoringController` (`start()`/`stop()`) y que `stop()` usa `startForegroundService()` por la misma razón que `start()`; §9.3 agrega el requisito de edge-to-edge de Android 15 y una hipótesis (no confirmada) sobre el reinicio de `START_STICKY` en segundo plano en Android 12+, a verificar en el escenario E1; RF-P01 aclara que el período de 5 Hz es una sugerencia del sistema y que `AndroidPostureSource` debe diezmar por timestamp | Detalle de arquitectura e ingeniería que faltaba documentar (`MonitoringController` ya existe en el código desde la tarea 1; el resto son requisitos a tener en cuenta al escribir `data/`, `service/` completo y las pantallas de la app). |
+| 84 | **v5.8** · §10.2 actualiza el árbol de `domain/`, `domain/model/` y `domain/port/` con los archivos reales del código (`EscalationTimings`, `PostureTrack`, `ReasonTrack`, `UsageTimeTrack`, `WalkPlanning`, `EdgePlacement`, `SafeArea`, `LocalReactionTracker`, `MonitoringController` y los modelos de movimiento/pausa/reacción), y agrega `SpriteSize.kt` (ya existente desde la tarea 1) a la línea de `presentation/theme/` | El árbol reflejaba solo el diseño original de v5, ya superado por el código de las tareas 1–3. |
+| 85 | **v5.8** · §10.1 documenta la firma real de `onPauseSelected(minutes: Int, pausesUsedToday: Int): PauseResult` y que quien llama incrementa `pauses_today` solo si el resultado es `ACCEPTED` | La firma documentada (`onPauseSelected(minutes)`) no coincidía con el código, que necesita el conteo de pausas del día para aplicar la regla E. |
+| 86 | **v5.8** · §7.3 corrige el snippet de `build.gradle.kts` a `import java.util.Properties` + `Properties()`; §13.2 agrega las versiones reales de `libs.versions.toml`/el Wrapper (Gradle 9.7.0, AGP 9.3.1, Kotlin 2.4.20, Compose BOM 2026.06.01, core-ktx 1.16.0, activity-compose 1.10.1, kotlinx-coroutines-core 1.9.0, ktlint 14.2.0/1.8.0) y el requisito de `ANDROID_HOME`/`sdk.dir`; §1 corrige el emulador de prueba a la imagen `google_apis` x86_64 (no AOSP) | `java.util.Properties()` inline no compila con AGP 9 (choca con la extensión `java {}` del DSL); las versiones y el requisito de `ANDROID_HOME` no estaban documentados; la ficha técnica decía "AOSP", pero el emulador real usado es `google_apis`. |
 | 78 | **v5.7** · §12.3 M8: agrega comprobar en el Redmi 9 que Likka (sin círculo, solo con su halo de nivel) se distingue sobre un video oscuro de TikTok; si el halo del Nivel 1 se ve demasiado fino, se prueba subirlo antes de volver al círculo crema | El halo sustituye al círculo en el overlay N1–N2 y hay que validarlo en un fondo difícil. |
