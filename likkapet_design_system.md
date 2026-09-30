@@ -1,4 +1,4 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.9
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.10
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
 > *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
@@ -233,7 +233,7 @@ La UI es redondeada; solo Likka es pixelado. Ese contraste entre personaje pixel
 
 #### Ícono de la app y de la notificación
 
-- **Ícono de la app (launcher)**: **adaptativo** (`ic_launcher`, en `res/mipmap-*`). Fondo: color sólido cacao `#3D1B1C` (`brand.cocoa`). Primer plano: **recorte de 48 × 48 px de la cara y los cuernos de Likka**, tomado del **cuadro 0 de `idle`** y escalado con **escala entera y vecino más cercano** (sin suavizado) solo en las dos densidades más altas: **xxhdpi 4× = 192 px** y **xxxhdpi 5× = 240 px**. La regla es que las **partes opacas** del primer plano (cara y cuernos) caben dentro del **círculo de la zona segura de 66dp** (198 px en xxhdpi, 264 px en xxxhdpi); las esquinas transparentes del recorte de 48 px no cuentan. Las demás densidades las reescala Android; el Redmi 9 usa xxhdpi. Sin ícono monocromo temático en el MVP.
+- **Ícono de la app (launcher)**: **adaptativo** (`ic_launcher`, en `res/mipmap-*`). Fondo: color sólido cacao `#3D1B1C` (`brand.cocoa`). Primer plano: **la cara de Likka: un recorte de 48 × 48 px que contiene solo la cabeza (capucha y ojos ámbar) y los cuernos**, sin cuerpo, alas ni patas, tomado del **cuadro 0 de `idle`** (desde v3.10 `idle` está en vista 3/4, no de frente, así que la cara del ícono también va en 3/4; el recorte se coloca a mano sobre la cabeza en Aseprite) y escalado con **escala entera y vecino más cercano** (sin suavizado) solo en las dos densidades más altas: **xxhdpi 4× = 192 px** y **xxxhdpi 5× = 240 px**. La regla es que las **partes opacas** del primer plano (cara y cuernos) caben dentro del **círculo de la zona segura de 66dp** (198 px en xxhdpi, 264 px en xxxhdpi); las esquinas transparentes del recorte de 48 px no cuentan. Las demás densidades las reescala Android; el Redmi 9 usa xxhdpi. Sin ícono monocromo temático en el MVP.
 - **Ícono pequeño de la notificación**: **vector de 24dp** en `res/drawable`, **monocromo**, con la silueta de los cuernos calcada del sprite `idle` (lo dibuja el equipo). Nunca un sprite a color: Android lo pinta como silueta blanca. **Sin ícono grande** en la notificación en el MVP.
 
 ---
@@ -246,14 +246,14 @@ La UI es redondeada; solo Likka es pixelado. Ese contraste entre personaje pixel
 | `motion.standard` | 300ms | `FastOutSlowIn` | Cambio de pantalla, expandir tarjeta |
 | `motion.enter` | 400ms | `spring(dampingRatio = 0.6)` | Likka aparece (rebote) |
 | `motion.fury` | 600ms | `spring(dampingRatio = 0.4)` | Crecimiento al Nivel 3 |
-| `motion.hop` | — (instantáneo, sin interpolación) | — | Nivel 1: Likka se esconde y reaparece en otra posición (§1.8) |
+| `motion.hop` | — (instantáneo, sin interpolación) | — | Nivel 1: Likka se esconde y reaparece en otra posición (§1.8); es solo movimiento de Compose, no hay animación de sprite `hop` |
 | `motion.walk` | continuo, paso a paso | 8–10 pasos/s | Nivel 2: desplazamiento al caminar/perseguir (§1.8) |
 
 Animaciones del personaje:
 
 - **Frames del sprite**: 8–10 fps, tal como vienen en el paquete.
 - **Nivel 1**: Likka entra deslizándose desde el borde con `motion.enter` y queda **medio asomado**; cada cierto tiempo se esconde y reaparece en otra posición con `motion.hop` (§1.8, detalle de tiempos en `likkapet_documentacion.md` §6 Módulo 3).
-- **Nivel 2**: sacudida horizontal de **1 píxel del sprite** al aparecer (sincronizada con la vibración de 250 ms) — no un valor fijo en dp, para que se mantenga alineada a la cuadrícula del pixel art sin importar la escala del nivel (§1.7: un dp fijo no coincide con el tamaño de píxel real en todas las escalas). Además, camina por la pantalla con `motion.walk` en ciclos de caminar/detenerse (§1.8), usando la animación de caminar del personaje (genérica: la fila y los cuadros exactos los define la hoja de sprites vigente, §1.7).
+- **Nivel 2**: sacudida horizontal de **1 píxel del sprite** al aparecer (sincronizada con la vibración de 250 ms) — no un valor fijo en dp, para que se mantenga alineada a la cuadrícula del pixel art sin importar la escala del nivel (§1.7: un dp fijo no coincide con el tamaño de píxel real en todas las escalas). Además, camina por la pantalla con `motion.walk` en ciclos de caminar/detenerse (§1.8), usando las animaciones de caminar del personaje (`walk_down`, `walk_up` y `walk_diag_down_right`, con sus espejos; §1.7).
 - **Nivel 3**: el aura (dibujada en Compose, degradado frambuesa → frambuesa claro) pulsa cada 1 s, con la cuenta regresiva visible. Sin movimiento de posición.
 - Los movimientos del contenedor (deslizar, sacudir, crecer, caminar, cambiar de lugar) avanzan en **pasos de 1 píxel del sprite**, para no romper la estética pixel art. El movimiento de posición (`motion.hop`, `motion.walk`) va a **8–10 actualizaciones por segundo** (la cadencia de la animación), no a 60 fps: más barato en batería.
 
@@ -271,19 +271,19 @@ Tabla única de referencia. Las reglas completas viven en las secciones enlazada
 | :--- | :--- | :--- | :--- | :--- |
 | Dashboard — Protegiendo | `idle` | Centro del dashboard, sobre el escenario | No (solo la animación del sprite) | §3.5 |
 | Dashboard — En pausa | `sit` | Igual que arriba | No | §3.5 |
-| Dashboard — Desactivado | `sleeping` (tag `sleep`) | Igual que arriba | No | §3.5 |
-| Dashboard — Falta permiso | `worried` | Igual que arriba | No | §3.5 |
+| Dashboard — Desactivado | `sleeping` (tag `sleep`, más el extra `z`) | Igual que arriba | No | §3.5 |
+| Dashboard — Falta permiso | `worried` (tag `look_around` + extra `sweat_drop`) | Igual que arriba | No | §3.5 |
 | Dashboard — Sin internet o sin saldo de IA | `idle` | Igual que arriba | No | §3.5 |
-| Onboarding — bienvenida | `idle` (cuadro 0, escala entera) | Centro de la pantalla | No | §1.7 "Reglas de renderizado del pixel art" |
-| Onboarding — completo | `happy` | Centro de la pantalla | No | Tabla de tags (abajo) |
-| Nivel 1 — bordes laterales | `peek` | Asomado por el borde izquierdo o derecho | Sí — cambia de borde/altura cada `LEVEL_1_HOP_INTERVAL_SEC` (con `hop`) | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
-| Nivel 1 — borde inferior | `perch` (provisional: `peek`) | Sentado sobre el borde inferior, justo encima de la barra de navegación (nunca dentro de los *insets*) | Sí — mismo ciclo de cambio de lugar | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
-| Nivel 2 — caminando | `walk_right`, `walk_down`, `walk_up`, `walk_diag_down_right` y sus espejos (seis direcciones) | Recorre la pantalla llevando el globo | Sí | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Onboarding — bienvenida | `idle` (cuadro 0, escala entera; no hay animación de saludo) | Centro de la pantalla | No | §1.7 "Reglas de renderizado del pixel art" |
+| Onboarding — completo | `happy` (tag `idle` + extra `sparkles`) | Centro de la pantalla | No | Tabla de poses (abajo) |
+| Nivel 1 — bordes laterales | `peek` | Asomado por el borde izquierdo o derecho | Sí — cambia de borde/altura cada `LEVEL_1_HOP_INTERVAL_SEC` (cambio de posición de Compose, `motion.hop`; sin animación de sprite) | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 1 — borde inferior | `perch` (tag `sit`) | Sentado sobre el borde inferior, justo encima de la barra de navegación (nunca dentro de los *insets*) | Sí — mismo ciclo de cambio de lugar | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 2 — caminando | `walk_right`, `walk_left`, `walk_down`, `walk_up`, `walk_diag_down_right`, `walk_diag_down_left` (seis direcciones sobre tres tags, con espejos) | Recorre la pantalla llevando el globo | Sí | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
 | Nivel 2 — detenido | `annoyed` | Zona central del contenido | No (pausa del ciclo caminar/detenerse) | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
-| Nivel 2 — arrastrado | `dragged` (provisional: `annoyed`) | Bajo el dedo de la persona | Lo mueve la persona; a los `LEVEL_2_RETURN_DELAY_SEC` vuelve caminando | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
-| Nivel 3 | `fury` + aura (extra de Compose) | Panel del 80% anclado al fondo | No (solo el pulso del aura) | §1.8 "Overlay por nivel" |
-| Perdonado (motivo resuelto) | `happy` al celebrar; despedida con `goodbye` (`walk_right`) | Donde estaba; se va al terminar la despedida | Sí — camina ~1 s y sale | `likkapet_documentacion.md` RF-O04 |
-| Reacción local: arrastrar | `dragged` (provisional: `annoyed`) | Bajo el dedo de la persona | Lo mueve la persona | §1.9 "Reacciones locales" |
+| Nivel 2 — arrastrado | `dragged` (tag `annoyed`) | Bajo el dedo de la persona | Lo mueve la persona; a los `LEVEL_2_RETURN_DELAY_SEC` vuelve caminando | §1.8 "Overlay por nivel"; `likkapet_documentacion.md` §9.6 |
+| Nivel 3 | `fury` (tag `fury`) + aura (extra de Compose) | Panel del 80% anclado al fondo | No (solo el pulso del aura) | §1.8 "Overlay por nivel" |
+| Perdonado (motivo resuelto) | `happy` al celebrar (tag `idle` + `sparkles`); despedida con `goodbye` (`walk_right`, tag `walk_diag_down_right`) | Donde estaba; se va al terminar la despedida | Sí — camina ~1 s y sale | `likkapet_documentacion.md` RF-O04 |
+| Reacción local: arrastrar | `dragged` (tag `annoyed`) | Bajo el dedo de la persona | Lo mueve la persona | §1.9 "Reacciones locales" |
 | Reacción local: tocar repetido | `annoyed` mientras dura la reacción; después vuelve a la pose del nivel | Donde esté | No cambia por la reacción | §1.9 "Reacciones locales" |
 
 En el overlay de los Niveles 1 y 2, Likka no lleva círculo de escenario: va con su halo del color del nivel (extra `halo`) y su sombra de pies. En el dashboard, el onboarding y el panel del Nivel 3 va sobre el círculo crema (§1.7 "Reglas de renderizado del pixel art").
@@ -303,14 +303,14 @@ Likka es un **escarabajo ciervo nocturno**: un pequeño compañero del bosque co
 | Hoja de sprites final | `sprites/likka.png`, generada con herramientas de IA a partir de "Sirv" y limpiada en Aseprite, exportada junto con `sprites/likka.json` |
 | Mapa de poses | `sprites/likka_poses.json`, escrito y editado a mano |
 
-> **Origen del arte:** todo el arte de Likka se generó con herramientas de IA a partir del diseño propio "Sirv" y se limpia en Aseprite (ver "Preparar los bocetos de IA en Aseprite", más abajo). `sirv.png` se usa solo como referencia de diseño: nunca se recorta ni se reescala, y nunca va en el APK. Mientras la hoja se prepara, la app y la maqueta funcionan con **sprites provisionales** (ver "Regla de provisionales" más abajo): el reemplazo final es soltar `likka.png`, `likka.json` y `likka_poses.json` en `sprites/`, **sin tocar código**.
+> **Origen del arte:** todo el arte de Likka se generó con herramientas de IA a partir del diseño propio "Sirv" y se limpia en Aseprite (ver "Preparar los bocetos de IA en Aseprite", más abajo). `sirv.png` se usa solo como referencia de diseño: nunca se recorta ni se reescala, y nunca va en el APK. El conjunto de animaciones es **definitivo** (ver "Asignación definitiva" más abajo): se construye con las hojas de `sprites/drafts/2d-sprites-sheets/` y no se generarán más. La app lee `likka.png`, `likka.json` y `likka_poses.json` de `sprites/`, **sin tocar código**.
 
 #### Formato del arte
 
 | Propiedad | Valor |
 | :--- | :--- |
 | Lienzo por cuadro | **96 × 96 px** |
-| Altura de Likka | **≈84–88 px** (88 px es la referencia de la escala; máximo **90 px**, con al menos **2 px** libres arriba; el resto es aire transparente para patas/cuernos en las poses más extremas) |
+| Altura de Likka | **≈84–88 px** (88 px es la referencia de la escala; máximo **90 px**, con al menos **2 px** libres arriba; el resto es aire transparente para patas/cuernos en las poses más extremas). **Excepción documentada:** `walk_up` se usa sin escalar y mide **≈76–78 px**; se ve algo más pequeña que el resto al caminar hacia arriba |
 | Línea de pies | fija en **y = 92** en todos los cuadros, de todas las animaciones |
 | Fondo | transparente, **alfa binario** (0 o 255, sin semitransparencias) |
 | Paleta | fija, **12–16 colores**, basada en `sirv.png` y alineada con la paleta Bosque (§1.1) |
@@ -320,51 +320,67 @@ La línea de pies fija es lo que permite que todas las animaciones se vean parad
 
 #### Animaciones (tags de Aseprite)
 
-Cada fila es un **tag** de Aseprite; el nombre del tag es el identificador que usa el código (`likka_poses.json` los referencia). Los nombres de tag y las claves de `likka_poses.json` van en inglés, como cualquier identificador de código (`CLAUDE.md`, reglas de idioma).
+**El conjunto de animaciones es definitivo** (v3.10): no se generarán más. Cada fila es un **tag** de Aseprite; el nombre del tag es el identificador que usa el código (`likka_poses.json` los referencia). Los nombres de tag y las claves de `likka_poses.json` van en inglés, como cualquier identificador de código (`CLAUDE.md`, reglas de idioma). Los cuadros por tag se eligen entre los de la hoja de origen al limpiar el arte; `likka.json` es la fuente de verdad del número real.
 
-| Prioridad | Tag | Cuadros | fps | Uso (nivel / pantalla / evento) | Pose del §1.7 (v3.3) que reemplaza |
-| :---: | :--- | :---: | :---: | :--- | :--- |
-| P1 | `idle` | 4 | 8 | Reposo de frente; dashboard, onboarding, estado "Protegiendo" | `idle` |
-| P1 | `blink` | 2 | 8 | Variante corta insertada al azar en el loop de `idle` (ojos cerrados) | el "cuadro 6 parpadea" de la antigua fila `idle` |
-| P1 | `walk_right` | 4–6 | 10 | Overlay Nivel 2 caminando/persiguiendo hacia la derecha; despedida (`goodbye`, RF-O04) | `walk_right` |
-| P1 | *(`walk_left`, espejo de `walk_right`)* | — | 10 | Overlay Nivel 2 caminando hacia la izquierda | `walk_left` |
-| P1 | `walk_down` | 4 | 10 | Movimiento del overlay (N1/N2) hacia abajo en pantalla | *(nueva; no existía dirección vertical)* |
-| P1 | `walk_up` | 4 | 10 | Movimiento del overlay hacia arriba; también cubre ambas diagonales hacia arriba (§9.6) | *(nueva)* |
-| P1 | `peek` | 4 | 8 | Overlay Nivel 1, medio asomado por el borde | `whisper` (antes `idle` asomado) |
-| P1 | `annoyed` | 4 | 8 | Overlay Nivel 2, parado (detenido, no caminando) | `annoyed` (antes `idle` + sacudida en Compose) |
-| P1 | `fury` | 6 | 8 | Overlay Nivel 3 (el aura pulsante sigue siendo un extra de Compose, ver más abajo) | `fury` (antes `idle` + aura en Compose) |
-| P1 | `happy` | 6 | 8 | Perdonado, racha, onboarding completo | `happy`/`joy` |
-| P2 | `walk_diag_down_right` | 4–6 | 10 | Movimiento diagonal abajo-derecha del overlay | *(nueva)* |
-| P2 | *(`walk_diag_down_left`, espejo de `walk_diag_down_right`)* | — | 10 | Movimiento diagonal abajo-izquierda del overlay | *(nueva)* |
-| P2 | `talk` | 4 | 8 | Gesto sutil mientras el globo del roast está visible (Niveles 1–3) | *(nueva; antes el personaje quedaba estático mientras "hablaba")* |
-| P2 | `dragged` | 4 | 8 | Mientras el usuario arrastra a Likka (reacción local, §1.9); provisional: `annoyed` | *(nueva; antes no había pose visual para arrastrar)* |
-| P2 | `worried` | 2–4 | 6 | Falta un permiso, error | `worried` (antes `idle` + gota de sudor en Compose) |
-| P2 | `sit` | 4 | 6 | Dashboard, estado "En pausa": sentado con las rodillas al mentón (§3.5) | *(nueva)* |
-| P2 | `sleep` | 2–4 | 4 | Likka desactivado (estado "Desactivado", §3.5) | `sleep` |
-| P3 | `look_around` | 4 | 6 | Variante ambiental de `idle` en esperas largas (dashboard, Nivel 1 asomado) | *(nueva; detalle opcional, no bloquea el MVP)* |
-| P3 | `perch` | 4 | 8 | Overlay Nivel 1 en el borde inferior: sentado sobre el borde, justo encima de la barra de navegación y nunca dentro de los *insets* (en los bordes laterales sigue `peek`); provisional: `peek` | *(nueva)* |
-| P3 | `hop` | 4–6 | 10 | Overlay Nivel 1 al esconderse y reaparecer en otro borde | `hop`/`jump` |
-| P3 | `wave` | 4 | 8 | Saludo; candidato para el paso de bienvenida del onboarding | *(nueva)* |
+##### Tags de la hoja (10)
 
-`walk_left` y `walk_diag_down_left` **no se exportan aparte**: el código los obtiene reflejando en X el frame de `walk_right`/`walk_diag_down_right` (igual que antes en v3.3, que ya espejaba `walk_left` a partir de `walk_right`... en realidad al revés; lo importante es que solo uno de cada par existe en la hoja).
+| Tag | Cuadros | fps | Origen (`sprites/drafts/2d-sprites-sheets/`) | Uso (nivel / pantalla / evento) |
+| :--- | :---: | :---: | :--- | :--- |
+| `idle` | 8 | 8 | `left-diagonal-down-idle.png` (vista 3/4, no de frente) | Reposo; dashboard, onboarding, estado "Protegiendo"; base de `talk` y `happy` |
+| `walk_down` | 8 | 10 | `front_front_walk_walk_down.png` | Movimiento del overlay (N1/N2) hacia abajo en pantalla |
+| `walk_up` | 8 | 10 | `walk_up.png` (sin escalar; 12 cuadros en la hoja, se eligen 8) | Movimiento del overlay hacia arriba; también cubre ambas diagonales hacia arriba (§9.6) |
+| `walk_diag_down_right` | 5 | 10 | `likka-walk-rigth-diagonal.png` (÷3) | Movimiento hacia la derecha y diagonal abajo-derecha del overlay; despedida (`goodbye`, RF-O04) |
+| `annoyed` | 4 | 8 | `Likka-a-angry.png` (÷2; ciclo de 4 cuadros) | Overlay Nivel 2 detenido; reacción de tocar repetido y de arrastrar (§1.9) |
+| `fury` | 6 | 8 | `Likka-a-angry.png` (÷2; los 6 cuadros más intensos, distintos de los de `annoyed`) | Overlay Nivel 3 (el aura pulsante es un extra de Compose) |
+| `peek` | 4 | 8 | derivado de los cuadros de `idle`, desplazados dentro del lienzo de 96×96 | Overlay Nivel 1, medio asomado por el borde (ver "Medio asomado", abajo) |
+| `sit` | 4 | 6 | `Likka-sit-sit-down.png` (÷2) | Estado "En pausa" (§3.5); Nivel 1 sentado sobre el borde inferior (`perch`) |
+| `sleep` | 4 | 4 | `Likka-sleepy.png` (÷2) | Estado "Desactivado" (§3.5) |
+| `look_around` | 4 | 6 | `Likka-c-curiosity.png` (÷2) | Estado "Falta permiso" (`worried`, §3.5) |
 
-Los **9 tags P1** son los que valida la prueba unitaria; `sit` y `perch` (v3.7) no la cambian.
+##### Poses que reutilizan un tag
 
-No hay tag de `attack`/`hurt` ni pose de muerte, por la misma razón que en v3.3: es una app de bienestar, no un juego de combate.
+Las poses son lo que pide el código (`OverlayMotionPlanner`, pantallas); cada una apunta en `likka_poses.json` a uno de los 10 tags de arriba. No hay tag nuevo por pose.
+
+| Pose | Tag | `mirror` | Extra de Compose | Uso |
+| :--- | :--- | :---: | :--- | :--- |
+| `idle` | `idle` | — | — | Reposo, bienvenida del onboarding |
+| `talk` | `idle` | — | — | Mientras el globo del roast está visible (Niveles 1–3); sin gesto propio |
+| `happy` | `idle` | — | `sparkles` | Perdonado, racha, onboarding completo |
+| `worried` | `look_around` | — | `sweat_drop` | Falta un permiso, error |
+| `sleeping` | `sleep` | — | `z` | Likka desactivado |
+| `sit` | `sit` | — | — | "En pausa" |
+| `perch` | `sit` | — | — | Nivel 1, borde inferior |
+| `peek` | `peek` | según el borde | — | Nivel 1, bordes laterales |
+| `annoyed` | `annoyed` | — | — | Nivel 2 detenido; tocar repetido |
+| `dragged` | `annoyed` | — | — | Mientras la persona arrastra a Likka (§1.9) |
+| `fury` | `fury` | — | `aura` | Nivel 3 |
+| `walk_right` | `walk_diag_down_right` | — | — | Caminar hacia la derecha |
+| `goodbye` | `walk_diag_down_right` | — | — | Despedida (RF-O04) |
+| `walk_left` | `walk_diag_down_right` | sí | — | Caminar hacia la izquierda |
+| `walk_diag_down_right` | `walk_diag_down_right` | — | — | Diagonal abajo-derecha |
+| `walk_diag_down_left` | `walk_diag_down_right` | sí | — | Diagonal abajo-izquierda |
+| `walk_down` | `walk_down` | — | — | Hacia abajo |
+| `walk_up` | `walk_up` | — | — | Hacia arriba y diagonales hacia arriba |
+
+**Animaciones que ya no existen como tag:** `blink` (`idle` se reproduce en loop, sin parpadeo), `hop` (el cambio de posición del Nivel 1 lo hace Compose con `motion.hop`, sin animación de sprite), `wave` (la bienvenida del onboarding usa `idle`), y, como tags propios, `talk`, `dragged`, `happy`, `worried` y `perch` (ahora son poses que reutilizan un tag). No hay tag de `attack`/`hurt` ni pose de muerte: es una app de bienestar, no un juego de combate.
+
+**Hojas de `drafts/` que no se usan:** `walk_side-left.png` y `side_left-idle.png` (Likka de solo 46–50 px, demasiado pequeña) y los `.jpg` sueltos de `drafts/` (JPG con fondo horneado).
+
+La prueba unitaria valida los **10 tags de la hoja**; las poses se validan contra ellos (ver "Prueba unitaria", abajo).
 
 #### Seis direcciones de movimiento
 
-El movimiento del overlay usa **seis** tags de dirección: `walk_down`, `walk_up`, `walk_right`, `walk_left` (espejo), `walk_diag_down_right` y `walk_diag_down_left` (espejo). Las diagonales **hacia arriba** no tienen tag propio: usan `walk_up`. El código (`OverlayMotionPlanner`, `domain`) calcula la dirección a partir del vector de movimiento y elige la animación por sectores angulares — el detalle de los sectores y la prueba unitaria correspondiente están en `likkapet_documentacion.md` §9.6 y §12.1.
+El movimiento del overlay usa **seis** poses de dirección (`walk_down`, `walk_up`, `walk_right`, `walk_left`, `walk_diag_down_right`, `walk_diag_down_left`) que se resuelven sobre **tres** tags: `walk_down`, `walk_up` y `walk_diag_down_right`. `walk_right` usa `walk_diag_down_right` tal cual; `walk_left` y `walk_diag_down_left` lo usan reflejado en X (`mirror`). Las diagonales **hacia arriba** no tienen tag propio: usan `walk_up`. El código (`OverlayMotionPlanner`, `domain`) calcula la dirección a partir del vector de movimiento y elige la pose por sectores angulares — el detalle de los sectores y la prueba unitaria correspondiente están en `likkapet_documentacion.md` §9.6 y §12.1.
 
 #### Extras dibujados en Compose, nunca en la hoja
 
-Las "z" de dormir, la gota de sudor de `worried`, el aura pulsante de `fury`, los destellos de `happy`, la sombra de pies y el halo de nivel (`halo`) **no se dibujan dentro de `likka.png`**: son overlays de Compose sobre la animación base, listados en `likka_poses.json` como `extras`. Esto es un cambio respecto a v3.3, donde la "z" y los destellos venían horneados en los cuadros de `sleep`/`joy`: mantener la hoja limpia de estos detalles hace más fácil re-dibujar o ajustar una animación sin tener que repetir el extra en cada cuadro.
+Las "z" de dormir, la gota de sudor de `worried`, el aura pulsante de `fury`, los destellos de `happy`, la sombra de pies y el halo de nivel (`halo`) **no se dibujan dentro de `likka.png`**: son overlays de Compose sobre la animación base, listados en `likka_poses.json` como `extras`. Mantener la hoja limpia de estos detalles hace más fácil re-dibujar o ajustar una animación sin tener que repetir el extra en cada cuadro.
 
 `halo` (v3.7) es un halo del color del nivel (`levelColor`) alrededor de la silueta de Likka, solo en el overlay de los Niveles 1 y 2. Su grosor es de **2 píxeles del sprite** (`2 × escala` px físicos: 4 px ≈ 1.5dp en N1 y 8 px ≈ 2.9dp en N2 en el Redmi 9), así que sigue la rejilla del pixel art y crece con el tamaño. Se dibuja en Compose a partir de la silueta (alfa binaria) del cuadro actual. Como depende del nivel y no de la pose, el código lo aplica a toda pose mostrada en ese overlay y **no se lista por pose** en `likka_poses.json`.
 
-#### Regla de provisionales
+#### Asignación definitiva (sin provisionales)
 
-Mientras una animación de la tabla no exista todavía, `likka_poses.json` apunta esa pose a `idle` (o a la más cercana ya disponible; p. ej. `perch` → `peek`, `dragged` → `annoyed`) en vez de fallar. La app y la maqueta funcionan igual, solo que con un movimiento menos expresivo; en cuanto se agrega el tag real en Aseprite, basta con actualizar `likka_poses.json` — sin tocar código ni la app.
+Desde v3.10 **no hay animaciones provisionales**: la asignación pose → tag de la tabla de arriba es definitiva y el proyecto se entrega con las hojas actuales (decisión de la dueña: no hay presupuesto para más animaciones). Ninguna pose apunta a `idle` "mientras llega el arte": las que usan `idle`, `sit`, `annoyed` o `look_around` lo hacen por diseño. Si algún día se agregara un tag nuevo, bastaría con actualizar `likka_poses.json`, sin tocar código.
 
 #### Preparar los bocetos de IA en Aseprite
 
@@ -372,14 +388,14 @@ Los bocetos generados con IA no se usan tal cual: se limpian en Aseprite hasta c
 
 1. **Quitar el fondo**: dejar solo transparencia.
 2. **Reducir con vecino más cercano** según el tamaño de su píxel real (el "píxel" de un boceto de IA suele ser mayor que 1 px); nunca con suavizado.
-3. **Normalizar todas las poses a la misma escala** (≈88 px de alto; máximo 90 px, con al menos 2 px libres arriba). Una hoja que salió a otra escala **se regenera**, no se agranda.
+3. **Normalizar las poses a la misma escala** (≈88 px de alto; máximo 90 px, con al menos 2 px libres arriba) con estos factores de reducción por hoja de origen: `idle`, `walk_down` (hojas que ya vienen a tamaño de píxel real): sin reducción; `walk_diag_down_right`: **÷3**; `annoyed`, `fury`, `sit`, `sleep` y `look_around` (hojas de 1280×1280): **÷2**; **`walk_up`: sin escalar (excepción, queda en ≈76–78 px)**. `peek` se arma con los cuadros de `idle` ya normalizados. No se agranda nada para igualar alturas.
 4. **Pasar a la paleta fija** de 12–16 colores (§1.1).
 5. **Contorno de 1 px** oscuro alrededor de la silueta y alfa binaria (0 o 255).
 6. **Alinear los pies en y = 92** en todos los cuadros, de todas las animaciones: es lo que evita saltos verticales y parpadeos de color al cambiar de tag.
 7. **Borrar los extras pintados** (destellos, sombras, halos de nivel, "z", gotas, aura): van en Compose (ver arriba).
 8. **Dejar 4–6 cuadros por animación** (8 como máximo en `walk` e `idle`).
-9. **Reflejar las caminatas hacia la izquierda** para exportarlas como `walk_right` / `walk_diag_down_right`.
-10. **Un tag por animación**, con el nombre exacto de la tabla de arriba (en inglés, minúsculas, con guion bajo).
+9. **No exportar espejos**: `walk_left` y `walk_diag_down_left` los obtiene el código con `mirror` a partir de `walk_diag_down_right`. `peek` se exporta cortado por un solo lado (ver "Medio asomado").
+10. **Un tag por animación**, con el nombre exacto de la tabla de tags de la hoja (en inglés, minúsculas, con guion bajo): `idle`, `walk_down`, `walk_up`, `walk_diag_down_right`, `annoyed`, `fury`, `peek`, `sit`, `sleep`, `look_around`. El origen de cada uno (hoja de `sprites/drafts/2d-sprites-sheets/`) está en esa tabla; `annoyed` y `fury` salen de la misma hoja (`Likka-a-angry.png`) con cuadros distintos.
 11. **Exportar sin Trim**: *File → Export Sprite Sheet* → formato **JSON (Array)**, casilla **Tags** activada, recorte (*Trim*) desactivado para que los 96 × 96 se mantengan iguales en todos los cuadros → guardar como `sprites/likka.png` + `sprites/likka.json`.
 
 #### Formato de `likka.json` (exportado por Aseprite) y `likka_poses.json` (a mano)
@@ -391,32 +407,36 @@ Los bocetos generados con IA no se usan tal cual: se limpian en Aseprite hasta c
 ```json
 {
   "idle": { "tag": "idle", "mode": "loop" },
-  "peek": { "tag": "peek", "mode": "loop" },
-  "annoyed": { "tag": "annoyed", "mode": "loop" },
-  "fury": { "tag": "fury", "mode": "loop", "extras": ["aura"] },
-  "worried": { "tag": "worried", "mode": "loop", "extras": ["sweat_drop"] },
+  "talk": { "tag": "idle", "mode": "loop" },
+  "happy": { "tag": "idle", "mode": "loop", "extras": ["sparkles"] },
+  "worried": { "tag": "look_around", "mode": "loop", "extras": ["sweat_drop"] },
   "sleeping": { "tag": "sleep", "mode": "loop", "extras": ["z"] },
   "sit": { "tag": "sit", "mode": "loop" },
-  "perch": { "tag": "peek", "mode": "loop" },
+  "perch": { "tag": "sit", "mode": "loop" },
+  "peek": { "tag": "peek", "mode": "loop" },
+  "annoyed": { "tag": "annoyed", "mode": "loop" },
   "dragged": { "tag": "annoyed", "mode": "loop" },
-  "happy": { "tag": "happy", "mode": "once_then_idle", "extras": ["sparkles"] },
-  "hop": { "tag": "hop", "mode": "once" },
-  "goodbye": { "tag": "walk_right", "mode": "loop" },
-  "walk_left": { "tag": "walk_right", "mode": "loop", "mirror": true },
+  "fury": { "tag": "fury", "mode": "loop", "extras": ["aura"] },
+  "walk_down": { "tag": "walk_down", "mode": "loop" },
+  "walk_up": { "tag": "walk_up", "mode": "loop" },
+  "walk_right": { "tag": "walk_diag_down_right", "mode": "loop" },
+  "goodbye": { "tag": "walk_diag_down_right", "mode": "loop" },
+  "walk_diag_down_right": { "tag": "walk_diag_down_right", "mode": "loop" },
+  "walk_left": { "tag": "walk_diag_down_right", "mode": "loop", "mirror": true },
   "walk_diag_down_left": { "tag": "walk_diag_down_right", "mode": "loop", "mirror": true }
 }
 ```
-- `mode` puede ser `loop`, `once`, `once_then_idle` o `hold`, igual que en v3.3.
-- `mirror: true` le dice al código que refleje en X los cuadros del `tag` indicado, en vez de buscar un tag propio.
-- Mientras falta un tag real, su entrada apunta a `"tag": "idle"` o al más cercano (regla de provisionales, arriba). En el ejemplo, `perch` y `dragged` son provisionales (apuntan a `peek` y `annoyed`); `sit` ya usa su tag real.
+- `mode` puede ser `loop`, `once`, `once_then_idle` o `hold`. Con el conjunto definitivo todas las poses usan `loop`; los otros modos los soporta el código por si se agregan poses.
+- `mirror: true` le dice al código que refleje en X los cuadros del `tag` indicado, en vez de buscar un tag propio. En `peek`, el reflejo depende del borde (`edge`, ver "Medio asomado") y lo decide la UI, no el JSON.
+- Ya no hay entradas provisionales: cada pose apunta a su tag definitivo (ver "Asignación definitiva").
 
 Se elimina `sirv_frames.json`: ya no hace falta describir filas/columnas/`cellSize` a mano porque `likka.json` (de Aseprite) ya trae la posición exacta de cada cuadro.
 
 #### Prueba unitaria
 
 Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
-- `likka.json` tiene **todos los tags P1** de la tabla de arriba.
-- Cada pose de `likka_poses.json` apunta a un `tag` que existe en `likka.json`.
+- `likka.json` tiene **los 10 tags de la hoja** (`idle`, `walk_down`, `walk_up`, `walk_diag_down_right`, `annoyed`, `fury`, `peek`, `sit`, `sleep`, `look_around`).
+- Cada pose de `likka_poses.json` apunta a un `tag` que existe en `likka.json` (incluidas las poses que reutilizan un tag).
 - Todos los cuadros de `likka.json` miden **96 × 96 px**.
 
 > `sprites/` y `app/src/main/assets/sprites/` son carpetas **locales**, ignoradas por git (`.gitignore`, §10.2 de `likkapet_documentacion.md`). Si la carpeta de sprites no existe donde corre la prueba, esta se **salta** (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio. Si existe, valida todo lo de arriba.
@@ -426,8 +446,8 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 - **Escalado solo entero**: el tamaño en pantalla se calcula en **píxeles físicos** a partir de la altura real de Likka dentro del lienzo (≈88 px de referencia, no los 96 px del lienzo completo): `scale = floor(targetPx / 88)`. Las escalas fraccionarias deforman los píxeles. La **ventana del overlay** (Niveles 1–2), en cambio, se dimensiona con el cuadro completo (`96 × escala` px) más el grosor del halo en cada lado (`2 × escala` px por lado) y el globo.
 - **Sin suavizado**: dibujar con `FilterQuality.None`.
 - **Escenario y halo**: en el **overlay de los Niveles 1 y 2 no hay círculo**: Likka se dibuja directamente sobre la app de fondo, con un **halo del color del nivel** (`levelColor`), de 2 píxeles del sprite de grosor, alrededor de su silueta —extra `halo` de Compose, nunca parte de la hoja— más la sombra de pies (otro extra de Compose). En el **dashboard, el onboarding y el panel del Nivel 3** se mantiene el **círculo crema** (`neutral.cream`) con un borde de 3dp del color del nivel; es solo un fondo, con diámetro **no menor que la altura de Likka mostrada** (sin tokens nuevos), y el sprite se dibuja encima y puede sobresalir en las esquinas (los cuernos, por ejemplo). Likka es oscuro (capa ciruela, cuerpo cacao): el círculo crema garantiza que se vea sobre cualquier fondo en esas pantallas, y en el overlay N1–N2 esa función la cumple el halo (si se ve demasiado fino, primero se prueba subirlo; si aun así no basta, se vuelve al círculo; ver §12.3 M8 en `likkapet_documentacion.md`). En pantallas de la app con el tema claro activo (§1.1 "Paleta clara"), el relleno del círculo pasa a `#FFFFFF` y el borde de reposo a `outline`; el overlay (que siempre usa la paleta oscura) no cambia.
-- **"Medio asomado" (`peek`, Nivel 1, bordes laterales)**: el efecto de Likka asomándose por el borde de la pantalla depende de que el propio arte de `peek` esté dibujado **cortado por uno de los lados del cuadro de 96×96 px** (no de recortar la ventana del overlay). El código expone el borde donde está Likka (`OverlayMotionPlanner`, campo `edge`: izquierdo, derecho o inferior) para que la UI sepa qué lado mostrar y, si `peek` solo se dibuja cortado por un lado, refleje (mirror) el cuadro en el borde contrario — el mismo mecanismo de `mirror` que ya usa `walk_left`/`walk_diag_down_left` (más arriba). Este es un requisito para el arte de `peek`, no solo de código.
-- **Retrato**: no existe un archivo de retrato aparte. La bienvenida del onboarding usa el **cuadro 0 de `idle`** a escala entera, igual que cualquier otro uso del sprite.
+- **"Medio asomado" (`peek`, Nivel 1, bordes laterales)**: el efecto de Likka asomándose por el borde de la pantalla depende de que el propio arte de `peek` esté **cortado por un lado del cuadro de 96×96 px** (no de recortar la ventana del overlay). `peek` no es una hoja aparte: se deriva de los cuadros de `idle`, **desplazados dentro del lienzo de 96×96** hasta que Likka queda cortado por un solo lado (el derecho en el arte base). El código expone el borde donde está Likka (`OverlayMotionPlanner`, campo `edge`: izquierdo, derecho o inferior) para que la UI sepa qué lado mostrar: en el **borde izquierdo** refleja (`mirror`) el cuadro, el mismo mecanismo que ya usa `walk_left`/`walk_diag_down_left`. En el borde inferior no se usa `peek` sino `perch` (tag `sit`). Este es un requisito para el arte de `peek`, no solo de código.
+- **Retrato**: no existe un archivo de retrato aparte. La bienvenida del onboarding usa el **cuadro 0 de `idle`** (vista 3/4) a escala entera, igual que cualquier otro uso del sprite.
 - **Accesibilidad**: `contentDescription` con el estado (*"Likka molesto, nivel 2"*).
 - El código lee la posición de cada cuadro solo de `likka.json` y el mapeo pose→tag solo de `likka_poses.json`; ningún offset va hardcodeado.
 
@@ -752,10 +772,10 @@ Cada pantalla contempla estos estados, y cada uno tiene su pose de Likka:
 
 | Estado | Pose | Mensaje | Acción |
 | :--- | :--- | :--- | :--- |
-| Protegiendo | `idle` | "Te vigilo desde mi tronco. Sin presión. Bueno, un poco." | Pausar |
-| En pausa | `sit` | "Me siento a esperar hasta las 18:40. No hagas nada que yo haría." | Reanudar ahora |
-| Desactivado | `sleeping` | "Estoy apagado. Sin mí, tu cuello queda por su cuenta." | Activar a Likka |
-| Falta permiso | `worried` | "Sin este permiso no puedo aparecer." | Conceder permiso |
+| Protegiendo | `idle` (tag `idle`) | "Te vigilo desde mi tronco. Sin presión. Bueno, un poco." | Pausar |
+| En pausa | `sit` (tag `sit`) | "Me siento a esperar hasta las 18:40. No hagas nada que yo haría." | Reanudar ahora |
+| Desactivado | `sleeping` (tag `sleep` + `z`) | "Estoy apagado. Sin mí, tu cuello queda por su cuenta." | Activar a Likka |
+| Falta permiso | `worried` (tag `look_around` + `sweat_drop`) | "Sin este permiso no puedo aparecer." | Conceder permiso |
 | Sin internet o sin saldo de IA | `idle` | "Sin internet. Tranquilo, mis frases de siempre también muerden." | — (informativo) |
 | IA desactivada | `idle` | — (no se muestra aviso: es una elección del usuario) | — |
 
@@ -1252,3 +1272,7 @@ object LikkaMotion {
 | **v3.9** | §1.7 (tabla de escalas): los `LikkaSpriteSize` están calibrados para la densidad del Redmi 9 (≈2.75); a 2.625 (Pixel 7, emulador de prueba) la escala baja a 1×/3×/5×/4×/2× (Nivel 1/Nivel 2/Nivel 3/dashboard/onboarding), por ejemplo el sprite de onboarding sale a 2× | En el emulador de prueba (2.625) el sprite de onboarding salió a 2×: la regla `floor(targetPx / 88)` es entera a propósito, así que otra densidad cae en otra escala. |
 | **v3.9** | §3.1 (mapa y contenido de "Acerca de y créditos") y §2.5: el crédito es de la **autora única**, Paula Sofia Gonzalez Zambrano, con la materia "Diseño de Interfaces" (RF-S07 de `likkapet_documentacion.md`); ya no "el equipo" | Así quedó en `strings.xml` (`about_author`, `about_course`) en la tarea 4. |
 | **v3.9** | Nota de v3.8 sobre `presentation/theme/` actualizada, sin reescribirla: ahora existen además `ComponentSize.kt` y `SwitchColors.kt`; `Motion.kt` (`LikkaMotion`, §5) sigue sin existir en el código | Verificado contra el código de las tareas 1–4 al escribir v3.9. |
+| **v3.10** | §1.7: **conjunto final de animaciones**. La tabla P1/P2/P3 de 19 tags se reemplaza por **10 tags de la hoja** (`idle`, `walk_down`, `walk_up`, `walk_diag_down_right`, `annoyed`, `fury`, `peek`, `sit`, `sleep`, `look_around`, con su hoja de origen y factor de reducción) y una tabla de **poses que reutilizan un tag** (`walk_right`/`goodbye` y los espejos de `walk_left`/`walk_diag_down_left` → `walk_diag_down_right`; `happy`/`talk` → `idle`; `worried` → `look_around`; `perch` → `sit`; `dragged` → `annoyed`). Se eliminan `blink`, `hop` y `wave` como animaciones; `likka_poses.json` se reescribe completo | Decisión de la dueña: no hay presupuesto para más animaciones; el proyecto se entrega con las hojas actuales de `sprites/drafts/2d-sprites-sheets/`, y los documentos pedían tags que nunca existirían. |
+| **v3.10** | §1.7: la "Regla de provisionales" pasa a "Asignación definitiva": ya no hay provisionales. `idle` es ahora en vista 3/4; `walk_up` se usa sin escalar (≈76–78 px, excepción al rango 84–88); `peek` se deriva de los cuadros de `idle` desplazados en el lienzo (cortado por un lado, reflejado con `mirror` en el borde izquierdo); la guía de limpieza lista el origen y el factor de reducción de cada tag; no se usan `walk_side-left.png`, `side_left-idle.png` ni los `.jpg` de `drafts/` | Mismo motivo: fijar un diseño definitivo y coherente con el arte que existe. |
+| **v3.10** | §1.5: el primer plano del ícono de la app es explícitamente la **cara de Likka** (recorte de 48×48 px con solo la cabeza y los cuernos, del cuadro 0 de `idle`, que ahora es 3/4) | Petición de la dueña: que el ícono muestre la cara de Likka, sin cuerpo. |
+| **v3.10** | §1.6, §1.7 (tabla "Qué hace Likka en cada momento") y §3.5: poses y tags actualizados (`perch` = `sit`, `dragged` = `annoyed`, `worried` = `look_around` + `sweat_drop`, `happy` = `idle` + `sparkles`); `motion.hop` es solo movimiento de Compose; la prueba unitaria valida los 10 tags de la hoja | Coherencia con el conjunto final. |
