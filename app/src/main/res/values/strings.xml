@@ -2,12 +2,168 @@
 <resources>
     <string name="app_name">Likka-Pet</string>
 
-    <!-- Temporary service control screen (spike) -->
-    <string name="service_start_button">Activar a Likka</string>
-    <string name="service_stop_button">Desactivar a Likka</string>
-
     <!-- Foreground service notification (design system §1.8) -->
     <string name="notification_channel_name">Protección de Likka</string>
     <string name="notification_channel_description">Aviso fijo mientras Likka cuida tu postura.</string>
     <string name="notification_title">Likka está cuidando tu cuello</string>
+
+    <!-- Shared actions -->
+    <string name="back_action">Volver</string>
+    <string name="settings_action">Ajustes</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_close">Cerrar</string>
+
+    <!-- Likka poses: accessibility descriptions (design system §1.7, §4) -->
+    <string name="pose_idle">Likka tranquilo</string>
+    <string name="pose_peek">Likka asomado</string>
+    <string name="pose_annoyed">Likka molesto</string>
+    <string name="pose_fury">Likka furioso</string>
+    <string name="pose_worried">Likka preocupado</string>
+    <string name="pose_sleeping">Likka dormido</string>
+    <string name="pose_sit">Likka sentado, en pausa</string>
+    <string name="pose_perch">Likka sentado en el borde</string>
+    <string name="pose_dragged">Likka arrastrado</string>
+    <string name="pose_happy">Likka feliz</string>
+    <string name="pose_hop">Likka saltando</string>
+    <string name="pose_goodbye">Likka despidiéndose</string>
+    <string name="pose_walking">Likka caminando</string>
+
+    <!-- Dashboard: states (design system §3.5) -->
+    <string name="status_protecting">Protegiendo tu cuello</string>
+    <string name="status_paused">En pausa</string>
+    <string name="status_disabled">Desactivado</string>
+    <string name="status_permission_missing">Falta permiso</string>
+    <string name="status_message_protecting">Te vigilo desde mi tronco. Sin presión. Bueno, un poco.</string>
+    <string name="status_message_paused">Me siento a esperar hasta las %1$s. No hagas nada que yo haría.</string>
+    <string name="status_message_disabled">Estoy apagado. Sin mí, tu cuello queda por su cuenta.</string>
+    <string name="status_message_permission_missing">Sin este permiso no puedo aparecer.</string>
+    <string name="status_message_offline">Sin internet. Tranquilo, mis frases de siempre también muerden.</string>
+
+    <!-- Dashboard: metrics and actions (design system §2.4) -->
+    <string name="stat_minutes_value">%1$d min</string>
+    <string name="stat_minutes_label">de redes hoy</string>
+    <plurals name="stat_interventions_label">
+        <item quantity="one">aviso</item>
+        <item quantity="other">avisos</item>
+    </plurals>
+    <plurals name="stat_streak_label">
+        <item quantity="one">día</item>
+        <item quantity="other">días</item>
+    </plurals>
+    <plurals name="pauses_left">
+        <item quantity="one">Te queda %1$d pausa hoy</item>
+        <item quantity="other">Te quedan %1$d pausas hoy</item>
+    </plurals>
+    <string name="pause_button">Pausar</string>
+    <string name="resume_button">Reanudar ahora</string>
+    <string name="activate_likka_button">Activar a Likka</string>
+    <string name="deactivate_likka_button">Desactivar a Likka</string>
+    <string name="permission_grant_action">Conceder permiso</string>
+    <string name="pause_unavailable_no_pauses">Sin pausas por hoy</string>
+    <string name="pause_unavailable_level_3">No puedes pausarme mientras estoy furioso</string>
+
+    <!-- Pause sheet -->
+    <string name="pause_sheet_title">¿Cuánto descanso, humano?</string>
+    <string name="pause_option_minutes">%1$d min</string>
+    <string name="pause_confirm_button">Pausar a Likka</string>
+
+    <!-- Deactivate confirmation (RF-S04) -->
+    <string name="deactivate_dialog_title">¿Desactivar a Likka?</string>
+    <string name="deactivate_dialog_body">Dejaré de vigilar tu postura y el tiempo en redes hasta que me actives de nuevo.</string>
+    <string name="deactivate_dialog_confirm">Desactivar</string>
+
+    <!-- Permissions (onboarding step 4 and Settings › Revisar permisos) -->
+    <string name="permission_overlay_title">Mostrar sobre otras apps</string>
+    <string name="permission_overlay_description">Para que Likka aparezca encima de TikTok.</string>
+    <string name="permission_usage_title">Acceso al uso de apps</string>
+    <string name="permission_usage_description">Para saber cuándo abres TikTok, Instagram, YouTube o Facebook. No leo lo que ves.</string>
+    <string name="permission_notifications_title">Notificaciones</string>
+    <string name="permission_notifications_description">Para mostrar el aviso fijo de que sigo cuidándote.</string>
+    <string name="permission_grant_button">Conceder</string>
+    <string name="permission_retry_button">Reintentar</string>
+    <string name="permission_granted">Concedido</string>
+    <string name="permission_denied">No concedido</string>
+    <string name="permissions_review_title">Revisar permisos</string>
+    <string name="permissions_review_all_granted">Todo en orden: tengo todos los permisos que necesito.</string>
+    <string name="permissions_review_missing">Faltan permisos. Sin ellos no puedo cuidarte.</string>
+
+    <!-- Privacy (onboarding step 3 and Settings › Qué datos se envían), documentación §8 -->
+    <string name="privacy_title">Qué datos se envían</string>
+    <string name="privacy_intro">Para que mis mensajes sean ingeniosos, envío a un servicio de IA (DeepSeek) solo el nombre de la app, cuántos minutos llevas, el ángulo de tu teléfono, y el nivel y motivo del aviso. Nada más.</string>
+    <string name="privacy_sent_title">Lo que recibe el servicio de IA</string>
+    <string name="privacy_sent_app">La app en uso: TikTok, Instagram, YouTube o Facebook. Nunca el nombre del paquete ni otras apps.</string>
+    <string name="privacy_sent_minutes">Los minutos de uso. Mi servidor intermedio los redondea de 5 en 5 (hasta 240) antes de pasarlos.</string>
+    <string name="privacy_sent_angle">El ángulo del teléfono. Mi servidor intermedio lo redondea de 5 en 5 (entre 0 y 90) antes de pasarlo.</string>
+    <string name="privacy_sent_level">El nivel y el motivo del aviso.</string>
+    <string name="privacy_never_title">Lo que nunca sale del teléfono</string>
+    <string name="privacy_never_identity">Tu nombre, tu cuenta, tu ubicación o el identificador del dispositivo.</string>
+    <string name="privacy_never_content">Lo que ves en la pantalla.</string>
+    <string name="privacy_never_history">Tu historial y tus estadísticas: se quedan en el teléfono.</string>
+    <string name="privacy_ip_title">Tu dirección IP</string>
+    <string name="privacy_ip_body">Sí llega a mi servidor intermedio, que es el que habla con la IA. A la IA no le llega: ahí solo se ve la IP de Cloudflare.</string>
+    <string name="privacy_limits_note">Lo que DeepSeek haga con esos datos no lo controlo. Por eso le paso lo mínimo.</string>
+    <string name="privacy_ai_switch">Usar IA para los mensajes de Likka</string>
+    <string name="privacy_ai_switch_hint">Si la apagas, sigo funcionando con frases locales y sin conexión a internet.</string>
+
+    <!-- Onboarding (design system §3.1) -->
+    <string name="onboarding_start">Empezar</string>
+    <string name="onboarding_next">Continuar</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_finish">Comenzar a cuidar mi cuello</string>
+    <string name="onboarding_step_indicator">Paso %1$d de %2$d</string>
+    <string name="onboarding_welcome_title">Soy Likka, tu escarabajo de la noche</string>
+    <string name="onboarding_welcome_body">Vivo en tu teléfono y me molesta que te encorves o te quedes pegado a las redes. Te lo digo con cariño. Casi siempre.</string>
+    <string name="onboarding_how_title">Cómo funciona</string>
+    <string name="onboarding_how_intro">Subo de tono poco a poco, pero siempre tienes una salida.</string>
+    <string name="onboarding_level_1_title">Nivel 1: Susurro</string>
+    <string name="onboarding_level_1_body">Me asomo por el borde de la pantalla y suelto un comentario. Puedes seguir con lo tuyo.</string>
+    <string name="onboarding_level_2_title">Nivel 2: Molesto</string>
+    <string name="onboarding_level_2_body">Camino por la pantalla y te lo digo sin rodeos. Sigo sin bloquear nada.</string>
+    <string name="onboarding_level_3_title">Nivel 3: Furia</string>
+    <string name="onboarding_level_3_body">Ocupo casi toda la pantalla y, si no me haces caso, te mando al inicio del teléfono.</string>
+    <string name="onboarding_privacy_title">Privacidad e IA</string>
+    <string name="onboarding_permissions_title">Permisos</string>
+    <string name="onboarding_permissions_intro">Necesito estos permisos para cuidarte. Sin ellos no puedo aparecer ni saber qué app usas.</string>
+    <string name="onboarding_permissions_required">Concede todos los permisos para continuar.</string>
+    <string name="onboarding_miui_title">Ajustes de Xiaomi</string>
+    <string name="onboarding_miui_intro">Tu teléfono cierra las apps en segundo plano. Activa estas tres opciones para que no me apague.</string>
+    <string name="onboarding_miui_autostart_title">Inicio automático</string>
+    <string name="onboarding_miui_autostart_body">Permite que vuelva a arrancar solo cuando enciendas el teléfono.</string>
+    <string name="onboarding_miui_battery_title">Batería sin restricciones</string>
+    <string name="onboarding_miui_battery_body">Evita que el ahorro de batería me cierre.</string>
+    <string name="onboarding_miui_popup_title">Ventanas emergentes en segundo plano</string>
+    <string name="onboarding_miui_popup_body">Necesario para que pueda aparecer sobre otras apps.</string>
+    <string name="onboarding_miui_open_settings">Abrir ajustes</string>
+    <string name="onboarding_miui_confirmed">Ya lo activé</string>
+    <string name="onboarding_done_title">¡Listo!</string>
+    <string name="onboarding_done_body">Ya estoy en guardia. Si te encorvas o te pegas de más a las redes, te lo voy a decir.</string>
+
+    <!-- Settings (design system §2.5) -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_group_likka">Likka</string>
+    <string name="settings_likka_enabled">Likka activado</string>
+    <string name="settings_vibration">Vibración</string>
+    <string name="settings_group_appearance">Apariencia</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_group_watched_apps">Apps vigiladas</string>
+    <string name="settings_watched_apps_hint">Tiene que quedar al menos una app vigilada.</string>
+    <string name="settings_group_ai">Inteligencia artificial</string>
+    <string name="settings_ai_messages">Mensajes con IA</string>
+    <string name="settings_privacy_link">¿Qué datos se envían?</string>
+    <string name="settings_review_permissions">Revisar permisos</string>
+    <string name="settings_about">Acerca de y créditos</string>
+
+    <!-- About and credits (RF-S07, design system §3.1) -->
+    <string name="about_title">Acerca de y créditos</string>
+    <string name="about_author">Paula Sofia Gonzalez Zambrano</string>
+    <string name="about_course">Diseño de Interfaces</string>
+    <string name="about_version">Versión %1$s</string>
+    <string name="about_fonts_header">Tipografías</string>
+    <string name="about_font_baloo2">Baloo 2</string>
+    <string name="about_font_nunito">Nunito</string>
+    <string name="about_font_credit">Google Fonts · SIL Open Font License 1.1</string>
+    <string name="about_license_button">Ver licencia</string>
 </resources>

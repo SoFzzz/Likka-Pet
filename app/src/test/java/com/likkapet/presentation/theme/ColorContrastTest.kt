@@ -52,6 +52,47 @@ class ColorContrastTest {
         )
     }
 
+    @Test
+    fun darkTheme_screenComponentTokensMeetWcag() {
+        val scheme = LikkaDarkColorScheme
+        val levelBorders = listOf(1 to LikkaColors.Amber, 2 to LikkaColors.Ochre, 3 to LikkaColors.RaspberryLight)
+        assertAllPairsPass(
+            componentPairs(scheme, stageFill = LikkaColors.Cream, thumbInactive = LikkaColors.Cream) +
+                levelBorders.map { (level, color) ->
+                    ContrastPair("level $level border on surface", color, scheme.surface, AA_NON_TEXT)
+                },
+        )
+    }
+
+    @Test
+    fun lightTheme_screenComponentTokensMeetWcag() {
+        val scheme = LikkaLightColorScheme
+        val levelBorders = listOf(1 to LikkaColors.AmberDark, 2 to LikkaColors.OchreDark, 3 to LikkaColors.Raspberry)
+        assertAllPairsPass(
+            componentPairs(scheme, stageFill = LikkaColors.LightSurface, thumbInactive = LikkaColors.LightSurface) +
+                levelBorders.map { (level, color) ->
+                    ContrastPair("level $level border on surface", color, scheme.surface, AA_NON_TEXT)
+                },
+        )
+    }
+
+    /**
+     * Non-text pairs of the app screens (WCAG 1.4.11): switch tracks/thumbs and the sprite marker on
+     * its stage. Switches only sit on `background` (Settings rows, never on a plum card): on plum
+     * the dark track is 2.94:1, not the "≈3.0" that design system §1.1 states.
+     */
+    private fun componentPairs(
+        scheme: ColorScheme,
+        stageFill: Color,
+        thumbInactive: Color,
+    ): List<ContrastPair> =
+        listOf(
+            ContrastPair("inactive switch track on background", LikkaColors.SwitchTrackInactive, scheme.background, AA_NON_TEXT),
+            ContrastPair("inactive switch thumb on track", thumbInactive, LikkaColors.SwitchTrackInactive, AA_NON_TEXT),
+            ContrastPair("checked switch thumb on track", scheme.onPrimary, scheme.primary, AA_NON_TEXT),
+            ContrastPair("sprite placeholder on stage", scheme.outline, stageFill, AA_NON_TEXT),
+        )
+
     private fun darkPairs(scheme: ColorScheme): List<ContrastPair> =
         listOf(
             ContrastPair("onBackground on background", scheme.onBackground, scheme.background, AA_NORMAL_TEXT),

@@ -75,6 +75,13 @@ fun levelColor(level: Int): Color =
     }
 
 /**
+ * Fill of Likka's cream stage circle (dashboard, onboarding, level 3 panel): `neutral.cream` in
+ * dark, `#FFFFFF` in light (design system §1.1 "Paleta clara", regla 3, and §1.7).
+ */
+@Composable
+fun stageFillColor(): Color = if (LocalLikkaIsLightTheme.current) LikkaColors.LightSurface else LikkaColors.Cream
+
+/**
  * Filled-button colors (design system §1.8): Primary/Advertencia/Peligro keep the same brand fill
  * in both themes, unlike `colorScheme.primary`/`secondary`/`tertiary` (which change in light so
  * they stay usable as text/border colors, §1.1). Read via [LocalLikkaButtonColors], never

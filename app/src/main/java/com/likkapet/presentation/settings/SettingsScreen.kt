@@ -1,0 +1,178 @@
+package com.likkapet.presentation.settings
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.likkapet.R
+import com.likkapet.domain.model.TargetApp
+import com.likkapet.domain.model.ThemeMode
+import com.likkapet.presentation.components.DeactivateDialog
+import com.likkapet.presentation.components.LikkaPreview
+import com.likkapet.presentation.components.LikkaThemePreviews
+import com.likkapet.presentation.components.LikkaTopBar
+import com.likkapet.presentation.components.SettingsGroupHeader
+import com.likkapet.presentation.components.SettingsLinkRow
+import com.likkapet.presentation.components.SettingsSwitchRow
+import com.likkapet.presentation.components.screenInsets
+import com.likkapet.presentation.theme.LikkaComponentSize
+import com.likkapet.presentation.theme.LikkaSpacing
+
+/** Everything Settings can ask for; the screen forwards them, no logic in the composable. */
+data class SettingsActions(
+    val onBackClick: () -> Unit = {},
+    val onLikkaEnabledChange: (Boolean) -> Unit = {},
+    val onDeactivateConfirm: () -> Unit = {},
+    val onDeactivateDismiss: () -> Unit = {},
+    val onVibrationChange: (Boolean) -> Unit = {},
+    val onThemeSelected: (ThemeMode) -> Unit = {},
+    val onWatchedAppChange: (TargetApp, Boolean) -> Unit = { _, _ -> },
+    val onAiEnabledChange: (Boolean) -> Unit = {},
+    val onPrivacyClick: () -> Unit = {},
+    val onReviewPermissionsClick: () -> Unit = {},
+    val onAboutClick: () -> Unit = {},
+)
+
+@Composable
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onBackClick: () -> Unit,
+    onPrivacyClick: () -> Unit,
+    onReviewPermissionsClick: () -> Unit,
+    onAboutClick: () -> Unit,
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    SettingsContent(
+        state = state,
+        actions =
+            SettingsActions(
+                onBackClick = onBackClick,
+                onLikkaEnabledChange = viewModel::onLikkaEnabledChange,
+                onDeactivateConfirm = viewModel::onDeactivateConfirm,
+                onDeactivateDismiss = viewModel::onDeactivateDismiss,
+                onVibrationChange = viewModel::onVibrationChange,
+                onThemeSelected = viewModel::onThemeSelected,
+                onWatchedAppChange = viewModel::onWatchedAppChange,
+                onAiEnabledChange = viewModel::onAiEnabledChange,
+                onPrivacyClick = onPrivacyClick,
+                onReviewPermissionsClick = onReviewPermissionsClick,
+                onAboutClick = onAboutClick,
+            ),
+    )
+}
+
+@Composable
+fun SettingsContent(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.screenInsets()) {
+        LikkaTopBar(title = stringResource(R.string.settings_title), onBackClick = actions.onBackClick)
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = LikkaSpacing.l)) {
+            LikkaGroup(state, actions)
+            AppearanceGroup(state.themeMode, actions.onThemeSelected)
+            WatchedAppsGroup(state.watchedApps, actions.onWatchedAppChange)
+            AiGroup(state, actions)
+            SettingsLinkRow(stringResource(R.string.settings_review_permissions), actions.onReviewPermissionsClick)
+            SettingsLinkRow(stringResource(R.string.settings_about), actions.onAboutClick)
+        }
+    }
+    if (state.isDeactivateDialogVisible) {
+        DeactivateDialog(onConfirm = actions.onDeactivateConfirm, onDismiss = actions.onDeactivateDismiss)
+    }
+}
+
+@Composable
+private fun LikkaGroup(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    SettingsGroupHeader(stringResource(R.string.settings_group_likka))
+    SettingsSwitchRow(stringResource(R.string.settings_likka_enabled), state.isLikkaEnabled, actions.onLikkaEnabledChange)
+    SettingsSwitchRow(stringResource(R.string.settings_vibration), state.isVibrationEnabled, actions.onVibrationChange)
+}
+
+@Composable
+private fun AppearanceGroup(
+    themeMode: ThemeMode,
+    onThemeSelected: (ThemeMode) -> Unit,
+) {
+    SettingsGroupHeader(stringResource(R.string.settings_group_appearance))
+    Text(
+        text = stringResource(R.string.settings_theme),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier.padding(bottom = LikkaSpacing.s),
+    )
+    val options = listOf(ThemeMode.DARK, ThemeMode.LIGHT, ThemeMode.SYSTEM)
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, mode ->
+            SegmentedButton(
+                selected = mode == themeMode,
+                onClick = { onThemeSelected(mode) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                modifier = Modifier.heightIn(min = LikkaComponentSize.minTouchTarget),
+            ) {
+                Text(text = stringResource(themeLabel(mode)), style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    }
+}
+
+private fun themeLabel(mode: ThemeMode): Int =
+    when (mode) {
+        ThemeMode.DARK -> R.string.settings_theme_dark
+        ThemeMode.LIGHT -> R.string.settings_theme_light
+        ThemeMode.SYSTEM -> R.string.settings_theme_system
+    }
+
+@Composable
+private fun WatchedAppsGroup(
+    apps: List<WatchedAppUi>,
+    onWatchedAppChange: (TargetApp, Boolean) -> Unit,
+) {
+    SettingsGroupHeader(stringResource(R.string.settings_group_watched_apps))
+    apps.forEach { item ->
+        SettingsSwitchRow(
+            label = item.app.displayName,
+            checked = item.isWatched,
+            onCheckedChange = { onWatchedAppChange(item.app, it) },
+            enabled = item.canToggle,
+        )
+    }
+    Text(
+        text = stringResource(R.string.settings_watched_apps_hint),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun AiGroup(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    SettingsGroupHeader(stringResource(R.string.settings_group_ai))
+    SettingsSwitchRow(stringResource(R.string.settings_ai_messages), state.isAiEnabled, actions.onAiEnabledChange)
+    SettingsLinkRow(stringResource(R.string.settings_privacy_link), actions.onPrivacyClick)
+}
+
+@LikkaThemePreviews
+@Composable
+private fun SettingsContentPreview() {
+    LikkaPreview { SettingsContent(state = SettingsUiState.preview(), actions = SettingsActions()) }
+}
