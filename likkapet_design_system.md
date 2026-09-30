@@ -1,4 +1,4 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.10
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.11
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
 > *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
@@ -300,27 +300,28 @@ Likka es un **escarabajo ciervo nocturno**: un pequeño compañero del bosque co
 | Derechos | Diseño propio (Sirv); arte generado con IA a partir de él; uso académico privado, no se publica |
 | Nombre en la app | **Likka** ("Sirv" es solo el nombre interno del diseño anterior) |
 | Referencia de diseño | `sprites/sirv.png` — **no** se usa en la app; solo guía de colores, capucha, cuernos y bufanda al preparar `likka.png` |
-| Hoja de sprites final | `sprites/likka.png`, generada con herramientas de IA a partir de "Sirv" y limpiada en Aseprite, exportada junto con `sprites/likka.json` |
-| Mapa de poses | `sprites/likka_poses.json`, escrito y editado a mano |
+| Hoja de sprites final | `sprites/likka.png` + `sprites/likka.json`, construidas por el script `likka_sprites/tools/build.py` a partir de los bocetos de IA de `sprites/drafts/2d-sprites-sheets/` (generados a partir de "Sirv") |
+| Mapa de poses | `sprites/likka_poses.json`, generado por el mismo `build.py` desde su tabla `POSES` |
+| Herramientas y revisión | `likka_sprites/` (`tools/build.py`, `tools/validate.py`, `tools/contact.py`, `review/`, `README.md`) |
 
-> **Origen del arte:** todo el arte de Likka se generó con herramientas de IA a partir del diseño propio "Sirv" y se limpia en Aseprite (ver "Preparar los bocetos de IA en Aseprite", más abajo). `sirv.png` se usa solo como referencia de diseño: nunca se recorta ni se reescala, y nunca va en el APK. El conjunto de animaciones es **definitivo** (ver "Asignación definitiva" más abajo): se construye con las hojas de `sprites/drafts/2d-sprites-sheets/` y no se generarán más. La app lee `likka.png`, `likka.json` y `likka_poses.json` de `sprites/`, **sin tocar código**.
+> **Origen del arte:** todo el arte de Likka se generó con herramientas de IA a partir del diseño propio "Sirv"; la hoja final la construye un script, no se limpia a mano (ver "Construir la hoja con `build.py`", más abajo). `sirv.png` se usa solo como referencia de diseño: nunca se recorta ni se reescala, y nunca va en el APK. El conjunto de animaciones es **definitivo** (ver "Asignación definitiva" más abajo): se construye con las hojas de `sprites/drafts/2d-sprites-sheets/` y no se generarán más. La app lee `likka.png`, `likka.json` y `likka_poses.json` de `sprites/`, **sin tocar código**.
 
 #### Formato del arte
 
 | Propiedad | Valor |
 | :--- | :--- |
 | Lienzo por cuadro | **96 × 96 px** |
-| Altura de Likka | **≈84–88 px** (88 px es la referencia de la escala; máximo **90 px**, con al menos **2 px** libres arriba; el resto es aire transparente para patas/cuernos en las poses más extremas). **Excepción documentada:** `walk_up` se usa sin escalar y mide **≈76–78 px**; se ve algo más pequeña que el resto al caminar hacia arriba |
+| Altura de Likka | **≈84–88 px** (88 px es la referencia de la escala; máximo **90 px**, con al menos **2 px** libres arriba; el resto es aire transparente para patas/cuernos en las poses más extremas). **Excepciones aceptadas** (no hay factor entero que las acerque al rango sin agrandar el arte): `walk_up` se usa sin escalar y mide **76–78 px** (se ve algo más pequeña al caminar hacia arriba); `walk_down` se usa sin escalar y mide **81–90 px** (la altura cambia a lo largo del ciclo de caminar); `walk_diag_down_right` mide **81–83 px** (÷3 es el único factor entero posible: con ÷2 mediría unos 123 px y no cabría en el lienzo); `sit` mide **63 px** (misma escala ÷2 que el resto, pero Likka sentado es más bajo). Alturas por tag en "Construir la hoja con `build.py`" |
 | Línea de pies | fija en **y = 92** en todos los cuadros, de todas las animaciones |
 | Fondo | transparente, **alfa binario** (0 o 255, sin semitransparencias) |
-| Paleta | fija, **12–16 colores**, basada en `sirv.png` y alineada con la paleta Bosque (§1.1) |
+| Paleta | fija, **12–16 colores**, basada en `sirv.png` y alineada con la paleta Bosque (§1.1); la hoja final usa **16** (ver "Paleta final", más abajo) |
 | Contorno | **1 px** oscuro alrededor de la silueta |
 
 La línea de pies fija es lo que permite que todas las animaciones se vean paradas en el mismo sitio al cambiar de cuadro o de tag, sin saltos verticales.
 
 #### Animaciones (tags de Aseprite)
 
-**El conjunto de animaciones es definitivo** (v3.10): no se generarán más. Cada fila es un **tag** de Aseprite; el nombre del tag es el identificador que usa el código (`likka_poses.json` los referencia). Los nombres de tag y las claves de `likka_poses.json` van en inglés, como cualquier identificador de código (`CLAUDE.md`, reglas de idioma). Los cuadros por tag se eligen entre los de la hoja de origen al limpiar el arte; `likka.json` es la fuente de verdad del número real.
+**El conjunto de animaciones es definitivo** (v3.10): no se generarán más. Cada fila es un **tag** de Aseprite; el nombre del tag es el identificador que usa el código (`likka_poses.json` los referencia). Los nombres de tag y las claves de `likka_poses.json` van en inglés, como cualquier identificador de código (`CLAUDE.md`, reglas de idioma). Los cuadros de cada tag los elige `build.py` entre los de la hoja de origen (tabla en "Construir la hoja con `build.py`"); `likka.json` es la fuente de verdad del número real.
 
 ##### Tags de la hoja (10)
 
@@ -380,29 +381,74 @@ Las "z" de dormir, la gota de sudor de `worried`, el aura pulsante de `fury`, lo
 
 #### Asignación definitiva (sin provisionales)
 
-Desde v3.10 **no hay animaciones provisionales**: la asignación pose → tag de la tabla de arriba es definitiva y el proyecto se entrega con las hojas actuales (decisión de la dueña: no hay presupuesto para más animaciones). Ninguna pose apunta a `idle` "mientras llega el arte": las que usan `idle`, `sit`, `annoyed` o `look_around` lo hacen por diseño. Si algún día se agregara un tag nuevo, bastaría con actualizar `likka_poses.json`, sin tocar código.
+Desde v3.10 **no hay animaciones provisionales**: la asignación pose → tag de la tabla de arriba es definitiva y el proyecto se entrega con las hojas actuales (decisión de la dueña: no hay presupuesto para más animaciones). Ninguna pose apunta a `idle` "mientras llega el arte": las que usan `idle`, `sit`, `annoyed` o `look_around` lo hacen por diseño. Si algún día se agregara un tag nuevo, bastaría con sumarlo a las tablas `TAGS` y `POSES` de `build.py` y regenerar la hoja, sin tocar el código de la app.
 
-#### Preparar los bocetos de IA en Aseprite
+#### Construir la hoja con `build.py`
 
-Los bocetos generados con IA no se usan tal cual: se limpian en Aseprite hasta cumplir el "Formato del arte".
+Los bocetos generados con IA no se usan tal cual ni se limpian a mano: la hoja final la construye el script `likka_sprites/tools/build.py` a partir de las hojas de `sprites/drafts/2d-sprites-sheets/`, y el resultado es determinista (k-means con semilla fija). Para regenerarla, desde la raíz del proyecto (Python 3 con Pillow, numpy y scipy):
 
-1. **Quitar el fondo**: dejar solo transparencia.
-2. **Reducir con vecino más cercano** según el tamaño de su píxel real (el "píxel" de un boceto de IA suele ser mayor que 1 px); nunca con suavizado.
-3. **Normalizar las poses a la misma escala** (≈88 px de alto; máximo 90 px, con al menos 2 px libres arriba) con estos factores de reducción por hoja de origen: `idle`, `walk_down` (hojas que ya vienen a tamaño de píxel real): sin reducción; `walk_diag_down_right`: **÷3**; `annoyed`, `fury`, `sit`, `sleep` y `look_around` (hojas de 1280×1280): **÷2**; **`walk_up`: sin escalar (excepción, queda en ≈76–78 px)**. `peek` se arma con los cuadros de `idle` ya normalizados. No se agranda nada para igualar alturas.
-4. **Pasar a la paleta fija** de 12–16 colores (§1.1).
-5. **Contorno de 1 px** oscuro alrededor de la silueta y alfa binaria (0 o 255).
-6. **Alinear los pies en y = 92** en todos los cuadros, de todas las animaciones: es lo que evita saltos verticales y parpadeos de color al cambiar de tag.
-7. **Borrar los extras pintados** (destellos, sombras, halos de nivel, "z", gotas, aura): van en Compose (ver arriba).
-8. **Dejar 4–6 cuadros por animación** (8 como máximo en `walk` e `idle`).
-9. **No exportar espejos**: `walk_left` y `walk_diag_down_left` los obtiene el código con `mirror` a partir de `walk_diag_down_right`. `peek` se exporta cortado por un solo lado (ver "Medio asomado").
-10. **Un tag por animación**, con el nombre exacto de la tabla de tags de la hoja (en inglés, minúsculas, con guion bajo): `idle`, `walk_down`, `walk_up`, `walk_diag_down_right`, `annoyed`, `fury`, `peek`, `sit`, `sleep`, `look_around`. El origen de cada uno (hoja de `sprites/drafts/2d-sprites-sheets/`) está en esa tabla; `annoyed` y `fury` salen de la misma hoja (`Likka-a-angry.png`) con cuadros distintos.
-11. **Exportar sin Trim**: *File → Export Sprite Sheet* → formato **JSON (Array)**, casilla **Tags** activada, recorte (*Trim*) desactivado para que los 96 × 96 se mantengan iguales en todos los cuadros → guardar como `sprites/likka.png` + `sprites/likka.json`.
+```bash
+python likka_sprites/tools/build.py
+python likka_sprites/tools/validate.py
+python likka_sprites/tools/contact.py
+```
 
-#### Formato de `likka.json` (exportado por Aseprite) y `likka_poses.json` (a mano)
+`build.py` escribe `sprites/likka.png`, `sprites/likka.json` y `sprites/likka_poses.json`; `validate.py` comprueba la hoja con los criterios de la prueba unitaria (abajo) y los del "Formato del arte" (alfa binaria, 12–16 colores, pies en y = 92, alto máximo 90 px con 2 px libres arriba, número de cuadros y duración por tag), y termina con error si algo falla; `contact.py` regenera `likka_sprites/review/` (`contact_<tag>.png` ×4 sobre cacao y sobre crema, `anim_<tag>.gif`, `overview.png` con la hoja completa y `peek_options.png` con `peek` visible al 55 / 60 / 65 %). El detalle de cada herramienta está en `likka_sprites/README.md`.
 
-`likka.json` es el JSON estándar que exporta Aseprite (*Array* + *Tags*): cada frame trae su `frame` (x, y, w, h) y `duration` en ms, y cada tag trae su rango de frames (`from`/`to`). El código lo lee tal cual, sin reprocesarlo: los **tags son las animaciones** y la **duración por cuadro sale de `duration`**, no de un `fps` fijo.
+Lo que hace `build.py`:
 
-`likka_poses.json` es el archivo pequeño, escrito a mano, que traduce cada **pose** (lo que pide el resto del código: `idle`, `annoyed`, `fury`...) a un tag de `likka.json`, con su modo de reproducción y, si aplica, sus extras de Compose:
+1. **Reducción por factor entero con vecino más cercano**, nunca con suavizado: **÷2** en las hojas de 1280×1280, **÷3** en la diagonal; `idle`, `walk_down` y `walk_up` van **sin escalar**. No se agranda nada para igualar alturas. Las hojas de IA no son escalados limpios (por el suavizado del remuestreo); el vecino más cercano y la paleta común absorben ese ruido.
+2. **Alfa binaria** (umbral 128) y eliminación de motas sueltas de menos de 6 px.
+3. **Paleta común de 16 colores** para toda la hoja: k-means en Lab con el **contorno** y el **ámbar de los ojos** fijados (ver "Paleta final").
+4. **Contorno de 1 px**: todo píxel opaco que toca transparencia pasa al color del contorno.
+5. **Pies en y = 92** en cada cuadro, de todas las animaciones: es lo que evita saltos verticales al cambiar de cuadro o de tag. Un solo desplazamiento en X por tag, que centra la caja de todos sus cuadros y así conserva el movimiento de la animación.
+6. **`peek`** se arma con cuadros de `idle`, desplazados para que quede visible el **60 %** del ancho de Likka, cortado por el **lado derecho** (ver "Medio asomado").
+7. **Sin espejos en la hoja**: `walk_left` y `walk_diag_down_left` los obtiene el código con `mirror` a partir de `walk_diag_down_right`.
+8. **Sin extras pintados**: destellos, sombras, halos, "z", gotas y aura van en Compose (ver arriba).
+
+Cuadros elegidos por tag (los índices son los de la hoja de origen, desde 0, fila por fila):
+
+| Tag | Origen (`sprites/drafts/2d-sprites-sheets/`) | Cuadros elegidos | fps | Alto de Likka (px) |
+| :--- | :--- | :--- | :---: | :---: |
+| `idle` | `left-diagonal-down-idle.png` (sin escalar) | 0–7 | 8 | 86–87 |
+| `walk_down` | `front_front_walk_walk_down.png` (sin escalar) | 0–7 | 10 | 81–90 |
+| `walk_up` | `walk_up.png` (sin escalar) | 0, 1, 2, 5, 6, 7, 8, 11 (de 12) | 10 | 76–78 |
+| `walk_diag_down_right` | `likka-walk-rigth-diagonal.png` (÷3) | 0–4 | 10 | 81–83 |
+| `annoyed` | `Likka-a-angry.png` (÷2) | 0, 6, 17, 16 | 8 | 89–90 |
+| `fury` | `Likka-a-angry.png` (÷2) | 7–12 (los más intensos) | 8 | 85–88 |
+| `peek` | cuadros de `idle` | 0, 1, 6, 7 (60 % visible, cortado a la derecha) | 8 | 86 |
+| `sit` | `Likka-sit-sit-down.png` (÷2) | 0, 4, 16, 23 | 6 | 63 |
+| `sleep` | `Likka-sleepy.png` (÷2) | 15, 16, 23, 17 | 4 | 88 |
+| `look_around` | `Likka-c-curiosity.png` (÷2) | 0, 6, 11, 19 | 6 | 89–90 |
+
+Las alturas fuera de ≈84–88 px (`walk_up`, `walk_down`, `walk_diag_down_right`, `sit`) son las excepciones aceptadas de "Formato del arte"; ninguna supera el máximo de 90 px.
+
+##### Paleta final (16 colores)
+
+| # | Color | Uso |
+| :---: | :--- | :--- |
+| 1 | `#140A0B` | Contorno (fijo) |
+| 2 | `#ECA142` | Ojos ámbar (fijo) |
+| 3 | `#1A0D18` | |
+| 4 | `#271222` | |
+| 5 | `#2F1318` | |
+| 6 | `#381B2B` | |
+| 7 | `#482527` | |
+| 8 | `#4F1F33` | |
+| 9 | `#5F272E` | |
+| 10 | `#782535` | Frambuesa (bufanda, capa de `sit`) |
+| 11 | `#633C39` | |
+| 12 | `#7A4437` | |
+| 13 | `#955B41` | |
+| 14 | `#B57546` | |
+| 15 | `#C8916F` | |
+| 16 | `#E7B27E` | Luz de cuernos y élitros |
+
+#### Formato de `likka.json` y `likka_poses.json` (generados por `build.py`)
+
+`likka.json` tiene **exactamente el formato del JSON que exporta Aseprite** (*Array* + `frameTags`): cada frame trae su `frame` (x, y, w, h) y `duration` en ms, y cada tag trae su rango de frames (`from`/`to`). Lo genera `build.py`, no Aseprite, pero por tener ese formato se puede abrir y retocar en Aseprite si hiciera falta; un retoque manual se pierde la próxima vez que se corre `build.py`, así que un cambio permanente se hace en el script. El código lo lee tal cual, sin reprocesarlo: los **tags son las animaciones** y la **duración por cuadro sale de `duration`**, no de un `fps` fijo.
+
+`likka_poses.json` es el archivo pequeño que traduce cada **pose** (lo que pide el resto del código: `idle`, `annoyed`, `fury`...) a un tag de `likka.json`, con su modo de reproducción y, si aplica, sus extras de Compose:
 
 ```json
 {
@@ -429,8 +475,9 @@ Los bocetos generados con IA no se usan tal cual: se limpian en Aseprite hasta c
 - `mode` puede ser `loop`, `once`, `once_then_idle` o `hold`. Con el conjunto definitivo todas las poses usan `loop`; los otros modos los soporta el código por si se agregan poses.
 - `mirror: true` le dice al código que refleje en X los cuadros del `tag` indicado, en vez de buscar un tag propio. En `peek`, el reflejo depende del borde (`edge`, ver "Medio asomado") y lo decide la UI, no el JSON.
 - Ya no hay entradas provisionales: cada pose apunta a su tag definitivo (ver "Asignación definitiva").
+- **No se edita a mano**: `build.py` lo reescribe desde su tabla `POSES` cada vez que se regenera la hoja. Para cambiar una pose se edita `POSES` en `build.py` y se vuelve a correr el script.
 
-Se elimina `sirv_frames.json`: ya no hace falta describir filas/columnas/`cellSize` a mano porque `likka.json` (de Aseprite) ya trae la posición exacta de cada cuadro.
+`sirv_frames.json` ya no existe (se borró): no hace falta describir filas/columnas/`cellSize` porque `likka.json` ya trae la posición exacta de cada cuadro.
 
 #### Prueba unitaria
 
@@ -439,7 +486,11 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 - Cada pose de `likka_poses.json` apunta a un `tag` que existe en `likka.json` (incluidas las poses que reutilizan un tag).
 - Todos los cuadros de `likka.json` miden **96 × 96 px**.
 
-> `sprites/` y `app/src/main/assets/sprites/` son carpetas **locales**, ignoradas por git (`.gitignore`, §10.2 de `likkapet_documentacion.md`). Si la carpeta de sprites no existe donde corre la prueba, esta se **salta** (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio. Si existe, valida todo lo de arriba.
+`likka_sprites/tools/validate.py` aplica los mismos criterios fuera de Gradle (más los del "Formato del arte"), para comprobar la hoja justo después de regenerarla.
+
+> **Qué se versiona en git** (`.gitignore`, §10.2 de `likkapet_documentacion.md`): **sí** `sprites/likka.png`, `sprites/likka.json`, `sprites/likka_poses.json` y `likka_sprites/` (scripts, revisión y README), y también la copia de `app/src/main/assets/sprites/`, para que quien clone el repo pueda compilar el APK con Likka; **no** `sprites/drafts/`, `sprites/sirv.png` ni los archivos `*.aseprite` / `*.ase`. Motivo: el repositorio de GitHub es público y el APK entregado ya contiene los sprites, así que versionarlos no expone nada nuevo y da copia de seguridad y un repo con el que se puede compilar. *Nota:* `app/src/main/assets/sprites/` todavía figura en `.gitignore`; esa línea se quita en la fase 2 de sprites, cuando se copian los archivos a `assets/`.
+>
+> Si los archivos de sprites no existen donde corre la prueba (por ejemplo, antes de la fase 2), esta se **salta** (`Assume`) con un mensaje explícito — nunca pasa en verde en silencio. Si existen, valida todo lo de arriba.
 
 #### Reglas de renderizado del pixel art
 
@@ -1276,3 +1327,7 @@ object LikkaMotion {
 | **v3.10** | §1.7: la "Regla de provisionales" pasa a "Asignación definitiva": ya no hay provisionales. `idle` es ahora en vista 3/4; `walk_up` se usa sin escalar (≈76–78 px, excepción al rango 84–88); `peek` se deriva de los cuadros de `idle` desplazados en el lienzo (cortado por un lado, reflejado con `mirror` en el borde izquierdo); la guía de limpieza lista el origen y el factor de reducción de cada tag; no se usan `walk_side-left.png`, `side_left-idle.png` ni los `.jpg` de `drafts/` | Mismo motivo: fijar un diseño definitivo y coherente con el arte que existe. |
 | **v3.10** | §1.5: el primer plano del ícono de la app es explícitamente la **cara de Likka** (recorte de 48×48 px con solo la cabeza y los cuernos, del cuadro 0 de `idle`, que ahora es 3/4) | Petición de la dueña: que el ícono muestre la cara de Likka, sin cuerpo. |
 | **v3.10** | §1.6, §1.7 (tabla "Qué hace Likka en cada momento") y §3.5: poses y tags actualizados (`perch` = `sit`, `dragged` = `annoyed`, `worried` = `look_around` + `sweat_drop`, `happy` = `idle` + `sparkles`); `motion.hop` es solo movimiento de Compose; la prueba unitaria valida los 10 tags de la hoja | Coherencia con el conjunto final. |
+| **v3.11** | §1.7: la hoja ya no "se limpia en Aseprite". "Preparar los bocetos de IA en Aseprite" pasa a **"Construir la hoja con `build.py`"**: `likka_sprites/tools/build.py` construye `likka.png`, `likka.json` y `likka_poses.json` desde `sprites/drafts/2d-sprites-sheets/` (reducción por factor entero con vecino más cercano, paleta común de 16 colores en Lab con contorno y ámbar de ojos fijos, alfa binaria, contorno de 1 px, pies en y = 92); `validate.py` comprueba la hoja y `contact.py` genera la revisión en `likka_sprites/review/`. Se agregan la tabla de cuadros elegidos por tag (origen → cuadros → fps → alto) y la paleta final | Es como se construyó de verdad la hoja: un script determinista y reproducible, no una limpieza manual. |
+| **v3.11** | §1.7: `likka.json` tiene el formato del JSON de Aseprite (*Array* + `frameTags`) pero lo genera el script (se puede abrir en Aseprite; un retoque manual se pierde al regenerar). `likka_poses.json` deja de ser "escrito a mano": lo genera `build.py` desde su tabla `POSES`, y una pose se cambia ahí | `build.py` reescribe ambos archivos en cada ejecución; editarlos a mano llevaría a perder cambios sin aviso (decisión de la dueña). |
+| **v3.11** | §1.7 "Formato del arte": excepciones de altura aceptadas, además de `walk_up` (76–78 px): `walk_down` 81–90 px (sin escalar, varía con el ciclo), `walk_diag_down_right` 81–83 px (÷3, único factor entero posible) y `sit` 63 px (pose sentada, misma escala ÷2) | Son las alturas reales de la hoja (`validate.py`); ningún factor entero las acerca al rango sin agrandar el arte. Aceptadas por la dueña. |
+| **v3.11** | §1.7: nueva política de git del arte. Se versionan `sprites/likka.png`, `sprites/likka.json`, `sprites/likka_poses.json`, `likka_sprites/` y (desde la fase 2 de sprites) `app/src/main/assets/sprites/`; no se versionan `sprites/drafts/`, `sprites/sirv.png` ni `*.aseprite`/`*.ase`. Reemplaza la nota de v3.5 ("carpetas locales, ignoradas por git"); la prueba se sigue saltando con `Assume` si faltan los archivos. Se quita la mención a `sirv_frames.json` como archivo que se elimina: ya se borró | El repo de GitHub es público y el APK entregado ya contiene los sprites: versionarlos da copia de seguridad y un repo con el que se puede compilar el APK. |

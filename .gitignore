@@ -47,11 +47,13 @@ __pycache__/
 .venv/
 
 # ---------------------------------------------------------------
-# Likka art: sprites, drawings and animations stay local for now
+# Likka art: the final sheet (sprites/likka.png, likka.json, likka_poses.json), its copy in
+# app/src/main/assets/sprites/ and likka_sprites/ are versioned; drafts, sirv.png and
+# Aseprite files are not
 # ---------------------------------------------------------------
-/sprites/
+/sprites/drafts/
+/sprites/sirv.png
 /art/
-/app/src/main/assets/sprites/
 *.aseprite
 *.ase
 # Loose images/archives at the repo root (old concept sheets, sprite zips)
