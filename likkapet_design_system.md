@@ -1,4 +1,4 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.11
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.12
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
 > *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
@@ -736,6 +736,9 @@ Si ya no quedan pausas o Likka está en el Nivel 3, el botón "Pausar" del dashb
 │ Instagram               [●━]  │
 │ YouTube                 [●━]  │
 │ Facebook                [●━]  │
+│ [ico] Chrome            [●━]  │  ← app añadida por el usuario (ícono + nombre + interruptor)
+│        Quitar                 │  ←   opción de quitar, botón de texto ≥48dp
+│ Añadir app             →      │  ← abre la pantalla "Añadir app" (abajo)
 │                               │
 │ INTELIGENCIA ARTIFICIAL       │
 │ Mensajes con IA         [●━]  │
@@ -750,8 +753,38 @@ Reglas de la pantalla:
 - Los grupos llevan un encabezado `caption` en mayúsculas cortas.
 - Cada fila mide 56dp de alto.
 - Interruptores: pista `colorScheme.primary` cuando están activos (`brand.amber` en oscuro, `AmberDark` en claro) y `bg.switchTrackInactive` cuando están inactivos (`likkaSwitchColors()`, §5). Contraste ≥ 3:1 **solo sobre el fondo de la pantalla** (3.25:1 sobre cacao): los interruptores van en filas sobre el fondo, nunca sobre una tarjeta ciruela, donde la pista inactiva mide 2.94:1 (§1.1).
-- No se puede apagar la última app vigilada.
+- No se puede apagar la última app vigilada, y esa cuenta incluye las apps añadidas (RF-S02 y RF-S06 de `likkapet_documentacion.md`); tampoco se puede quitar la última activa: su "Quitar" queda deshabilitado. Debajo del grupo, el texto de apoyo `settings_watched_apps_hint` ("Tiene que quedar al menos una app vigilada.") lo explica.
+- **Apps añadidas (v3.12):** van en el grupo APPS VIGILADAS, debajo de las 4 por defecto y en orden alfabético, cada una con el **ícono de la app** (40dp, el del launcher) a la izquierda del nombre, el interruptor a la derecha y, debajo del nombre, el botón de texto "Quitar" (variante Texto, §1.8, objetivo ≥48dp). La fila crece con la fuente al 200% (RNF-U03): el nombre puede ocupar dos líneas y la altura de 56dp es un mínimo. "Quitar" no pide confirmación (es reversible: se vuelve a añadir desde "Añadir app"). La fila "Añadir app →" cierra el grupo y abre la pantalla de abajo.
 - **Apariencia** va en su propio grupo, justo debajo de LIKKA: no es un ajuste del personaje (como "Likka activado"/"Vibración") ni de las apps vigiladas o la IA, así que un grupo propio evita forzarlo dentro de una categoría a la que no pertenece. El control es segmentado (Oscuro / Claro / Sistema), no un interruptor, porque son 3 opciones mutuamente excluyentes; la etiqueta "Tema" va arriba y el control ocupa el ancho completo debajo (no en la misma fila) para que los 3 segmentos tengan espacio de crecer con la fuente del sistema al 200% (RNF-U03) sin comprimirse; cada segmento cumple el objetivo táctil mínimo de 48dp (§1.3). El segmento activo conserva el ícono de check de `SegmentedButton` (Material), para no comunicar cuál está seleccionado solo con el color de fondo (§1.1, regla 3).
+
+#### Pantalla "Añadir app" (v3.12, RF-S06)
+
+Subpantalla de Ajustes, abierta desde la fila "Añadir app →" del grupo APPS VIGILADAS (§3.1). Es un flujo de **ajustes**: voz clara, sin ironía ni comparaciones (§1.9, "Dónde aplica cada tono").
+
+```
+┌───────────────────────────────┐
+│ ←  Añadir app                 │  ← barra superior; "Atrás" regresa a Ajustes (§3.3)
+│                               │
+│ [ 🔍 Buscar app          ✕ ]  │  ← campo de búsqueda; ✕ solo con texto escrito
+│ Para la IA, toda app que      │  ← caption, texto secundario
+│ añadas es solo «otra app»:    │
+│ nunca envío su nombre.        │
+│                               │
+│ [ico] Chrome          Añadir  │  ← fila: ícono · nombre · acción
+│ [ico] Gmail           Añadir  │
+│ [ico] Netflix         Añadida │  ← ya añadida: check + "Añadida", sin acción
+│ [ico] Spotify         Añadir  │
+│  …                            │
+└───────────────────────────────┘
+```
+
+- **Contenido de la lista:** las apps instaladas con ícono de launcher (las que se ven con el intent `MAIN` + `LAUNCHER` declarado en `<queries>`, `likkapet_documentacion.md` §11), **sin** las 4 apps por defecto (ya están en Ajustes con su interruptor) y **sin** Likka-Pet. Orden alfabético por nombre, sin distinguir mayúsculas ni tildes.
+- **Filas:** ícono de la app (40dp) + nombre (`body`, una sola línea con elipsis; con fuente al 200% puede pasar a dos) + a la derecha el botón de texto "Añadir" o, si ya está añadida, un ícono de check y la palabra "Añadida" (nunca solo el ícono ni solo el color, §1.1 regla 3). Toda la fila es el objetivo táctil (≥ 56dp de alto, ≥ 48dp en cada elemento interactivo, RNF-U02). Al pulsar "Añadir" la fila pasa a "Añadida" en el momento y la app queda en el grupo APPS VIGILADAS, **encendida**; la pantalla no se cierra, para poder añadir varias seguidas.
+- **Buscador:** filtra la lista mientras se escribe, por coincidencia parcial del nombre, sin distinguir mayúsculas ni tildes. La ✕ borra el texto y se anuncia como "Borrar búsqueda".
+- **Estados:** *cargando* (mientras se leen las apps instaladas; un indicador de progreso centrado con el texto "Buscando tus apps…"), *lista* y *sin resultados*. Sin resultados: "No encuentro ninguna app con ese nombre." más el botón de texto "Borrar búsqueda". Si no hubiera ninguna app que ofrecer (todas ya añadidas): "Ya añadiste todas las apps que puedo ver."
+- **Textos (todos en `strings.xml`, sin emojis):** título "Añadir app", campo "Buscar app", aviso de privacidad "Para la IA, toda app que añadas es solo «otra app»: nunca envío su nombre.", acciones "Añadir" / "Añadida", y en Ajustes "Añadir app" y "Quitar". Los textos nuevos los escribe la tarea de código; aquí se fija su redacción.
+- **Accesibilidad:** el ícono de cada app es decorativo (`contentDescription = null`; el nombre ya está al lado); el botón "Añadir" se anuncia con el nombre de la app ("Añadir Chrome"), igual que "Quitar" ("Quitar Chrome"); el check de "Añadida" lleva su texto, así que no hace falta otra descripción.
+- **Tokens:** solo los del tema (§5): fondo y texto de `colorScheme`, espaciado de `LikkaSpacing`, tamaños de `LikkaComponentSize` (ícono de app con un token propio `appIcon` de 40dp, a agregar; `minTouchTarget` y `settingsRowHeight` para los objetivos y el alto de fila), nunca `LikkaColors.X` directo ni números sueltos. Sin sprites ni escenario de Likka en esta pantalla.
 
 ---
 
@@ -780,7 +813,8 @@ flowchart TD
 
     OB6 --> HOME["🏠 Inicio (Dashboard)"]
     HOME --> PAUSA["Hoja de pausa\n15 · 30 · 60 min"]
-    HOME <--> SET["⚙️ Ajustes\nLikka, vibración, apps vigiladas, IA"]
+    HOME <--> SET["⚙️ Ajustes\nLikka, vibración, apps vigiladas (con las añadidas), IA"]
+    SET --> ADDAPP["Añadir app\nlista de apps instaladas + buscador"]
     SET --> PRIV["Qué datos se envían\n(reusa la pantalla 3)"]
     SET --> PERM["Revisar permisos\n(reusa la pantalla 4)"]
     SET --> ABOUT["Acerca de y créditos\n(autora, materia, tipografías)"]
@@ -1331,3 +1365,6 @@ object LikkaMotion {
 | **v3.11** | §1.7: `likka.json` tiene el formato del JSON de Aseprite (*Array* + `frameTags`) pero lo genera el script (se puede abrir en Aseprite; un retoque manual se pierde al regenerar). `likka_poses.json` deja de ser "escrito a mano": lo genera `build.py` desde su tabla `POSES`, y una pose se cambia ahí | `build.py` reescribe ambos archivos en cada ejecución; editarlos a mano llevaría a perder cambios sin aviso (decisión de la dueña). |
 | **v3.11** | §1.7 "Formato del arte": excepciones de altura aceptadas, además de `walk_up` (76–78 px): `walk_down` 81–90 px (sin escalar, varía con el ciclo), `walk_diag_down_right` 81–83 px (÷3, único factor entero posible) y `sit` 63 px (pose sentada, misma escala ÷2) | Son las alturas reales de la hoja (`validate.py`); ningún factor entero las acerca al rango sin agrandar el arte. Aceptadas por la dueña. |
 | **v3.11** | §1.7: nueva política de git del arte. Se versionan `sprites/likka.png`, `sprites/likka.json`, `sprites/likka_poses.json`, `likka_sprites/` y (desde la fase 2 de sprites) `app/src/main/assets/sprites/`; no se versionan `sprites/drafts/`, `sprites/sirv.png` ni `*.aseprite`/`*.ase`. Reemplaza la nota de v3.5 ("carpetas locales, ignoradas por git"); la prueba se sigue saltando con `Assume` si faltan los archivos. Se quita la mención a `sirv_frames.json` como archivo que se elimina: ya se borró | El repo de GitHub es público y el APK entregado ya contiene los sprites: versionarlos da copia de seguridad y un repo con el que se puede compilar el APK. |
+| **v3.12** | §2.5 (Plantilla de Ajustes): el grupo APPS VIGILADAS muestra además las apps que el usuario añadió (ícono de 40dp + nombre + interruptor + botón de texto "Quitar", en orden alfabético bajo las 4 por defecto) y cierra con la fila "Añadir app →"; "no se puede apagar la última app vigilada" pasa a contar también las añadidas (y a deshabilitar "Quitar" en la última activa) | Decisión de la dueña: RF-S06 pasa de `WON'T (MVP)` a `SHOULD` en `likkapet_documentacion.md` v5.12. |
+| **v3.12** | §2.5: nueva pantalla **"Añadir app"** (subpantalla de Ajustes): lista de apps instaladas con ícono y nombre (sin las 4 por defecto ni Likka-Pet), buscador con filtrado por coincidencia parcial, estados cargando / lista / sin resultados, acción "Añadir" → "Añadida" sin cerrar la pantalla, aviso de privacidad ("toda app que añadas es solo «otra app»"), textos en español en voz clara (ajustes, §1.9) y sin emojis, objetivos ≥ 48dp, accesibilidad (nombre de la app en "Añadir"/"Quitar") y solo tokens del tema, con un token `LikkaComponentSize.appIcon` (40dp) **pendiente de agregar al código** | Hay que poder elegir qué apps vigila Likka sin exponer su nombre fuera del teléfono (`likkapet_documentacion.md` §8). |
+| **v3.12** | §3.1 (mapa de la app): Ajustes → "Añadir app" (destino nuevo; "Atrás" regresa a Ajustes, §3.3 ya cubre "Ajustes y subpantallas") y la etiqueta de Ajustes menciona las apps añadidas | Coherencia con la pantalla nueva. |
