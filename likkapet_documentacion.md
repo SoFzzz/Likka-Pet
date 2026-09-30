@@ -1,4 +1,4 @@
-# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.8
+# 📖 Likka-Pet — Documentación Técnica Definitiva (MVP) · v5.9
 
 > **Mascota virtual anti-procrastinación y guardián físico contra el dolor cervical.**  
 > *El trinomio core: Postura Física + Overlay Flotante + IA Sarcástica (DeepSeek vía backend propio).*  
@@ -460,7 +460,7 @@ enum class OverlayVisibility { SHOWN, HIDDEN_WHILE_AWAY, HIDDEN_SUSPENDED }
 | RF-I02 | La app envía únicamente `{ app, minutes, angle, level, reason }`; el Worker valida con lista blanca (`Object.hasOwn`) y redondea antes de armar el prompt. | MUST | Un campo extra en el body no llega al prompt ni se refleja en la respuesta. Un body no-objeto (`null`/número/array) responde 400. | `roast-lab` validación (§12.2). |
 | RF-I03 | Máximo 25 palabras por roast; el Worker recorta y la app vuelve a verificar. | MUST | Ningún roast de la suite de calidad supera 25 palabras. | `roast-lab` (§12.2). |
 | RF-I04 | Guardarraíles de tono en el *system prompt*: el humor ataca el hábito, nunca el cuerpo, la identidad ni la salud mental; sin groserías. | MUST | Ningún roast de la suite de calidad contiene una palabra de la lista prohibida de `roast-lab`. | `roast-lab` (§12.2). |
-| RF-I05 | Timeout de 6 s (`AbortSignal.timeout`) por petición a DeepSeek; manejo de errores según la tabla de §7.2 (`200`→pool, red/`502`/`504`→fallback+reintento, `429`→fallback 10 min, `402 no_credit`→fallback hasta el día siguiente, `401`→fallback+reintento sin bloqueo de un día). | MUST | Simulando cada código con `MockWebServer`, la app toma la acción de la tabla correspondiente. | §12.1 `WorkerRoastGenerator`. |
+| RF-I05 | Timeout de 6 s (`AbortSignal.timeout`) por petición a DeepSeek; manejo de errores según la tabla de §7.2 (`200`→pool, red/`502`/`504`→fallback+reintento, `429`→fallback 10 min, `402 no_credit`→fallback hasta el día siguiente, `401`→fallback+reintento sin bloqueo de un día). El Worker devuelve `502` también cuando DeepSeek responde `200` con un cuerpo que no es JSON, y `504` ante un fallo de red o el vencimiento del timeout. | MUST | Simulando cada código con `MockWebServer`, la app toma la acción de la tabla correspondiente. Del lado del Worker, con `fetch` simulado: un `200` de DeepSeek con cuerpo no-JSON devuelve `502`. | §12.1 `WorkerRoastGenerator`; §12.2 `npm test` (lado Worker). |
 | RF-I06 | Pool de hasta 3 roasts por clave `${app}_L${level}_${reason}` (el motivo es parte de la clave, §6 Módulo 4 punto 2); cada roast se usa una sola vez. | MUST | Un roast servido del pool no vuelve a aparecer en la misma sesión para la misma clave. | §12.1. |
 | RF-I07 | El *system prompt* es fijo y va primero en `messages`, aprovechando el caché de prefijos de DeepSeek. | MUST | El costo por roast en caché es ≈50× menor que sin caché (según la documentación de precios de DeepSeek). | Revisión manual del payload enviado. |
 | RF-I08 | `roasts_fallback.json` con mínimo 7 frases por combinación de nivel × motivo (3×2 = 42+ frases), cada una ≤ 25 palabras y escrita con la voz de Likka del design system §1.9 (ironía, exageración dramática, autorreferencia de escarabajo; nunca un mensaje informativo plano). | MUST | Prueba unitaria: el JSON tiene 6 claves `L{1,2,3}.{POSTURE,USAGE_TIME}`, cada una con ≥ 7 strings de ≤ 25 palabras. La voz se revisa a mano (una heurística no mide tono, ver `roast-lab`). | §12.1 `roasts_fallback.json`. |
@@ -510,7 +510,7 @@ Además de los campos de estadísticas de arriba, `RF-D01` guarda: `onboarding_c
 | RF-S04 | Interruptor maestro "Desactivar Likka" (`likka_enabled`) que detiene el servicio, con diálogo de confirmación. | MUST | Confirmar el diálogo detiene `LikkaService` y el dashboard pasa al estado "Desactivado" (design system §3.5). | §12.3 manual. |
 | RF-S05 | Interruptor de vibración (`vibration_enabled`). | SHOULD | Con el interruptor apagado, ningún nivel dispara `VibrationEffect`. | §12.3 manual. |
 | RF-S06 | Agregar cualquier app instalada a la lista de vigiladas (`<queries>` para intents de launcher). | **WON'T (MVP)** | Fuera de alcance: el equipo confirmó que no es compatible con el enum `TargetApp` (§3.4) ni con la lista blanca fija del Worker (§8), y no vale la pena rediseñar ambos para una prioridad que ya era COULD. Queda documentado para una iteración futura. | — |
-| RF-S07 | Pantalla "Acerca de y créditos" (design system §2.5/§3.1), accesible desde Ajustes, con crédito del equipo, versión de la app y créditos de licencia de las tipografías Baloo 2 y Nunito (SIL OFL 1.1, design system §1.2). | MUST | Abrir "Acerca de y créditos" muestra el nombre del equipo/materia, el `versionName` actual y el crédito de licencia de ambas tipografías. | §12.3 manual. |
+| RF-S07 | Pantalla "Acerca de y créditos" (design system §2.5/§3.1), accesible desde Ajustes, con el crédito de la autora (autora única: Paula Sofia Gonzalez Zambrano) y la materia (Diseño de Interfaces), la versión de la app y créditos de licencia de las tipografías Baloo 2 y Nunito (SIL OFL 1.1, design system §1.2). | MUST | Abrir "Acerca de y créditos" muestra el nombre de la autora y la materia, el `versionName` actual y el crédito de licencia de ambas tipografías. | §12.3 manual. |
 | RF-S08 | Tema de la app (Oscuro / Claro / Sistema), elegible en Ajustes con un control segmentado (`theme_mode`, RF-D01); "Sistema" sigue `isSystemInDarkTheme()`; color dinámico de Material You desactivado en ambos temas (la paleta es siempre la de Likka, design system §5). Alcance: solo pantallas de la app (onboarding, dashboard, hoja de pausa, ajustes y subpantallas); el overlay siempre renderiza con el esquema oscuro (`LikkaTheme(ThemeMode.DARK)`, §9.1), y la notificación persistente no depende de `theme_mode` (la dibuja el sistema, no la app). | COULD | Dado `theme_mode = LIGHT`, el dashboard usa la paleta clara del design system §1.1 y el overlay del Nivel 1–3 sigue oscuro. Dado `theme_mode = SYSTEM` con el sistema en modo claro, la app se ve en claro. Al reiniciar la app, se mantiene el `theme_mode` elegido (no depende de `today_date`). | §12.1 `DataStoreStatsStore`; §12.3 manual (revisar las pantallas de la app en ambos temas en el Redmi 9, sin escenario numerado nuevo). |
 
 ---
@@ -560,7 +560,7 @@ Todo requisito **MUST** tiene al menos una prueba en §12.1 (unitaria), §12.2 (
 | Sección de prueba | Requisitos MUST que cubre |
 | :--- | :--- |
 | §12.1 (JVM, `domain`/`data`) | RF-E01–E08, RF-P02–P04, RF-A01, RF-I05–I11, RF-D01–D05, RF-S01, RF-O04, RF-O06, RF-O07, RF-O09–RF-O14 |
-| §12.2 (Worker, `roast-lab`) | RF-I01–I04 |
+| §12.2 (Worker: `roast-lab` y `npm test`) | RF-I01–I04 (`roast-lab`); `npm test` cubre además el lado Worker de RF-I02, RF-I03 y RF-I05 |
 | §12.3 escenarios M1–M8 (Redmi 9) | RF-P01, RF-P05, RNF-P01, RNF-P02, RF-A07, RF-O01, RF-O02, RF-O03, RF-O05, RF-O08, RF-O10, RF-O11, RNF-F01–F04, RNF-C02 |
 | §12.3 escenario E1 (emulador API 35) | RF-A04, RF-O03, RNF-C01, RNF-C03 |
 | §12.3 manual (sin escenario numerado: Ajustes, Acerca de, dashboard) | RF-A02, RF-A05, RF-A06, RF-S02–S04, RF-S07, RF-D03, RF-D05 |
@@ -612,12 +612,13 @@ Tu humor es irónico y exagerado: te comparas con tus propios cuernos, élitros,
 Te burlas del hábito (encorvarse, quedarse pegado a la pantalla), nunca del cuerpo, la identidad ni la salud mental de la persona. Sin groserías ni culpa real: molestas con cariño, como un amigo pesado que en el fondo quiere lo mejor.
 El mensaje del usuario incluye "estilo": un ángulo cómico para esta respuesta (comparacion_absurda, falso_elogio, queja_dramatica, noticia_del_bosque o consejo_exagerado). Construye la respuesta alrededor de ese ángulo, sin nombrarlo ni explicarlo.
 Responde SOLO en español, máximo 25 palabras, una o dos oraciones, sin emojis ni comillas.
-Ajusta el tono al nivel: Nivel 1 = comentario pícaro y ligero. Nivel 2 = sarcasmo directo, sin groserías. Nivel 3 = drama teatral con ultimátum.
+Ajusta el tono y la longitud al nivel: Nivel 1 = comentario pícaro y ligero, UNA sola oración de máximo 14 palabras. Nivel 2 = sarcasmo directo, sin groserías, máximo 20 palabras. Nivel 3 = drama teatral con ultimátum, máximo 25 palabras.
+Cada frase debe tener sentido literal y terminar completa: nada de metáforas enredadas ni frases cortadas. Menciona solo la app indicada, nunca otras. La burla va siempre al hábito y a la app, nunca a la persona: no la califiques de inútil, disfuncional ni le pongas etiquetas, ni pidas que renuncie a nada como humano. Abre con algo del bosque, de Likka o de la app, nunca con un número de minutos.
 Ejemplos de referencia por nivel, solo para el tono — NO los copies ni parafrasees, son genéricos y no deben repetirse:
 - Nivel 1: "Psst... tu cuello acaba de pedir asilo en mi bosque."
 - Nivel 2: "Media hora ahí pegado. Qué dedicación. Ojalá tu tarea tuviera tanta suerte."
 - Nivel 3: "Tu cuello carga veintitantos kilos. Yo cargo cuernos y aun así camino derecho. Suelta eso."
-Si el motivo es POSTURE, menciona la carga en el cuello (entre 18 y 27 kg según el ángulo).
+Si el motivo es POSTURE, menciona la carga en el cuello. "angulo" es la inclinación del teléfono: cuanto más bajo, peor postura. Con angulo menor a 45 el cuello carga hasta 27 kilos; entre 45 y 64, unos 15 kilos; desde 65 la postura es sana. Usa solo esas cifras.
 Si el motivo es USAGE_TIME, menciona los minutos perdidos.`;
 
 const roundTo5 = (n) => Math.round(n / 5) * 5;
@@ -635,6 +636,20 @@ function parseRoastRequest(body) {
   const isValid = app && [1, 2, 3].includes(level) && REASONS.has(reason)
     && Number.isFinite(minutes) && Number.isFinite(angle);
   return isValid ? { app, level, reason, minutes, angle } : null;
+}
+
+/**
+ * Limits a roast to MAX_WORDS. When it has to cut, it keeps only whole sentences so the
+ * user never sees a half-finished phrase; if the first sentence alone is too long, it cuts
+ * at the word limit and closes the phrase with a period.
+ */
+function trimToMaxWords(text) {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= MAX_WORDS) return words.join(" ");
+  const cut = words.slice(0, MAX_WORDS).join(" ");
+  const lastSentenceEnd = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  if (lastSentenceEnd > 0) return cut.slice(0, lastSentenceEnd + 1);
+  return cut.replace(/[\s,;:\-–—]+$/, "").replace(/([^.!?…])$/, "$1.");
 }
 
 const DEEPSEEK_TIMEOUT_MS = 6000;
@@ -669,9 +684,14 @@ async function generateRoast(input, apiKey) {
   if (response.status === 402) return { status: 402, noCredit: true };
   if (!response.ok) return { status: 502 };
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    return { status: 502 };   // DeepSeek answered 200 with a body that is not JSON
+  }
   const text = (data.choices?.[0]?.message?.content ?? "").trim();
-  const roast = text.split(/\s+/).slice(0, MAX_WORDS).join(" ");
+  const roast = trimToMaxWords(text);
   return roast ? { status: 200, roast } : { status: 502 };
 }
 
@@ -702,17 +722,20 @@ export default {
 
 > **`estilo` no es un campo nuevo del contrato app↔Worker**: el payload que envía la app sigue siendo exactamente `{app, minutes, angle, level, reason}` (RF-I02, §8). `estilo` lo elige el propio Worker al azar, por petición, y solo viaja en el mensaje de usuario que arma internamente hacia DeepSeek — nunca llega desde la app ni sale del Worker. `SYSTEM_PROMPT` sigue siendo un texto fijo (no se le interpola nada), para no perder el caché de prefijos de DeepSeek (RF-I07).
 
+> **Fuente de verdad: `backend/likka-worker/src/index.js`.** El bloque de arriba es una copia literal de ese archivo tal como quedó en la tarea 5 (v5.9); si difiere del archivo, manda el archivo. El `SYSTEM_PROMPT` **se sigue ajustando con `roast-lab`** (§12.2, §17): longitud por nivel, tono y cifras de la carga en el cuello se afinan contra el Worker desplegado, así que esta copia puede quedar atrás del prompt vigente. Dos comportamientos del código que conviene conocer: `trimToMaxWords` recorta a `MAX_WORDS` **conservando solo frases completas** (si la primera frase ya excede el límite, corta en la palabra 25 y cierra con un punto), y el `try/catch` alrededor de `response.json()` devuelve `502` cuando DeepSeek responde `200` con un cuerpo que no es JSON (RF-I05), en vez de dejar escapar una excepción.
+
+`backend/likka-worker/wrangler.toml` (copia literal del archivo):
+
 ```toml
-# backend/likka-worker/wrangler.toml
 name = "likka-worker"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
 
-# No content logging (§7.2, §8): Workers Logs/tail off entirely.
+# No content logging (documentación §7.2, §8): Workers Logs/tail off entirely.
 [observability]
 enabled = false
 
-# 10 requests per minute per IP (check the current syntax in the Workers Rate Limiting docs)
+# 10 requests per minute per IP (period must be 10 or 60 seconds)
 [[ratelimits]]
 name = "LIMITER"
 namespace_id = "1001"
@@ -767,8 +790,8 @@ npx wrangler deploy
 | Dato | ¿Sale del teléfono? | Forma en que llega a DeepSeek |
 | :--- | :---: | :--- |
 | App en uso | Sí | Solo `TikTok` / `Instagram` / `YouTube` / `Facebook` (enum). **Nunca** el nombre de paquete ni otras apps. |
-| Minutos de uso | Sí | Redondeados a múltiplos de 5, máximo 240 |
-| Ángulo del teléfono | Sí | Redondeado a múltiplos de 5, entre 0 y 90 |
+| Minutos de uso | Sí, al Worker y **sin redondear** | La app los envía tal cual; el **Worker** (servidor intermedio) los redondea a múltiplos de 5, máximo 240, antes de armar el prompt |
+| Ángulo del teléfono | Sí, al Worker y **sin redondear** | La app lo envía tal cual; el **Worker** lo redondea a múltiplos de 5, entre 0 y 90, antes de armar el prompt |
 | Nivel y motivo | Sí | `1..3`, `POSTURE`/`USAGE_TIME` |
 | IP del usuario | Al Worker, sí | **No llega a DeepSeek**: DeepSeek ve la IP de Cloudflare |
 | ID del dispositivo, cuenta, ubicación, nombre, contenido que ve el usuario | **No** | — |
@@ -779,7 +802,7 @@ Medidas:
 1. **Lista blanca en el servidor**: el Worker descarta cualquier campo extra, así que aunque la app tuviera un error, no puede filtrar más datos.
 2. **Prompt armado en el servidor**: la app no envía texto libre, solo números y enums.
 3. **Sin registros** en el Worker (§7.2).
-4. **Aviso en el onboarding** (paso 3) con texto claro: *"Para que mis mensajes sean ingeniosos, envío a un servicio de IA (DeepSeek) solo el nombre de la app, cuántos minutos llevas, el ángulo de tu teléfono, y el nivel y motivo del aviso. Nada más."*
+4. **Aviso en el onboarding** (paso 3) con texto claro: *"Para que mis mensajes sean ingeniosos, envío a un servicio de IA (DeepSeek) solo el nombre de la app, cuántos minutos llevas, el ángulo de tu teléfono, y el nivel y motivo del aviso. Nada más."* (texto de `privacy_intro` en `strings.xml`). Precisión: el envío **no va directo a DeepSeek, pasa por el Worker propio** (§7), que redondea minutos y ángulo y es el único que habla con DeepSeek. Ese intermediario ya se nombra en las líneas de minutos, ángulo y dirección IP de la misma pantalla (`privacy_sent_minutes`, `privacy_sent_angle`, `privacy_ip_body`); la frase de introducción, en cambio, no lo menciona.
 5. **Opción de desactivar la IA** en el onboarding y en Ajustes: Likka sigue funcionando con frases locales y **sin ninguna conexión a internet**.
 
 ---
@@ -1013,11 +1036,14 @@ Likka-Pet/
 ├── backend/
 │   └── likka-worker/
 │       ├── src/index.js                   # Proxy /roast → DeepSeek
+│       ├── test/worker.test.js            # Suite local (`npm test`): node --test con fetch simulado (§12.2)
+│       ├── package.json
+│       ├── README.md
 │       └── wrangler.toml
 └── app/src/
     ├── main/
     │   ├── java/com/likkapet/
-    │   │   ├── LikkaApplication.kt        # Inyección manual: expone las interfaces de domain/port
+    │   │   ├── LikkaApplication.kt        # Inyección manual: expone las interfaces de domain/port (hoy además el FakeAppStateStore provisional)
     │   │   ├── domain/
     │   │   │   ├── model/                 # LikkaOverlayState, LikkaState, TargetApp, TriggerReason, PostureReading, ThemeMode,
     │   │   │   │                          # LocalReaction, OverlayGeometry, OverlayMotion, PauseResult, ReasonLevel, Vector3
@@ -1042,13 +1068,18 @@ Likka-Pet/
     │   │   │   ├── remote/                # LikkaApi (Retrofit) + DTOs, LikkaApiClient (OkHttp)
     │   │   │   └── preferences/           # DataStoreStatsStore
     │   │   ├── presentation/
-    │   │   │   ├── onboarding/            # OnboardingScreen, OnboardingViewModel, steps/
-    │   │   │   ├── dashboard/             # DashboardScreen, DashboardViewModel, PauseSheet
-    │   │   │   ├── settings/              # SettingsScreen, SettingsViewModel
-    │   │   │   ├── overlay/               # LikkaOverlay, RoastBubble, SurrenderPanel
-    │   │   │   ├── components/            # LikkaSprite, StatCard, PermissionCard, LikkaButton
-    │   │   │   ├── navigation/            # LikkaNavHost, Routes
-    │   │   │   ├── theme/                 # Color.kt, Type.kt, Shape.kt, Spacing.kt, SpriteSize.kt, Theme.kt
+    │   │   │   ├── onboarding/            # OnboardingScreen, OnboardingViewModel, OnboardingSteps, MiuiDetector
+    │   │   │   ├── dashboard/             # DashboardScreen, DashboardViewModel, DashboardUiState, PauseSheet
+    │   │   │   ├── settings/              # SettingsScreen, SettingsViewModel, AboutScreen
+    │   │   │   ├── permissions/           # PermissionsChecklist, PermissionsReviewScreen (paso 4 del onboarding y "Revisar permisos")
+    │   │   │   ├── privacy/               # PrivacyScreen, PrivacyBody (paso 3 del onboarding y "Qué datos se envían")
+    │   │   │   ├── overlay/               # LikkaOverlay, RoastBubble, SurrenderPanel (todavía por escribir, junto con service/)
+    │   │   │   ├── components/            # LikkaSprite, LikkaButton, StatCard, StatusChip, StepIndicator, PermissionCard,
+    │   │   │   │                          # SettingsRows, ScreenLayout, DeactivateDialog, LikkaPreviews
+    │   │   │   ├── navigation/            # LikkaNavHost, Routes, ViewModelFactories
+    │   │   │   ├── state/                 # PROVISIONAL: FakeAppStateStore (estado en memoria) y FakeAppState, su modelo; se borran cuando llegue data/
+    │   │   │   ├── theme/                 # Color.kt, Type.kt, Shape.kt, Spacing.kt, SpriteSize.kt, ComponentSize.kt, SwitchColors.kt, Theme.kt
+    │   │   │   ├── DebugLaunchOptions.kt  # PROVISIONAL: extras de depuración para forzar un estado falso en el emulador; se borra cuando llegue data/
     │   │   │   └── MainActivity.kt
     │   │   └── service/
     │   │       ├── LikkaService.kt        # ÚNICO Foreground Service
@@ -1191,7 +1222,7 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 | Reglas anti-trampa | **A**: con `USAGE_TIME` activo, enderezar el cuello resuelve solo la pista `POSTURE` y el nivel mostrado no baja. **B**: 60 s de gracia solo tras resolver `POSTURE`; resolver `USAGE_TIME` no genera Gracia. **C**: reincidencia de `POSTURE` en < 10 min retoma el nivel de postura previo (no reinicia en N1). **D**: reabrir una app vigilada en < 5 min tras una expulsión retoma en N2 **cada pista que seguía activa** al expulsar; una pista ya resuelta no se reactiva. **E**: 4.ª pausa del día rechazada; pausa rechazada si alguna pista está en N3. |
 | Sesión de ocio y salir de la app (§3.3) | TikTok → Instagram no reinicia el contador de `USAGE_TIME`. 4 min fuera pausan el contador; 5 min lo reinician (fin de sesión, ambas pistas a 0). Salir de la app vigilada en Nivel 1–2 sin ejección oculta el overlay y congela ambas pistas; volver antes de 5 min retoma el mismo nivel sin pasar por la regla D. |
 | Suspendido / en mesa / pausa (§3.3) | **Suspendido**: llamada o pantalla apagada en N3 congela la cuenta regresiva de 20 s y, de cualquier nivel, al terminar se retoma con el tiempo restante de cada pista. **En mesa**: solo congela la pista `POSTURE`; si `USAGE_TIME` está activo, su temporizador sigue corriendo y su overlay no se oculta. **Pausa**: los minutos se siguen sumando a `usage_minutes_today` aunque ninguna pista escale; una pausa iniciada en N0–N2 nunca se acepta si alguna pista llegó a N3. |
-| `WorkerRoastGenerator` (MockWebServer) | `200` → pool. Timeout/`502`/`504` → fallback, reintenta en el siguiente prefetch. `402 {"error":"no_credit"}` → sin llamadas hasta mañana. `401` → fallback, reintenta como cualquier otro error (no bloquea el día). `429` → sin reintento por 10 min. IA desactivada → **cero peticiones**. Un roast del pool no se usa dos veces. Prefetch de Nivel 1 pide ambos motivos. Payload de un prefetch usa el valor proyectado del umbral, no un valor en tiempo real. |
+| `WorkerRoastGenerator` (MockWebServer) | `200` → pool. Timeout/`502`/`504` → fallback, reintenta en el siguiente prefetch (el `502` incluye el caso en que DeepSeek responde `200` con un cuerpo que no es JSON: para la app es un `502` más). `402 {"error":"no_credit"}` → sin llamadas hasta mañana. `401` → fallback, reintenta como cualquier otro error (no bloquea el día). `429` → sin reintento por 10 min. IA desactivada → **cero peticiones**. Un roast del pool no se usa dos veces. Prefetch de Nivel 1 pide ambos motivos. Payload de un prefetch usa el valor proyectado del umbral, no un valor en tiempo real. |
 | `roasts_fallback.json` | Estructura válida, ≥ 7 frases por combinación, todas con ≤ 25 palabras. |
 | `reactions.json` | Estructura válida, claves `drag`/`poke` con ≥ 7 frases cada una, todas con ≤ 12 palabras. |
 | `OverlayMotionPlanner` (con `Clock` falso, §9.6) | N1: cambia a un borde/altura distinto cada `LEVEL_1_HOP_INTERVAL_SEC`, siempre a una posición al menos una ventana distinta de la anterior, y siempre con la ventana completa dentro del área segura. Un arrastre en N1 se suelta en el borde permitido más cercano, sin tocar el temporizador del próximo hop. N2: alterna "caminando" (`LEVEL_2_WALK_SEC`) / "detenido" (`LEVEL_2_STOP_SEC`) en ciclo, con el **centro** de la ventana cayendo en la zona central (`LEVEL_2_CENTER_ZONE_FRACTION`) y cada paso avanzando `LEVEL_2_WALK_STEP_SPRITE_PX`. N2: tras un arrastre, vuelve a caminar hacia el centro a los `LEVEL_2_RETURN_DELAY_SEC`, sin el tope de `LEVEL_2_WALK_SEC` (puede tardar más si arranca lejos), y termina detenido. Ninguna posición generada cae dentro de los *insets* de sistema pasados como límite. Con `ANIMATOR_DURATION_SCALE = 0`, la posición no cambia tras varios ciclos, pero colocar a Likka al entrar a un nivel o tras un cambio de geometría sí ocurre. Reacciones: arrastrar dispara `drag`; exactamente `POKE_REACTION_TAPS` (3) toques en `POKE_REACTION_WINDOW_SEC` ya disparan `poke` (el umbral es inclusivo, no hace falta un cuarto toque); 2 toques no disparan nada. **Pose del Nivel 1**: una posición en el borde inferior elige `perch` (con su `y` por encima del *inset* de la barra de navegación); una posición en un borde lateral elige `peek`; en el Nivel 2 nunca elige `perch`. **Dirección del sprite**: con los 8 sectores de 45° de §9.6, un vector recto hacia cada uno de los 4 ejes (`walk_down`/`walk_up`/`walk_right`/`walk_left`) y hacia cada diagonal inferior (`walk_diag_down_right`/`walk_diag_down_left`) elige el tag esperado; cada sector incluye su límite inferior exacto (p. ej. exactamente -22.5° ya es `walk_right`, no el sector anterior); un vector diagonal hacia arriba (225° o 315°) elige `walk_up`. |
@@ -1202,6 +1233,7 @@ Herramientas: JUnit 4, `kotlinx-coroutines-test` (tiempo virtual), Turbine (para
 
 - Script `roast-lab` (ver §17): envía **24 combinaciones** (4 apps × 3 niveles × 2 motivos) y verifica ≤ 25 palabras, español y ausencia de insultos prohibidos.
 - Casos de validación: token incorrecto → 401, `level = 4` → 400, app desconocida → 400, motivo desconocido → 400, cuerpo no-objeto (`null`/número/array) → 400, campo extra ignorado → 200 sin ese campo en el prompt. Detrás de un flag opcional: 11 peticiones en un minuto → 429 (consume cupo real, por eso no corre por defecto).
+- Suite local `npm test` (en `backend/likka-worker`; `node --test` con `fetch` simulado, sin red, sin cupo y sin llamar a DeepSeek): **21 tests** en `test/worker.test.js` (conteo de los `test(...)` del archivo al escribir v5.9). Cubre el token incorrecto (401), ruta o método desconocidos (404), el rechazo del limitador (429), la validación de `level`/`app`/`reason`/cuerpo no-objeto/`minutes` y `angle` ausentes o no numéricos (400), el campo extra que no llega a DeepSeek, el redondeo a múltiplos de 5 y el tope 0–240 / 0–90, los parámetros fijos de la petición a DeepSeek con el *system prompt* primero e idéntico entre peticiones, el recorte a 25 palabras (corte con punto, solo frases completas y sin tocar un roast corto), y los errores de DeepSeek: `402` → `402 {"error":"no_credit"}`, `5xx` o contenido vacío → `502`, **`200` con cuerpo no-JSON → `502`**, timeout → `504` y la señal de timeout en la petición. Complementa a `roast-lab`: verifica el código del Worker; `roast-lab` mide la calidad de los roasts contra el Worker desplegado.
 
 ### 12.3 Pruebas instrumentadas y manuales
 
@@ -1290,6 +1322,7 @@ El entregable del proyecto es un **APK de release firmado** que se instala por s
 - Requisitos: **JDK 21 (mínimo 17)**. No usar el JBR de Android Studio si es Java 25: el Gradle del proyecto puede no soportarlo. En Android Studio: Settings → Build Tools → Gradle → Gradle JDK = JDK 21. Nunca fijar `org.gradle.java.home` en el `gradle.properties` del proyecto (se versiona; las rutas de JDK son locales a cada máquina). La versión de Gradle la fija el Wrapper del proyecto.
 - Compilar desde la terminal sin `local.properties` también requiere que el SDK de Android sea localizable: con la variable de entorno `ANDROID_HOME` apuntando al SDK, o con un `sdk.dir=` en `local.properties` (nunca versionado; cada máquina tiene el suyo).
 - Versiones reales del proyecto (`gradle/wrapper/gradle-wrapper.properties`, `gradle/libs.versions.toml`): Gradle **9.7.0**, AGP **9.3.1**, Kotlin **2.4.20**, Compose BOM **2026.06.01**, `androidx.core:core-ktx` **1.16.0**, `androidx.activity:activity-compose` **1.10.1**, `kotlinx-coroutines-core` **1.9.0** (misma versión que ya trae AndroidX de forma transitiva), plugin de ktlint (`org.jlleitschuh.gradle.ktlint`) **14.2.0** con motor ktlint **1.8.0**. `compileSdk` se mantiene en **35**: verificado en los metadatos de Google Maven, los lanzamientos más nuevos de estas librerías exigen un `compileSdk` mayor (`androidx.core:core-ktx` 1.17.0 y `androidx.activity:activity-compose` 1.11.0 declaran `minCompileSdk = 36`; `androidx.compose.ui:ui` 1.12.0 declara `minCompileSdk = 37`), así que las versiones de arriba son las más recientes compatibles con `compileSdk = 35` en el momento de escribir esto.
+- Dependencias agregadas en la tarea 4 (`gradle/libs.versions.toml`): `androidx.navigation:navigation-compose` **2.9.8**, `androidx.lifecycle:lifecycle-viewmodel-compose` **2.10.0** (versión `lifecycle` del catálogo) y `androidx.compose.material:material-icons-extended` **sin versión propia: la fija el Compose BOM** (2026.06.01). Navigation y Lifecycle también quedan topadas por `compileSdk = 35`: verificado en Google Maven, `navigation-compose` 2.10.0 y `lifecycle-viewmodel-compose` 2.11.0 declaran `minCompileSdk = 37`, mientras que 2.9.8 y 2.10.0 declaran 35, así que esas dos son las más recientes que aceptan `compileSdk = 35`.
 
 ### 13.3 Instalación en el Redmi 9
 
@@ -1498,3 +1531,9 @@ Configuración mínima de Claude Code para este proyecto (más que esto sería s
 | 85 | **v5.8** · §10.1 documenta la firma real de `onPauseSelected(minutes: Int, pausesUsedToday: Int): PauseResult` y que quien llama incrementa `pauses_today` solo si el resultado es `ACCEPTED` | La firma documentada (`onPauseSelected(minutes)`) no coincidía con el código, que necesita el conteo de pausas del día para aplicar la regla E. |
 | 86 | **v5.8** · §7.3 corrige el snippet de `build.gradle.kts` a `import java.util.Properties` + `Properties()`; §13.2 agrega las versiones reales de `libs.versions.toml`/el Wrapper (Gradle 9.7.0, AGP 9.3.1, Kotlin 2.4.20, Compose BOM 2026.06.01, core-ktx 1.16.0, activity-compose 1.10.1, kotlinx-coroutines-core 1.9.0, ktlint 14.2.0/1.8.0) y el requisito de `ANDROID_HOME`/`sdk.dir`; §1 corrige el emulador de prueba a la imagen `google_apis` x86_64 (no AOSP) | `java.util.Properties()` inline no compila con AGP 9 (choca con la extensión `java {}` del DSL); las versiones y el requisito de `ANDROID_HOME` no estaban documentados; la ficha técnica decía "AOSP", pero el emulador real usado es `google_apis`. |
 | 78 | **v5.7** · §12.3 M8: agrega comprobar en el Redmi 9 que Likka (sin círculo, solo con su halo de nivel) se distingue sobre un video oscuro de TikTok; si el halo del Nivel 1 se ve demasiado fino, se prueba subirlo antes de volver al círculo crema | El halo sustituye al círculo en el overlay N1–N2 y hay que validarlo en un fondo difícil. |
+| 87 | **v5.9** · §7.2 sustituye el código del Worker y el `wrangler.toml` por los de `backend/likka-worker/` tal cual (tarea 5): `SYSTEM_PROMPT` actual (longitud máxima por nivel, cifras de carga del cuello por ángulo), `trimToMaxWords` que conserva solo frases completas, `try/catch` de `response.json()` → `502` y el comentario del período del limitador; se agrega la nota de que el prompt se sigue ajustando con `roast-lab` y de que la fuente de verdad es `src/index.js` | El bloque de v5.8 era un borrador previo al archivo real: no tenía el recorte por frases, el manejo del cuerpo no-JSON ni el prompt vigente. |
+| 88 | **v5.9** · RF-I05, §12.1, §12.2 y §6.8: el Worker devuelve `502` también cuando DeepSeek responde `200` con un cuerpo que no es JSON; §12.2 agrega la suite local `npm test` (`node --test` con `fetch` simulado, 21 tests en `test/worker.test.js`) junto a `roast-lab`; §10.2 agrega `test/`, `package.json` y `README.md` al árbol de `backend/likka-worker/` | La tarea 5 sumó una suite que verifica el código del Worker sin red ni cupo; antes solo existía `roast-lab`, que exige el Worker desplegado. |
+| 89 | **v5.9** · §8 (tabla de datos y medida 4): minutos y ángulo salen de la app **sin redondear** y los redondea el Worker (servidor intermedio) antes de armar el prompt; se precisa que el envío pasa por el Worker y no va directo a DeepSeek, sin cambiar el texto citado de `privacy_intro` | La tabla decía "redondeados" sin indicar quién, y el código de la tarea 4 (`PrivacyBody`, `strings.xml`) ya atribuye el redondeo al servidor intermedio. |
+| 90 | **v5.9** · RF-S07: "Acerca de y créditos" muestra a la autora única (Paula Sofia Gonzalez Zambrano) y la materia (Diseño de Interfaces), ya no "el equipo" | Así quedó en `strings.xml` (`about_author`, `about_course`) en la tarea 4; el requisito seguía pidiendo el crédito del equipo. |
+| 91 | **v5.9** · §10.2 actualiza el árbol de `presentation/` con las carpetas reales (`components/`, `dashboard/`, `onboarding/`, `settings/`, `permissions/`, `privacy/`, `navigation/`, `state/`, `theme/`) y marca como provisionales `state/FakeAppStateStore` (con su modelo `FakeAppState`) y `DebugLaunchOptions.kt`, que se borran cuando llegue `data/`; `overlay/` queda anotado como por escribir | El árbol reflejaba solo el diseño original; la tarea 4 creó las pantallas sobre un estado falso en memoria que no debe confundirse con la arquitectura final. |
+| 92 | **v5.9** · §13.2 agrega las dependencias de la tarea 4 con su versión real (`navigation-compose` 2.9.8, `lifecycle-viewmodel-compose` 2.10.0, `material-icons-extended` por el Compose BOM) y el motivo del tope: verificado en Google Maven, `navigation-compose` 2.10.0 y `lifecycle-viewmodel-compose` 2.11.0 declaran `minCompileSdk = 37`, y 2.9.8 / 2.10.0 declaran 35 | Mantener `compileSdk = 35` obliga a fijar estas dos librerías en la última versión que lo acepta; sin el motivo escrito, alguien podría "actualizarlas" y romper la compilación. |

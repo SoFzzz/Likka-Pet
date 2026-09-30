@@ -1,4 +1,4 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.8
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.9
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
 > *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
@@ -67,7 +67,7 @@ La paleta no trae un color claro para texto ni un tono de frambuesa legible sobr
 | `outline` | `#9C7488` | Bordes de 1dp para separar superficies (cacao y ciruela son muy parecidos) y límites de componente (WCAG 1.4.11). |
 | `raspberry.light` | `#F07AA0` | **Texto, íconos y bordes** "frambuesa" sobre fondos oscuros. |
 
-> **Corrección de contraste (v3):** en v2, `outline` (`#6B3552`) medía **1.64:1** sobre cacao y **1.49:1** sobre ciruela — WCAG 1.4.11 exige **3:1** para límites de componentes no decorativos (bordes de tarjetas, pista de interruptores inactiva), y ninguno de los dos llegaba. Se aclaró `outline` a `#9C7488`: contraste relativo a `#3D1B1C` (cacao) = **(0.208 + 0.05) / (0.032 + 0.05) = 3.15:1** ✅, y relativo a `#4B1C33` (ciruela) = **(0.208 + 0.05) / (0.028 + 0.05) = 3.31:1** ✅ (luminancias relativas WCAG: cacao 0.032, ciruela 0.028, `#9C7488` 0.208). La pista inactiva de los interruptores usa el mismo criterio con `bg.switchTrackInactive` (`#8A6B78`, ≈3.0:1 sobre ambos fondos) en vez de `bg.surfaceHigh` (que se queda como color de superficie elevada, sin ninguna obligación de contraste de "límite").
+> **Corrección de contraste (v3):** en v2, `outline` (`#6B3552`) medía **1.64:1** sobre cacao y **1.49:1** sobre ciruela — WCAG 1.4.11 exige **3:1** para límites de componentes no decorativos (bordes de tarjetas, pista de interruptores inactiva), y ninguno de los dos llegaba. Se aclaró `outline` a `#9C7488`: contraste relativo a `#3D1B1C` (cacao) = **(0.208 + 0.05) / (0.032 + 0.05) = 3.15:1** ✅, y relativo a `#4B1C33` (ciruela) = **(0.208 + 0.05) / (0.028 + 0.05) = 3.31:1** ✅ (luminancias relativas WCAG: cacao 0.032, ciruela 0.028, `#9C7488` 0.208). La pista inactiva de los interruptores usa el mismo criterio con `bg.switchTrackInactive` (`#8A6B78`: **3.25:1 sobre cacao** y **2.94:1 sobre ciruela**, no "≈3.0 sobre ambos fondos" como decía v3.8; ver la fila de la tabla de contraste y la regla de dónde puede ir un interruptor) en vez de `bg.surfaceHigh` (que se queda como color de superficie elevada, sin ninguna obligación de contraste de "límite").
 
 #### Contraste verificado (WCAG 2.1)
 
@@ -89,6 +89,7 @@ AA exige **4.5:1** para texto normal, y **3:1** para texto grande — la definic
 | **Frambuesa sobre Cacao / Ciruela** | **2.3 / 2.1** | ❌ **Ni texto ni bordes**: usar `raspberry.light` |
 | Cacao vs. Ciruela (entre superficies) | **1.1** | ⚠️ No se distinguen solas: usar borde `outline` |
 | `outline` sobre Cacao / Ciruela (límite de componente) | **3.15 / 3.31** | ✅ Cumple WCAG 1.4.11 (≥3:1); corregido en v3, ver nota debajo de la paleta |
+| `bg.switchTrackInactive` sobre Cacao / Ciruela (pista inactiva de interruptor) | **3.25 / 2.94** | ✅ Solo sobre el fondo cacao, donde van los interruptores (filas de Ajustes). ❌ Sobre ciruela no llega a 3:1 (2.94): **nunca un interruptor sobre una tarjeta ciruela** (`ColorContrastTest`). En claro, sobre el fondo crema, mide 4.34:1. |
 
 #### Reglas de uso
 
@@ -444,6 +445,8 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 > La columna "Objetivo (dp)" son los tokens `LikkaSpriteSize` (§5), no números sueltos en el código, y expresan la **altura de Likka** (≈88 px de referencia), no la del cuadro. La "Likka mostrada" es menor que el objetivo **a propósito**: cada objetivo se eligió con margen suficiente para que `floor(targetPx / 88)` caiga exactamente en la escala entera prevista (2×/4×/6×/5×/3×) y no en la inferior; no es una pérdida por redondeo, es el margen de diseño incluido en el objetivo.
 
+> **Densidad de calibración.** Los objetivos `LikkaSpriteSize` están calibrados para la densidad del **Redmi 9 (≈2.75)**: las escalas de la tabla (2×/4×/6×/5×/3×) solo se cumplen a esa densidad, que es la que fija `SpriteScaleTest`. En un dispositivo de **2.625** (Pixel 7 y el emulador de prueba) `floor(targetPx / 88)` da una escala menor en los cinco usos: 1× en el Nivel 1 (66dp → 173.25 px), 3× en el Nivel 2 (346.5 px), 5× en el Nivel 3 (514.5 px), 4× en el dashboard (430.5 px) y **2× en el onboarding** (100dp → 262.5 px). Es el comportamiento esperado de la regla de escala entera, no un error: el sprite se ve más chico, nunca deformado.
+
 > **Ventana y fondo.** En el overlay de los Niveles 1 y 2 no hay escenario circular: la ventana se dimensiona con el cuadro completo (`96 × escala` px, ≈69.8dp en N1 y ≈139.6dp en N2 en el Redmi 9) más el grosor del halo en cada lado (`2 × escala` px por lado; en total `100 × escala` px, ≈72.7dp en N1 y ≈145.5dp en N2) y el globo, y el nivel se ve en el halo. En el dashboard, el onboarding y el panel del Nivel 3, el círculo crema es solo un fondo de diámetro no menor que la altura de Likka mostrada, sin tokens nuevos; el sprite se dibuja encima y puede sobresalir en las esquinas.
 
 ---
@@ -462,7 +465,7 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 **Secundario** y **Texto** leen `colorScheme.primary`, que cambia por tema: `brand.amber` (`#FCA30B`) en oscuro, `AmberDark` (`#8F5600`) en claro — sobre fondo claro, el ámbar de marca no llega a 3:1 como borde ni texto (§1.1 "Paleta clara"). **Primario**, **Advertencia** y **Peligro** son botones de relleno y no cambian con el tema: sus colores vienen de `LikkaButtonColors` (§5), no de `colorScheme`, precisamente para no heredar el cambio de `primary`/`secondary`/`tertiary` en claro.
 
-Alto de 52dp (token `LikkaComponentSize.buttonHeight`, `presentation/theme/ComponentSize.kt`, §5 — pendiente de agregar al código, ver nota de v3.8 en el registro de cambios; hoy los botones de relleno miden los ~40dp por defecto de Material 3 porque el token todavía no existe), forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
+Alto de 52dp (token `LikkaComponentSize.buttonHeight`, `presentation/theme/ComponentSize.kt`, §5), forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
 
 #### Tarjeta de permiso (onboarding)
 
@@ -624,8 +627,11 @@ El overlay sigue la regla de **mínima interrupción necesaria**: cada nivel ocu
 │                               │
 │  [        Pausar          ]   │  ← 3. Acción (abre la hoja de pausa)
 │     Te quedan 3 pausas hoy    │
+│  [   Desactivar a Likka   ]   │  ← Peligro (abre un diálogo de confirmación)
 └───────────────────────────────┘
 ```
+
+**Botón "Desactivar a Likka" (v3.9, decisión de la dueña del proyecto):** además del interruptor "Likka activado" de Ajustes (§2.5), el dashboard lleva un botón de variante **Peligro** (§1.8) "Desactivar a Likka", debajo de la acción principal. Se muestra en todos los estados salvo "Desactivado", donde la acción principal pasa a ser "Activar a Likka" (§3.5). Al pulsarlo se abre `DeactivateDialog` (`presentation/components/DeactivateDialog.kt`), el mismo diálogo de confirmación que usa el interruptor de Ajustes (RF-S04 de `likkapet_documentacion.md`): título "¿Desactivar a Likka?" y botones "Desactivar" / "Cancelar"; nada se desactiva sin confirmar.
 
 #### Hoja de pausa (bottom sheet)
 
@@ -665,14 +671,14 @@ Si ya no quedan pausas o Likka está en el Nivel 3, el botón "Pausar" del dashb
 │ ¿Qué datos se envían?  →      │  ← enlace de texto
 │                               │
 │ Revisar permisos       →      │
-│ Acerca de y créditos   →      │  ← créditos del equipo
+│ Acerca de y créditos   →      │  ← créditos de la autora
 └───────────────────────────────┘
 ```
 
 Reglas de la pantalla:
 - Los grupos llevan un encabezado `caption` en mayúsculas cortas.
 - Cada fila mide 56dp de alto.
-- Interruptores: pista `colorScheme.primary` cuando están activos (`brand.amber` en oscuro, `AmberDark` en claro) y `bg.switchTrackInactive` cuando están inactivos (contraste ≥ 3:1, ver §1.1).
+- Interruptores: pista `colorScheme.primary` cuando están activos (`brand.amber` en oscuro, `AmberDark` en claro) y `bg.switchTrackInactive` cuando están inactivos (`likkaSwitchColors()`, §5). Contraste ≥ 3:1 **solo sobre el fondo de la pantalla** (3.25:1 sobre cacao): los interruptores van en filas sobre el fondo, nunca sobre una tarjeta ciruela, donde la pista inactiva mide 2.94:1 (§1.1).
 - No se puede apagar la última app vigilada.
 - **Apariencia** va en su propio grupo, justo debajo de LIKKA: no es un ajuste del personaje (como "Likka activado"/"Vibración") ni de las apps vigiladas o la IA, así que un grupo propio evita forzarlo dentro de una categoría a la que no pertenece. El control es segmentado (Oscuro / Claro / Sistema), no un interruptor, porque son 3 opciones mutuamente excluyentes; la etiqueta "Tema" va arriba y el control ocupa el ancho completo debajo (no en la misma fila) para que los 3 segmentos tengan espacio de crecer con la fuente del sistema al 200% (RNF-U03) sin comprimirse; cada segmento cumple el objetivo táctil mínimo de 48dp (§1.3). El segmento activo conserva el ícono de check de `SegmentedButton` (Material), para no comunicar cuál está seleccionado solo con el color de fondo (§1.1, regla 3).
 
@@ -706,10 +712,10 @@ flowchart TD
     HOME <--> SET["⚙️ Ajustes\nLikka, vibración, apps vigiladas, IA"]
     SET --> PRIV["Qué datos se envían\n(reusa la pantalla 3)"]
     SET --> PERM["Revisar permisos\n(reusa la pantalla 4)"]
-    SET --> ABOUT["Acerca de y créditos\n(equipo, materia, tipografías)"]
+    SET --> ABOUT["Acerca de y créditos\n(autora, materia, tipografías)"]
 ```
 
-**Contenido de "Acerca de y créditos" (v3.8):** nombre del equipo y la materia, `versionName` de la app (RF-S07), y los créditos de licencia de las dos fuentes usadas (§1.2): **Baloo 2** y **Nunito**, ambas de Google Fonts bajo licencia **SIL Open Font License 1.1**, con el texto completo de cada licencia disponible desde ahí (`assets/licenses/baloo2_OFL.txt`, `assets/licenses/nunito_OFL.txt`).
+**Contenido de "Acerca de y créditos" (v3.9):** nombre de la autora (autora única: Paula Sofia Gonzalez Zambrano, no "el equipo") y la materia (Diseño de Interfaces), `versionName` de la app (RF-S07), y los créditos de licencia de las dos fuentes usadas (§1.2): **Baloo 2** y **Nunito**, ambas de Google Fonts bajo licencia **SIL Open Font License 1.1**, con el texto completo de cada licencia disponible desde ahí (`assets/licenses/baloo2_OFL.txt`, `assets/licenses/nunito_OFL.txt`).
 
 ### 3.2 Patrón de navegación
 
@@ -839,6 +845,10 @@ fun levelColor(level: Int): Color = if (LocalLikkaIsLightTheme.current) {
         else -> LikkaColors.Cream
     }
 }
+
+/** Fill of Likka's cream stage circle (dashboard, onboarding, level 3 panel): `neutral.cream` in dark, `#FFFFFF` in light (§1.1 "Paleta clara", regla 3, and §1.7). */
+@Composable
+fun stageFillColor(): Color = if (LocalLikkaIsLightTheme.current) LikkaColors.LightSurface else LikkaColors.Cream
 
 /**
  * Filled-button colors (§1.8): Primary/Advertencia/Peligro keep the same brand fill in both
@@ -986,16 +996,73 @@ object LikkaSpacing {
 ```
 
 ```kotlin
-// presentation/theme/ComponentSize.kt — §1.8 (propuesto en v3.8, en paralelo a SpriteSize.kt/
-// LikkaSpriteSize; no existe todavía en el código, ver registro de cambios: el código se
-// actualiza en la tarea 4)
+// presentation/theme/ComponentSize.kt — medidas fijas de componentes: §1.3 (área táctil), §1.4 (bordes),
+// §1.5 (íconos), §1.8 (botones, bordes de botón y burbuja, borde del escenario), §2.5 (alto de fila de Ajustes)
+// y el indicador de pasos del onboarding (§3.2). Ningún composable lleva un dp suelto.
 package com.likkapet.presentation.theme
 
 import androidx.compose.ui.unit.dp
 
 object LikkaComponentSize {
     val buttonHeight = 52.dp
+    val minTouchTarget = 48.dp
+    val settingsRowHeight = 56.dp
+
+    val borderThin = 1.dp
+    val borderButton = 1.5.dp
+    val borderLevel = 2.dp
+    val stageBorder = 3.dp
+
+    val iconStandard = 24.dp
+    val iconChip = 20.dp
+    val iconPermission = 32.dp
+
+    val stepDot = 8.dp
 }
+```
+
+```kotlin
+// presentation/theme/SwitchColors.kt — §2.5 (filas de Ajustes) y §1.1 (contraste de la pista inactiva)
+package com.likkapet.presentation.theme
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Switch colors for Settings rows (design system §2.5): active track `colorScheme.primary`,
+ * inactive track `bg.switchTrackInactive` (≥ 3:1 on the screen background only; 2.94:1 on plum, so
+ * never on a card, §1.1). The inactive thumb is light in both themes so it stays visible on that
+ * mid-tone track.
+ */
+@Composable
+fun likkaSwitchColors(): SwitchColors {
+    val scheme = MaterialTheme.colorScheme
+    return SwitchDefaults.colors(
+        checkedThumbColor = scheme.onPrimary,
+        checkedTrackColor = scheme.primary,
+        checkedBorderColor = scheme.primary,
+        uncheckedThumbColor = switchThumbInactiveColor(),
+        uncheckedTrackColor = switchTrackInactiveColor(),
+        uncheckedBorderColor = switchTrackInactiveColor(),
+        disabledCheckedThumbColor = scheme.onPrimary.copy(alpha = DISABLED_ALPHA),
+        disabledCheckedTrackColor = scheme.primary.copy(alpha = DISABLED_ALPHA),
+        disabledCheckedBorderColor = scheme.primary.copy(alpha = DISABLED_ALPHA),
+    )
+}
+
+/** `bg.switchTrackInactive`: the same value in both themes. */
+@Composable
+fun switchTrackInactiveColor(): Color = LikkaColors.SwitchTrackInactive
+
+/** Cream on dark, white on light, so the thumb reads against [switchTrackInactiveColor]. */
+@Composable
+fun switchThumbInactiveColor(): Color = if (LocalLikkaIsLightTheme.current) LikkaColors.LightSurface else LikkaColors.Cream
+
+/** Material's own disabled opacity for content; also the 38% of design system §1.8. */
+const val DISABLED_ALPHA = 0.38f
 ```
 
 ```kotlin
@@ -1179,3 +1246,9 @@ object LikkaMotion {
 | **v3.8** | §1.8 y §5 documentan el token de alto de botón `LikkaComponentSize.buttonHeight = 52.dp` en `presentation/theme/ComponentSize.kt` (en paralelo a `SpriteSize.kt`/`LikkaSpriteSize`), hoy sin implementar (§1.8 ya pedía 52dp, pero no existía el token; los botones de relleno miden los ~40dp por defecto de Material 3). El código se agrega en la tarea 4, no en esta revisión de documentación | El botón de relleno no tenía token propio, contra la regla de "sin números sueltos" de `CLAUDE.md`. |
 | **v3.8** | §3.1 y RF-S07 (`likkapet_documentacion.md`): "Acerca de y créditos" agrega los créditos y licencias SIL OFL 1.1 de Baloo 2 y Nunito | Las fuentes usadas necesitan atribución de licencia visible en la app. |
 | **v3.8** | Nota pendiente: `presentation/theme/Motion.kt` (`LikkaMotion`, §5) todavía no existe en el código (solo `Color.kt`, `Shape.kt`, `Spacing.kt`, `SpriteSize.kt`, `Theme.kt`, `Type.kt`); se deja documentado como diseño objetivo, igual que otras piezas de la arquitectura completa que las tareas 1–3 todavía no cubren | Verificado contra el código de las tareas 1–3 al actualizar esta documentación; queda anotado para no perderlo de vista. |
+| **v3.9** | §2.4: el dashboard lleva además un botón de variante Peligro "Desactivar a Likka" (debajo de la acción principal, oculto en el estado "Desactivado") que abre un diálogo de confirmación (`components/DeactivateDialog.kt`), el mismo que usa el interruptor de Ajustes | Decisión de la dueña del proyecto, ya implementada en la tarea 4; hasta ahora solo estaba documentada la desactivación desde Ajustes (RF-S04). |
+| **v3.9** | §5: el bloque de tokens agrega el objeto real `LikkaComponentSize` completo (`buttonHeight`, `minTouchTarget`, `settingsRowHeight`, `borderThin`, `borderButton`, `borderLevel`, `stageBorder`, `iconStandard`, `iconChip`, `iconPermission`, `stepDot`), `likkaSwitchColors()` con sus ayudantes (`switchTrackInactiveColor()`, `switchThumbInactiveColor()`, `DISABLED_ALPHA`) y `stageFillColor()`; §1.8 y el comentario del bloque dejan de decir que `LikkaComponentSize` estaba "pendiente de agregar al código" | La tarea 4 creó `ComponentSize.kt` y `SwitchColors.kt` y `stageFillColor()` en `Color.kt`; el documento solo conocía `buttonHeight` como propuesta. |
+| **v3.9** | §1.1, tabla de contraste y §2.5: `bg.switchTrackInactive` (`#8A6B78`) mide **3.25:1 sobre cacao** y **2.94:1 sobre ciruela** (no "≈3.0 sobre ambos fondos"); los interruptores solo van sobre el fondo de la pantalla, nunca sobre una tarjeta ciruela | Lo dejó escrito `ColorContrastTest` al verificar las parejas de color de las pantallas: sobre ciruela la pista inactiva no llega a los 3:1 de WCAG 1.4.11. |
+| **v3.9** | §1.7 (tabla de escalas): los `LikkaSpriteSize` están calibrados para la densidad del Redmi 9 (≈2.75); a 2.625 (Pixel 7, emulador de prueba) la escala baja a 1×/3×/5×/4×/2× (Nivel 1/Nivel 2/Nivel 3/dashboard/onboarding), por ejemplo el sprite de onboarding sale a 2× | En el emulador de prueba (2.625) el sprite de onboarding salió a 2×: la regla `floor(targetPx / 88)` es entera a propósito, así que otra densidad cae en otra escala. |
+| **v3.9** | §3.1 (mapa y contenido de "Acerca de y créditos") y §2.5: el crédito es de la **autora única**, Paula Sofia Gonzalez Zambrano, con la materia "Diseño de Interfaces" (RF-S07 de `likkapet_documentacion.md`); ya no "el equipo" | Así quedó en `strings.xml` (`about_author`, `about_course`) en la tarea 4. |
+| **v3.9** | Nota de v3.8 sobre `presentation/theme/` actualizada, sin reescribirla: ahora existen además `ComponentSize.kt` y `SwitchColors.kt`; `Motion.kt` (`LikkaMotion`, §5) sigue sin existir en el código | Verificado contra el código de las tareas 1–4 al escribir v3.9. |
