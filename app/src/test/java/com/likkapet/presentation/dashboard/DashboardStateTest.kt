@@ -1,10 +1,9 @@
 package com.likkapet.presentation.dashboard
 
 import com.likkapet.domain.EscalationConfig
-import com.likkapet.presentation.state.AppPermission
-import com.likkapet.presentation.state.FakeAppState
-import com.likkapet.presentation.state.PermissionStatus
-import com.likkapet.presentation.state.pendingPermissions
+import com.likkapet.domain.model.DailyStats
+import com.likkapet.domain.model.LikkaSettings
+import com.likkapet.domain.model.LikkaSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -13,11 +12,21 @@ import java.time.ZoneOffset
 /** Global states of design system §3.5 and their priority. */
 class DashboardStateTest {
     private val now = 1_000_000L
-    private val granted =
-        pendingPermissions(includeNotifications = true).mapValues { PermissionStatus.GRANTED }
-    private val healthy = FakeAppState(onboardingCompleted = true, likkaEnabled = true, permissions = granted)
+    private val healthy = LikkaSnapshot(LikkaSettings(onboardingCompleted = true, likkaEnabled = true))
+    private val noSignals = RuntimeSignals()
 
-    private fun status(state: FakeAppState) = deriveDashboardStatus(state, now)
+    private fun LikkaSnapshot.withSettings(transform: (LikkaSettings) -> LikkaSettings) = copy(settings = transform(settings))
+
+    private fun status(
+        snapshot: LikkaSnapshot,
+        hasAllPermissions: Boolean = true,
+        signals: RuntimeSignals = noSignals,
+    ) = deriveDashboardStatus(snapshot, hasAllPermissions, signals, now)
+
+    private fun ui(
+        snapshot: LikkaSnapshot,
+        signals: RuntimeSignals = noSignals,
+    ) = buildDashboardUiState(snapshot, hasAllPermissions = true, signals, DashboardLocalState(), now, ZoneOffset.UTC)
 
     @Test
     fun `an enabled app with every permission and a connection is protecting`() {
@@ -26,47 +35,35 @@ class DashboardStateTest {
 
     @Test
     fun `a disabled Likka wins over every other state`() {
-        val state =
-            healthy.copy(
-                likkaEnabled = false,
-                permissions = granted + (AppPermission.OVERLAY to PermissionStatus.DENIED),
-                pausedUntilMillis = now + 1,
-                isOnline = false,
-            )
-        assertEquals(DashboardStatus.DISABLED, status(state))
+        val snapshot = healthy.withSettings { it.copy(likkaEnabled = false, pausedUntilMillis = now + 1) }
+
+        assertEquals(DashboardStatus.DISABLED, status(snapshot, hasAllPermissions = false, signals = RuntimeSignals(isOnline = false)))
     }
 
     @Test
-    fun `a revoked permission wins over a pause`() {
-        val state =
-            healthy.copy(
-                permissions = granted + (AppPermission.USAGE_STATS to PermissionStatus.DENIED),
-                pausedUntilMillis = now + 1,
-            )
-        assertEquals(DashboardStatus.PERMISSION_MISSING, status(state))
-    }
+    fun `a missing permission wins over a pause`() {
+        val snapshot = healthy.withSettings { it.copy(pausedUntilMillis = now + 1) }
 
-    @Test
-    fun `a pending permission also counts as missing`() {
-        val state = healthy.copy(permissions = granted + (AppPermission.NOTIFICATIONS to PermissionStatus.PENDING))
-        assertEquals(DashboardStatus.PERMISSION_MISSING, status(state))
+        assertEquals(DashboardStatus.PERMISSION_MISSING, status(snapshot, hasAllPermissions = false))
     }
 
     @Test
     fun `a pause is active only until its deadline`() {
-        assertEquals(DashboardStatus.PAUSED, status(healthy.copy(pausedUntilMillis = now + 1)))
-        assertEquals(DashboardStatus.PROTECTING, status(healthy.copy(pausedUntilMillis = now)))
+        assertEquals(DashboardStatus.PAUSED, status(healthy.withSettings { it.copy(pausedUntilMillis = now + 1) }))
+        assertEquals(DashboardStatus.PROTECTING, status(healthy.withSettings { it.copy(pausedUntilMillis = now) }))
     }
 
     @Test
     fun `no internet or no AI credit shows the offline state`() {
-        assertEquals(DashboardStatus.OFFLINE, status(healthy.copy(isOnline = false)))
-        assertEquals(DashboardStatus.OFFLINE, status(healthy.copy(hasAiCredit = false)))
+        assertEquals(DashboardStatus.OFFLINE, status(healthy, signals = RuntimeSignals(isOnline = false)))
+        assertEquals(DashboardStatus.OFFLINE, status(healthy, signals = RuntimeSignals(hasAiCredit = false)))
     }
 
     @Test
     fun `with AI switched off the connectivity notice never shows`() {
-        assertEquals(DashboardStatus.AI_DISABLED, status(healthy.copy(aiEnabled = false, isOnline = false)))
+        val snapshot = healthy.withSettings { it.copy(aiEnabled = false) }
+
+        assertEquals(DashboardStatus.AI_DISABLED, status(snapshot, signals = RuntimeSignals(isOnline = false)))
     }
 
     @Test
@@ -80,21 +77,29 @@ class DashboardStateTest {
     @Test
     fun `pause availability follows level 3 and the daily limit`() {
         val limit = EscalationConfig.MAX_PAUSES_PER_DAY
-        val ui = { state: FakeAppState -> buildDashboardUiState(state, DashboardLocalState(), now, ZoneOffset.UTC) }
+        val exhausted = healthy.copy(today = DailyStats(pauses = limit))
 
         assertEquals(PauseAvailability.AVAILABLE, ui(healthy).pauseAvailability)
-        assertEquals(PauseAvailability.NO_PAUSES_LEFT, ui(healthy.copy(pausesToday = limit)).pauseAvailability)
-        assertEquals(PauseAvailability.LEVEL_3_ACTIVE, ui(healthy.copy(isLevel3Active = true, pausesToday = limit)).pauseAvailability)
-        assertEquals(limit - 1, ui(healthy.copy(pausesToday = 1)).pausesLeft)
+        assertEquals(PauseAvailability.NO_PAUSES_LEFT, ui(exhausted).pauseAvailability)
+        assertEquals(PauseAvailability.LEVEL_3_ACTIVE, ui(exhausted, RuntimeSignals(isLevel3Active = true)).pauseAvailability)
+        assertEquals(limit - 1, ui(healthy.copy(today = DailyStats(pauses = 1))).pausesLeft)
+    }
+
+    @Test
+    fun `the metrics come from today's stored counters`() {
+        val snapshot = healthy.copy(today = DailyStats(usageMinutes = 23, interventions = 4, streakDays = 6))
+
+        val state = ui(snapshot)
+
+        assertEquals(listOf(23, 4, 6), listOf(state.minutesToday, state.interventionsToday, state.streakDays))
     }
 
     @Test
     fun `the pause deadline is formatted as a wall-clock time`() {
         val eighteenForty = (18 * 60 + 40) * 60_000L
-        val ui = buildDashboardUiState(healthy.copy(pausedUntilMillis = eighteenForty), DashboardLocalState(), now, ZoneOffset.UTC)
 
-        assertEquals("18:40", ui.pausedUntilLabel)
-        assertNull(buildDashboardUiState(healthy, DashboardLocalState(), now, ZoneOffset.UTC).pausedUntilLabel)
+        assertEquals("18:40", ui(healthy.withSettings { it.copy(pausedUntilMillis = eighteenForty) }).pausedUntilLabel)
+        assertNull(ui(healthy).pausedUntilLabel)
     }
 
     @Test

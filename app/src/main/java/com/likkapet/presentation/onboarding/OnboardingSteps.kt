@@ -28,14 +28,14 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import com.likkapet.R
+import com.likkapet.domain.model.AppPermission
+import com.likkapet.domain.model.MiuiTask
 import com.likkapet.presentation.components.LikkaButton
 import com.likkapet.presentation.components.LikkaButtonVariant
 import com.likkapet.presentation.components.LikkaPose
 import com.likkapet.presentation.components.LikkaStage
 import com.likkapet.presentation.permissions.PermissionsChecklist
 import com.likkapet.presentation.privacy.PrivacyBody
-import com.likkapet.presentation.state.AppPermission
-import com.likkapet.presentation.state.MiuiTask
 import com.likkapet.presentation.theme.LikkaComponentSize
 import com.likkapet.presentation.theme.LikkaShapes
 import com.likkapet.presentation.theme.LikkaSpacing

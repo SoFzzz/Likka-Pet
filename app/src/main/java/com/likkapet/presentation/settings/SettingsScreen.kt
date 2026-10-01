@@ -13,17 +13,18 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.likkapet.R
 import com.likkapet.domain.model.TargetApp
 import com.likkapet.domain.model.ThemeMode
+import com.likkapet.presentation.components.AppIconLoader
 import com.likkapet.presentation.components.DeactivateDialog
 import com.likkapet.presentation.components.LikkaPreview
 import com.likkapet.presentation.components.LikkaThemePreviews
 import com.likkapet.presentation.components.LikkaTopBar
+import com.likkapet.presentation.components.NoAppIcons
 import com.likkapet.presentation.components.SettingsGroupHeader
 import com.likkapet.presentation.components.SettingsLinkRow
 import com.likkapet.presentation.components.SettingsSwitchRow
@@ -40,6 +41,9 @@ data class SettingsActions(
     val onVibrationChange: (Boolean) -> Unit = {},
     val onThemeSelected: (ThemeMode) -> Unit = {},
     val onWatchedAppChange: (TargetApp, Boolean) -> Unit = { _, _ -> },
+    val onAddedAppChange: (String, Boolean) -> Unit = { _, _ -> },
+    val onRemoveApp: (String) -> Unit = {},
+    val onAddAppClick: () -> Unit = {},
     val onAiEnabledChange: (Boolean) -> Unit = {},
     val onPrivacyClick: () -> Unit = {},
     val onReviewPermissionsClick: () -> Unit = {},
@@ -49,14 +53,17 @@ data class SettingsActions(
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    iconLoader: AppIconLoader,
     onBackClick: () -> Unit,
+    onAddAppClick: () -> Unit,
     onPrivacyClick: () -> Unit,
     onReviewPermissionsClick: () -> Unit,
     onAboutClick: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state = viewModel.uiState.collectAsStateWithLifecycle().value ?: return
     SettingsContent(
         state = state,
+        iconLoader = iconLoader,
         actions =
             SettingsActions(
                 onBackClick = onBackClick,
@@ -66,6 +73,9 @@ fun SettingsScreen(
                 onVibrationChange = viewModel::onVibrationChange,
                 onThemeSelected = viewModel::onThemeSelected,
                 onWatchedAppChange = viewModel::onWatchedAppChange,
+                onAddedAppChange = viewModel::onAddedAppChange,
+                onRemoveApp = viewModel::onRemoveApp,
+                onAddAppClick = onAddAppClick,
                 onAiEnabledChange = viewModel::onAiEnabledChange,
                 onPrivacyClick = onPrivacyClick,
                 onReviewPermissionsClick = onReviewPermissionsClick,
@@ -79,13 +89,14 @@ fun SettingsContent(
     state: SettingsUiState,
     actions: SettingsActions,
     modifier: Modifier = Modifier,
+    iconLoader: AppIconLoader = NoAppIcons,
 ) {
     Column(modifier = modifier.screenInsets()) {
         LikkaTopBar(title = stringResource(R.string.settings_title), onBackClick = actions.onBackClick)
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = LikkaSpacing.l)) {
             LikkaGroup(state, actions)
             AppearanceGroup(state.themeMode, actions.onThemeSelected)
-            WatchedAppsGroup(state.watchedApps, actions.onWatchedAppChange)
+            WatchedAppsGroup(state, iconLoader, actions)
             AiGroup(state, actions)
             SettingsLinkRow(stringResource(R.string.settings_review_permissions), actions.onReviewPermissionsClick)
             SettingsLinkRow(stringResource(R.string.settings_about), actions.onAboutClick)
@@ -140,20 +151,31 @@ private fun themeLabel(mode: ThemeMode): Int =
         ThemeMode.SYSTEM -> R.string.settings_theme_system
     }
 
+/** The 4 default apps, then the added ones in alphabetical order, then "Añadir app" (design system §2.5). */
 @Composable
 private fun WatchedAppsGroup(
-    apps: List<WatchedAppUi>,
-    onWatchedAppChange: (TargetApp, Boolean) -> Unit,
+    state: SettingsUiState,
+    iconLoader: AppIconLoader,
+    actions: SettingsActions,
 ) {
     SettingsGroupHeader(stringResource(R.string.settings_group_watched_apps))
-    apps.forEach { item ->
+    state.watchedApps.forEach { item ->
         SettingsSwitchRow(
             label = item.app.displayName,
             checked = item.isWatched,
-            onCheckedChange = { onWatchedAppChange(item.app, it) },
+            onCheckedChange = { actions.onWatchedAppChange(item.app, it) },
             enabled = item.canToggle,
         )
     }
+    state.addedApps.forEach { item ->
+        AddedAppRow(
+            item = item,
+            iconLoader = iconLoader,
+            onCheckedChange = { actions.onAddedAppChange(item.packageName, it) },
+            onRemoveClick = { actions.onRemoveApp(item.packageName) },
+        )
+    }
+    SettingsLinkRow(stringResource(R.string.settings_add_app), actions.onAddAppClick)
     Text(
         text = stringResource(R.string.settings_watched_apps_hint),
         style = MaterialTheme.typography.bodyMedium,
@@ -175,4 +197,14 @@ private fun AiGroup(
 @Composable
 private fun SettingsContentPreview() {
     LikkaPreview { SettingsContent(state = SettingsUiState.preview(), actions = SettingsActions()) }
+}
+
+@LikkaThemePreviews
+@Composable
+private fun SettingsWatchedAppsPreview() {
+    LikkaPreview {
+        Column(modifier = Modifier.padding(horizontal = LikkaSpacing.m)) {
+            WatchedAppsGroup(SettingsUiState.preview(), NoAppIcons, SettingsActions())
+        }
+    }
 }

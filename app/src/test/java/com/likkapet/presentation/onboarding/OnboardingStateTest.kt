@@ -1,8 +1,9 @@
 package com.likkapet.presentation.onboarding
 
-import com.likkapet.presentation.state.FakeAppState
-import com.likkapet.presentation.state.PermissionStatus
-import com.likkapet.presentation.state.pendingPermissions
+import com.likkapet.domain.model.AppPermission
+import com.likkapet.domain.model.LikkaSettings
+import com.likkapet.presentation.permissions.PermissionStatus
+import com.likkapet.presentation.permissions.PermissionUi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,11 +36,18 @@ class OnboardingStateTest {
 
     @Test
     fun `the permissions step cannot be skipped until everything is granted`() {
-        val pending = permissionsStepState(PermissionStatus.PENDING)
-        val granted = permissionsStepState(PermissionStatus.GRANTED)
+        assertFalse(permissionsStepState(PermissionStatus.PENDING).canContinue)
+        assertTrue(permissionsStepState(PermissionStatus.GRANTED).canContinue)
+    }
 
-        assertFalse(pending.canContinue)
-        assertTrue(granted.canContinue)
+    @Test
+    fun `below API 33 the two permissions are enough`() {
+        val twoGranted = listOf(AppPermission.OVERLAY, AppPermission.USAGE_STATS).map { PermissionUi(it, PermissionStatus.GRANTED) }
+        val steps = stepsFor(isMiui = true)
+
+        val state = buildOnboardingUiState(LikkaSettings(), twoGranted, steps, steps.indexOf(OnboardingStep.PERMISSIONS))
+
+        assertTrue(state.canContinue)
     }
 
     @Test
@@ -52,15 +60,27 @@ class OnboardingStateTest {
 
     @Test
     fun `other steps never block on permissions`() {
-        val state = buildOnboardingUiState(FakeAppState(permissions = pendingPermissions(true)), stepsFor(true), currentIndex = 0)
+        val pending = AppPermission.entries.map { PermissionUi(it, PermissionStatus.PENDING) }
+
+        val state = buildOnboardingUiState(LikkaSettings(), pending, stepsFor(true), currentIndex = 0)
 
         assertTrue(state.canContinue)
         assertTrue(state.isFirstStep)
     }
 
+    @Test
+    fun `the AI switch and MIUI checks come from the stored settings`() {
+        val settings = LikkaSettings(aiEnabled = false)
+
+        val state = buildOnboardingUiState(settings, emptyList(), stepsFor(true), currentIndex = 0)
+
+        assertFalse(state.aiEnabled)
+        assertTrue(state.miuiConfirmed.isEmpty())
+    }
+
     private fun permissionsStepState(status: PermissionStatus): OnboardingUiState {
-        val permissions = pendingPermissions(includeNotifications = true).mapValues { status }
+        val permissions = AppPermission.entries.map { PermissionUi(it, status) }
         val steps = stepsFor(isMiui = false)
-        return buildOnboardingUiState(FakeAppState(permissions = permissions), steps, steps.indexOf(OnboardingStep.PERMISSIONS))
+        return buildOnboardingUiState(LikkaSettings(), permissions, steps, steps.indexOf(OnboardingStep.PERMISSIONS))
     }
 }

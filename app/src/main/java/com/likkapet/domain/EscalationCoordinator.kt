@@ -264,13 +264,12 @@ class EscalationCoordinator(
     }
 
     private fun pauseRejection(pausesUsedToday: Int): PauseResult? =
-        when {
-            baseState == LikkaState.PAUSED -> PauseResult.REJECTED_ALREADY_PAUSED
-            baseState == LikkaState.EJECTED -> PauseResult.REJECTED_WHILE_EJECTED
-            hasTrackAtLevel3() -> PauseResult.REJECTED_LEVEL_3
-            pausesUsedToday >= EscalationConfig.MAX_PAUSES_PER_DAY -> PauseResult.REJECTED_DAILY_LIMIT
-            else -> null
-        }
+        PauseRules.rejectionFor(
+            isPaused = baseState == LikkaState.PAUSED,
+            isEjected = baseState == LikkaState.EJECTED,
+            hasTrackAtLevel3 = hasTrackAtLevel3(),
+            pausesUsedToday = pausesUsedToday,
+        )
 
     private fun startPause(minutes: Int): PauseResult {
         stateAfterPause = baseState

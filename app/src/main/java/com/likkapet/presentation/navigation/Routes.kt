@@ -1,7 +1,5 @@
 package com.likkapet.presentation.navigation
 
-import com.likkapet.presentation.state.FakeAppState
-
 /** Destinations of the two navigation graphs (design system §3.2). */
 object Routes {
     const val ONBOARDING_GRAPH = "onboarding_graph"
@@ -13,6 +11,7 @@ object Routes {
     const val PRIVACY = "settings/privacy"
     const val PERMISSIONS = "settings/permissions"
     const val ABOUT = "settings/about"
+    const val ADD_APP = "settings/add_app"
 
     // Permissions screen shown on open when one was revoked from system settings (RF-A06).
     const val PERMISSIONS_GATE = "permissions_gate"
@@ -25,9 +24,22 @@ data class StartDestination(
 )
 
 /** Onboarding once; then the permissions gate if a permission is missing; otherwise the dashboard (§3.1). */
-fun resolveStartDestination(state: FakeAppState): StartDestination =
+fun resolveStartDestination(
+    isOnboardingCompleted: Boolean,
+    hasAllPermissions: Boolean,
+): StartDestination =
     when {
-        !state.onboardingCompleted -> StartDestination(Routes.ONBOARDING_GRAPH)
-        !state.hasAllPermissions -> StartDestination(Routes.MAIN_GRAPH, Routes.PERMISSIONS_GATE)
+        !isOnboardingCompleted -> StartDestination(Routes.ONBOARDING_GRAPH)
+        !hasAllPermissions -> StartDestination(Routes.MAIN_GRAPH, Routes.PERMISSIONS_GATE)
         else -> StartDestination(Routes.MAIN_GRAPH)
     }
+
+/**
+ * Whether opening the app should (re)start the service, e.g. after a force-stop: only once
+ * onboarding is done, Likka is switched on and every required permission is granted.
+ */
+fun shouldStartMonitoring(
+    isOnboardingCompleted: Boolean,
+    isLikkaEnabled: Boolean,
+    hasAllPermissions: Boolean,
+): Boolean = isOnboardingCompleted && isLikkaEnabled && hasAllPermissions

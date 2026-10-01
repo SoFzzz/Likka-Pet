@@ -14,6 +14,7 @@ import com.likkapet.presentation.onboarding.OnboardingScreen
 import com.likkapet.presentation.permissions.PermissionsReviewScreen
 import com.likkapet.presentation.privacy.PrivacyScreen
 import com.likkapet.presentation.settings.AboutScreen
+import com.likkapet.presentation.settings.AddAppScreen
 import com.likkapet.presentation.settings.SettingsScreen
 
 /** The two graphs of design system §3.2: `onboarding` (once) and `main` (dashboard + Settings). */
@@ -49,10 +50,19 @@ fun LikkaNavHost(
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     viewModel = viewModel(factory = remember { factories.settings() }),
+                    iconLoader = factories.iconLoader,
                     onBackClick = navController::popBackStack,
+                    onAddAppClick = { navController.navigate(Routes.ADD_APP) },
                     onPrivacyClick = { navController.navigate(Routes.PRIVACY) },
                     onReviewPermissionsClick = { navController.navigate(Routes.PERMISSIONS) },
                     onAboutClick = { navController.navigate(Routes.ABOUT) },
+                )
+            }
+            composable(Routes.ADD_APP) {
+                AddAppScreen(
+                    viewModel = viewModel(factory = remember { factories.addApp() }),
+                    iconLoader = factories.iconLoader,
+                    onBackClick = navController::popBackStack,
                 )
             }
             composable(Routes.PRIVACY) {

@@ -1,34 +1,36 @@
 package com.likkapet.presentation.navigation
 
-import com.likkapet.presentation.state.AppPermission
-import com.likkapet.presentation.state.FakeAppState
-import com.likkapet.presentation.state.PermissionStatus
-import com.likkapet.presentation.state.pendingPermissions
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Where the app opens (design system §3.1, RF-A06). */
+/** Where the app opens (design system §3.1, RF-A06) and when opening restarts the service. */
 class StartDestinationTest {
-    private val granted = pendingPermissions(includeNotifications = true).mapValues { PermissionStatus.GRANTED }
-
     @Test
     fun `first launch opens onboarding`() {
-        assertEquals(Routes.ONBOARDING_GRAPH, resolveStartDestination(FakeAppState()).graph)
+        assertEquals(Routes.ONBOARDING_GRAPH, resolveStartDestination(isOnboardingCompleted = false, hasAllPermissions = false).graph)
     }
 
     @Test
     fun `a finished onboarding with every permission opens the dashboard`() {
-        val start = resolveStartDestination(FakeAppState(onboardingCompleted = true, permissions = granted))
+        val start = resolveStartDestination(isOnboardingCompleted = true, hasAllPermissions = true)
 
         assertEquals(StartDestination(Routes.MAIN_GRAPH, Routes.DASHBOARD), start)
     }
 
     @Test
     fun `a revoked permission opens the permissions screen, not onboarding`() {
-        val revoked = granted + (AppPermission.OVERLAY to PermissionStatus.DENIED)
-
-        val start = resolveStartDestination(FakeAppState(onboardingCompleted = true, permissions = revoked))
+        val start = resolveStartDestination(isOnboardingCompleted = true, hasAllPermissions = false)
 
         assertEquals(StartDestination(Routes.MAIN_GRAPH, Routes.PERMISSIONS_GATE), start)
+    }
+
+    @Test
+    fun `opening the app restarts the service only when everything is in place`() {
+        assertTrue(shouldStartMonitoring(isOnboardingCompleted = true, isLikkaEnabled = true, hasAllPermissions = true))
+        assertFalse(shouldStartMonitoring(isOnboardingCompleted = false, isLikkaEnabled = true, hasAllPermissions = true))
+        assertFalse(shouldStartMonitoring(isOnboardingCompleted = true, isLikkaEnabled = false, hasAllPermissions = true))
+        assertFalse(shouldStartMonitoring(isOnboardingCompleted = true, isLikkaEnabled = true, hasAllPermissions = false))
     }
 }

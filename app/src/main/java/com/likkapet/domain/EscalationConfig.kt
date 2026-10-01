@@ -33,6 +33,12 @@ object EscalationConfig {
     val PAUSE_OPTIONS_MIN = listOf(15, 30, 60)
     const val NOTIFICATION_PAUSE_MIN = 30
 
+    // Not yet in §3.4 (pending doc): how often the in-memory usage time is written to DataStore (RF-D02).
+    const val USAGE_FLUSH_SEC = 60
+
+    // Not yet in §3.4 (pending doc): how often the dashboard re-checks whether paused_until has passed.
+    const val PAUSE_EXPIRY_CHECK_SEC = 15
+
     // Also pending in §3.4: after an ejection, a watched app still reported in the foreground for
     // longer than this (more than two 2 s poller cycles, so not just a stale poll) means the user
     // never left (HomeLauncher blocked, e.g. by MIUI, or reopened from recents): it counts as a
@@ -60,7 +66,8 @@ object EscalationConfig {
     const val LEVEL_2_CENTER_ZONE_FRACTION = 0.5
     const val LEVEL_2_WALK_STEP_SPRITE_PX = 1
 
-    // Default watched apps (user can disable them in Settings)
+    // Default watched apps (user can disable them in Settings). Any package the user adds
+    // (RF-S06) is not in this map and is treated as TargetApp.OTHER.
     val DEFAULT_TARGET_PACKAGES =
         mapOf(
             "com.zhiliaoapp.musically" to TargetApp.TIKTOK, // TikTok Global

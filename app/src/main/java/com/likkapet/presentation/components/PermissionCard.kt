@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.likkapet.R
-import com.likkapet.presentation.state.PermissionStatus
+import com.likkapet.presentation.permissions.PermissionStatus
 import com.likkapet.presentation.theme.LikkaComponentSize
 import com.likkapet.presentation.theme.LikkaShapes
 import com.likkapet.presentation.theme.LikkaSpacing

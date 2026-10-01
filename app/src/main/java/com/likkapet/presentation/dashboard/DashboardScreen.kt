@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -65,7 +64,8 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit,
     onGrantPermissionClick: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // Nothing to draw until the store has been read once (a few milliseconds after opening).
+    val state = viewModel.uiState.collectAsStateWithLifecycle().value ?: return
     DashboardContent(
         state = state,
         actions =

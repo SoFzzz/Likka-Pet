@@ -6,33 +6,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.likkapet.R
+import com.likkapet.domain.port.StatsStore
 import com.likkapet.presentation.components.LikkaPreview
 import com.likkapet.presentation.components.LikkaThemePreviews
 import com.likkapet.presentation.components.LikkaTopBar
 import com.likkapet.presentation.components.screenInsets
-import com.likkapet.presentation.state.FakeAppStateStore
+import com.likkapet.presentation.persist
 import com.likkapet.presentation.theme.LikkaSpacing
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class PrivacyViewModel(
-    private val store: FakeAppStateStore,
+    private val store: StatsStore,
 ) : ViewModel() {
-    val isAiEnabled: StateFlow<Boolean> =
-        store.state
-            .map { it.aiEnabled }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), store.state.value.aiEnabled)
+    // Null until the store has been read, so the switch never flashes a default value.
+    val isAiEnabled: StateFlow<Boolean?> =
+        store.snapshot
+            .map { it.settings.aiEnabled }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
-    fun onAiEnabledChange(enabled: Boolean) = store.setAiEnabled(enabled)
+    fun onAiEnabledChange(enabled: Boolean) {
+        persist { store.setAiEnabled(enabled) }
+    }
 
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
@@ -45,7 +49,7 @@ fun PrivacyScreen(
     viewModel: PrivacyViewModel,
     onBackClick: () -> Unit,
 ) {
-    val isAiEnabled by viewModel.isAiEnabled.collectAsStateWithLifecycle()
+    val isAiEnabled = viewModel.isAiEnabled.collectAsStateWithLifecycle().value ?: return
     PrivacyContent(isAiEnabled = isAiEnabled, onAiEnabledChange = viewModel::onAiEnabledChange, onBackClick = onBackClick)
 }
 

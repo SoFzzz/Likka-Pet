@@ -23,6 +23,7 @@ internal object EscalationTimings {
     val LEVEL_2_RETURN_DELAY_MS = EscalationConfig.LEVEL_2_RETURN_DELAY_SEC.seconds.inWholeMilliseconds
     val MOVEMENT_STEP_MS = 1.seconds.inWholeMilliseconds / EscalationConfig.MOVEMENT_STEP_FPS
     val POKE_REACTION_WINDOW_MS = EscalationConfig.POKE_REACTION_WINDOW_SEC.seconds.inWholeMilliseconds
+    val USAGE_FLUSH_MS = EscalationConfig.USAGE_FLUSH_SEC.seconds.inWholeMilliseconds
     val MILLIS_PER_SECOND = 1.seconds.inWholeMilliseconds
     val MILLIS_PER_MINUTE = 1.minutes.inWholeMilliseconds
 

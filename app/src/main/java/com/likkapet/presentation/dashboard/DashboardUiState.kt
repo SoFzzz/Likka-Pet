@@ -2,8 +2,9 @@ package com.likkapet.presentation.dashboard
 
 import androidx.compose.runtime.Immutable
 import com.likkapet.domain.EscalationConfig
+import com.likkapet.domain.PauseRules
+import com.likkapet.domain.model.LikkaSnapshot
 import com.likkapet.presentation.components.LikkaPose
-import com.likkapet.presentation.state.FakeAppState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -19,6 +20,17 @@ enum class DashboardStatus(
     OFFLINE(LikkaPose.IDLE),
     AI_DISABLED(LikkaPose.IDLE),
 }
+
+/**
+ * Signals that come from the service and the Worker, not from the stats store. Until they are
+ * wired (Data 2) the dashboard uses these defaults, so "Sin internet" cannot show yet.
+ */
+@Immutable
+data class RuntimeSignals(
+    val isLevel3Active: Boolean = false,
+    val isOnline: Boolean = true,
+    val hasAiCredit: Boolean = true,
+)
 
 /** Why the pause button is or is not usable (design system §2.4). */
 enum class PauseAvailability { AVAILABLE, NO_PAUSES_LEFT, LEVEL_3_ACTIVE }
@@ -70,40 +82,47 @@ data class DashboardUiState(
  * exists while AI is on, because switching AI off is the user's choice, not an error (§3.5).
  */
 fun deriveDashboardStatus(
-    state: FakeAppState,
+    snapshot: LikkaSnapshot,
+    hasAllPermissions: Boolean,
+    signals: RuntimeSignals,
     nowMillis: Long,
 ): DashboardStatus =
     when {
-        !state.likkaEnabled -> DashboardStatus.DISABLED
-        !state.hasAllPermissions -> DashboardStatus.PERMISSION_MISSING
-        state.isPausedAt(nowMillis) -> DashboardStatus.PAUSED
-        !state.aiEnabled -> DashboardStatus.AI_DISABLED
-        !state.isOnline || !state.hasAiCredit -> DashboardStatus.OFFLINE
+        !snapshot.settings.likkaEnabled -> DashboardStatus.DISABLED
+        !hasAllPermissions -> DashboardStatus.PERMISSION_MISSING
+        snapshot.isPausedAt(nowMillis) -> DashboardStatus.PAUSED
+        !snapshot.settings.aiEnabled -> DashboardStatus.AI_DISABLED
+        !signals.isOnline || !signals.hasAiCredit -> DashboardStatus.OFFLINE
         else -> DashboardStatus.PROTECTING
     }
 
 fun buildDashboardUiState(
-    state: FakeAppState,
+    snapshot: LikkaSnapshot,
+    hasAllPermissions: Boolean,
+    signals: RuntimeSignals,
     local: DashboardLocalState,
     nowMillis: Long,
     zone: ZoneId,
 ): DashboardUiState =
     DashboardUiState(
-        status = deriveDashboardStatus(state, nowMillis),
-        pausedUntilLabel = state.pausedUntilMillis?.let { formatClockTime(it, zone) },
-        minutesToday = state.minutesToday,
-        interventionsToday = state.interventionsToday,
-        streakDays = state.streakDays,
-        pausesLeft = state.pausesLeft,
-        pauseAvailability = pauseAvailability(state),
+        status = deriveDashboardStatus(snapshot, hasAllPermissions, signals, nowMillis),
+        pausedUntilLabel = snapshot.settings.pausedUntilMillis?.let { formatClockTime(it, zone) },
+        minutesToday = snapshot.today.usageMinutes,
+        interventionsToday = snapshot.today.interventions,
+        streakDays = snapshot.today.streakDays,
+        pausesLeft = PauseRules.pausesLeft(snapshot.today.pauses),
+        pauseAvailability = pauseAvailability(snapshot, signals),
         pauseOptionsMinutes = EscalationConfig.PAUSE_OPTIONS_MIN,
         local = local,
     )
 
-private fun pauseAvailability(state: FakeAppState): PauseAvailability =
+private fun pauseAvailability(
+    snapshot: LikkaSnapshot,
+    signals: RuntimeSignals,
+): PauseAvailability =
     when {
-        state.isLevel3Active -> PauseAvailability.LEVEL_3_ACTIVE
-        state.pausesLeft == 0 -> PauseAvailability.NO_PAUSES_LEFT
+        signals.isLevel3Active -> PauseAvailability.LEVEL_3_ACTIVE
+        PauseRules.pausesLeft(snapshot.today.pauses) == 0 -> PauseAvailability.NO_PAUSES_LEFT
         else -> PauseAvailability.AVAILABLE
     }
 

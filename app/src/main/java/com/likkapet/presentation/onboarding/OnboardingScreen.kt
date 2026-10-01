@@ -10,21 +10,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.likkapet.R
+import com.likkapet.domain.model.AppPermission
+import com.likkapet.domain.model.MiuiTask
 import com.likkapet.presentation.components.LikkaButton
 import com.likkapet.presentation.components.LikkaButtonVariant
 import com.likkapet.presentation.components.LikkaPreview
 import com.likkapet.presentation.components.LikkaThemePreviews
 import com.likkapet.presentation.components.StepIndicator
 import com.likkapet.presentation.components.screenInsets
-import com.likkapet.presentation.state.AppPermission
-import com.likkapet.presentation.state.MiuiTask
-import com.likkapet.presentation.state.PermissionStatus
+import com.likkapet.presentation.permissions.PermissionStatus
+import com.likkapet.presentation.system.rememberSystemActions
 import com.likkapet.presentation.theme.LikkaSpacing
 
 /** Everything the onboarding can ask for; the screen forwards them, no logic in the composable. */
@@ -44,6 +46,8 @@ fun OnboardingScreen(
     onFinished: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val systemActions = rememberSystemActions(onPermissionResult = viewModel::onPermissionResult)
+    LaunchedEffect(state.isFinished) { if (state.isFinished) onFinished() }
     // Step 1 leaves the app (system back); steps 2–6 go to the previous step (design system §3.3).
     BackHandler(enabled = !state.isFirstStep, onBack = viewModel::onBackClick)
     OnboardingContent(
@@ -53,14 +57,14 @@ fun OnboardingScreen(
                 onNextClick = viewModel::onNextClick,
                 onBackClick = viewModel::onBackClick,
                 onAiEnabledChange = viewModel::onAiEnabledChange,
-                onGrantPermissionClick = viewModel::onGrantPermissionClick,
-                onMiuiConfirmedChange = viewModel::onMiuiConfirmedChange,
-                // Opening MIUI's own settings screens (RF-A05) arrives with the real permission work.
-                onOpenMiuiSettingsClick = {},
-                onFinishClick = {
-                    viewModel.onFinishClick()
-                    onFinished()
+                onGrantPermissionClick = { permission ->
+                    val status = state.permissions.first { it.permission == permission }.status
+                    viewModel.onGrantPermissionClick(permission)
+                    systemActions.requestPermission(permission, status)
                 },
+                onMiuiConfirmedChange = viewModel::onMiuiConfirmedChange,
+                onOpenMiuiSettingsClick = systemActions.openMiuiSettings,
+                onFinishClick = viewModel::onFinishClick,
             ),
     )
 }

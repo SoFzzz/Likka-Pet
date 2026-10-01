@@ -1,6 +1,5 @@
 package com.likkapet.presentation
 
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -10,58 +9,100 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.likkapet.LikkaApplication
+import com.likkapet.domain.model.LikkaSnapshot
 import com.likkapet.presentation.navigation.LikkaNavHost
-import com.likkapet.presentation.navigation.Routes
 import com.likkapet.presentation.navigation.StartDestination
 import com.likkapet.presentation.navigation.ViewModelFactories
 import com.likkapet.presentation.navigation.resolveStartDestination
+import com.likkapet.presentation.navigation.shouldStartMonitoring
 import com.likkapet.presentation.onboarding.isMiuiDevice
 import com.likkapet.presentation.theme.LikkaTheme
 import com.likkapet.presentation.theme.LocalLikkaIsLightTheme
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.time.ZoneId
 
+/**
+ * The only activity, declared `singleTask` in the manifest: launching it again (launcher, the
+ * notification, `am start`) reuses this instance instead of stacking another dashboard on top.
+ */
 class MainActivity : ComponentActivity() {
+    private val app: LikkaApplication get() = application as LikkaApplication
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val app = application as LikkaApplication
-        val store = app.appStateStore
-        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-        val debug = DebugLaunchOptions.from(intent, isDebuggable)
-        if (savedInstanceState == null) debug.applyTo(store, System.currentTimeMillis())
-        val factories =
-            ViewModelFactories(
-                store = store,
-                monitoringController = app.monitoringController,
-                isMiui = isMiuiDevice(Build.MANUFACTURER, Build.BRAND) || debug.forceMiui,
-                versionName = readVersionName(),
-                readAsset = ::readAsset,
-                initialOnboardingStep = debug.onboardingStep,
-            )
-        // A forced dashboard state must show the dashboard, not the revoked-permission gate.
-        val start =
-            if (debug.dashboardStatus != null) StartDestination(Routes.MAIN_GRAPH) else resolveStartDestination(store.state.value)
+        // The process may have outlived a permission revoked in system settings.
+        app.permissionMonitor.refresh()
+        val factories = createFactories()
         setContent {
-            val state by store.state.collectAsStateWithLifecycle()
-            LikkaTheme(state.themeMode) {
-                SystemBarIcons()
-                Surface(color = MaterialTheme.colorScheme.background) {
-                    val navController = rememberNavController()
-                    LikkaNavHost(factories = factories, start = start, navController = navController)
-                    if (savedInstanceState == null) {
-                        debug.route?.let { route -> LaunchedEffect(route) { navController.navigate(route) } }
-                    }
-                }
+            // Only the window background shows until the store has been read once (milliseconds).
+            val snapshot by app.statsStore.snapshot.collectAsStateWithLifecycle(initialValue = null)
+            snapshot?.let { AppContent(it, factories) }
+        }
+    }
+
+    /** Re-reads permissions after returning from system settings (RF-A06) and restarts the service if needed. */
+    override fun onResume() {
+        super.onResume()
+        app.permissionMonitor.refresh()
+        lifecycleScope.launch {
+            app.statsStore.refreshDay()
+            val settings =
+                app.statsStore.snapshot
+                    .first()
+                    .settings
+            val shouldStart =
+                shouldStartMonitoring(settings.onboardingCompleted, settings.likkaEnabled, app.permissionMonitor.hasAllPermissions)
+            // Android 12+ only lets a foreground app start a foreground service (documentación §9.3).
+            if (shouldStart && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) app.monitoringController.start()
+        }
+    }
+
+    @Composable
+    private fun AppContent(
+        snapshot: LikkaSnapshot,
+        factories: ViewModelFactories,
+    ) {
+        // Decided once per activity (and kept across recreation): later changes navigate instead.
+        val initial = resolveStartDestination(snapshot.settings.onboardingCompleted, app.permissionMonitor.hasAllPermissions)
+        val startGraph = rememberSaveable { initial.graph }
+        val mainStart = rememberSaveable { initial.mainStart }
+        LikkaTheme(snapshot.settings.themeMode) {
+            SystemBarIcons()
+            Surface(color = MaterialTheme.colorScheme.background) {
+                LikkaNavHost(
+                    factories = factories,
+                    start = StartDestination(startGraph, mainStart),
+                    navController = rememberNavController(),
+                )
             }
         }
     }
+
+    private fun createFactories() =
+        ViewModelFactories(
+            store = app.statsStore,
+            permissionMonitor = app.permissionMonitor,
+            monitoringController = app.monitoringController,
+            installedAppsSource = app.installedAppsSource,
+            wallClock = app.wallClock,
+            zone = ZoneId.systemDefault(),
+            isMiui = isMiuiDevice(Build.MANUFACTURER, Build.BRAND),
+            versionName = readVersionName(),
+            readAsset = ::readAsset,
+            iconLoader = app.appIconLoader,
+        )
 
     private fun readVersionName(): String {
         val info =

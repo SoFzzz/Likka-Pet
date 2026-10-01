@@ -9,23 +9,15 @@ import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.QueryStats
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.likkapet.R
+import com.likkapet.domain.model.AppPermission
 import com.likkapet.presentation.components.LikkaPreview
 import com.likkapet.presentation.components.LikkaThemePreviews
 import com.likkapet.presentation.components.PermissionCard
-import com.likkapet.presentation.state.AppPermission
-import com.likkapet.presentation.state.PermissionStatus
 import com.likkapet.presentation.theme.LikkaSpacing
-
-@Immutable
-data class PermissionUi(
-    val permission: AppPermission,
-    val status: PermissionStatus,
-)
 
 /** The permission cards shared by onboarding step 4 and "Revisar permisos" (design system §3.1). */
 @Composable

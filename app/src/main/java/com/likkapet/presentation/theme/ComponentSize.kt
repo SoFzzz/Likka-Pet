@@ -21,5 +21,8 @@ object LikkaComponentSize {
     val iconChip = 20.dp
     val iconPermission = 32.dp
 
+    // Launcher icon of an added app (design system §2.5, "Añadir app").
+    val appIcon = 40.dp
+
     val stepDot = 8.dp
 }

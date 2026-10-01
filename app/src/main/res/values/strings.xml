@@ -75,7 +75,7 @@
     <string name="permission_overlay_title">Mostrar sobre otras apps</string>
     <string name="permission_overlay_description">Para que Likka aparezca encima de TikTok.</string>
     <string name="permission_usage_title">Acceso al uso de apps</string>
-    <string name="permission_usage_description">Para saber cuándo abres TikTok, Instagram, YouTube o Facebook. No leo lo que ves.</string>
+    <string name="permission_usage_description">Para saber cuándo abres las apps que vigilo. No leo lo que ves.</string>
     <string name="permission_notifications_title">Notificaciones</string>
     <string name="permission_notifications_description">Para mostrar el aviso fijo de que sigo cuidándote.</string>
     <string name="permission_grant_button">Conceder</string>
@@ -88,9 +88,9 @@
 
     <!-- Privacy (onboarding step 3 and Settings › Qué datos se envían), documentación §8 -->
     <string name="privacy_title">Qué datos se envían</string>
-    <string name="privacy_intro">Para que mis mensajes sean ingeniosos, envío a un servicio de IA (DeepSeek) solo el nombre de la app, cuántos minutos llevas, el ángulo de tu teléfono, y el nivel y motivo del aviso. Nada más.</string>
+    <string name="privacy_intro">Para que mis mensajes sean ingeniosos, le paso a mi servidor intermedio solo el nombre de la app (o «otra app» si la añadiste tú), cuántos minutos llevas, el ángulo de tu teléfono, y el nivel y motivo del aviso. Él se lo pasa a un servicio de IA (DeepSeek). Nada más.</string>
     <string name="privacy_sent_title">Lo que recibe el servicio de IA</string>
-    <string name="privacy_sent_app">La app en uso: TikTok, Instagram, YouTube o Facebook. Nunca el nombre del paquete ni otras apps.</string>
+    <string name="privacy_sent_app">La app en uso: TikTok, Instagram, YouTube o Facebook. Si es una app que añadiste tú, solo «otra app». Nunca el nombre del paquete ni el nombre de tu app.</string>
     <string name="privacy_sent_minutes">Los minutos de uso. Mi servidor intermedio los redondea de 5 en 5 (hasta 240) antes de pasarlos.</string>
     <string name="privacy_sent_angle">El ángulo del teléfono. Mi servidor intermedio lo redondea de 5 en 5 (entre 0 y 90) antes de pasarlo.</string>
     <string name="privacy_sent_level">El nivel y el motivo del aviso.</string>
@@ -149,11 +149,26 @@
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_group_watched_apps">Apps vigiladas</string>
     <string name="settings_watched_apps_hint">Tiene que quedar al menos una app vigilada.</string>
+    <string name="settings_add_app">Añadir app</string>
+    <string name="settings_remove_app">Quitar</string>
+    <string name="settings_remove_app_description">Quitar %1$s</string>
     <string name="settings_group_ai">Inteligencia artificial</string>
     <string name="settings_ai_messages">Mensajes con IA</string>
     <string name="settings_privacy_link">¿Qué datos se envían?</string>
     <string name="settings_review_permissions">Revisar permisos</string>
     <string name="settings_about">Acerca de y créditos</string>
+
+    <!-- Settings › Añadir app (design system §2.5, RF-S06): settings voice, no irony -->
+    <string name="add_app_title">Añadir app</string>
+    <string name="add_app_search">Buscar app</string>
+    <string name="add_app_clear_search">Borrar búsqueda</string>
+    <string name="add_app_privacy_note">Para la IA, toda app que añadas es solo «otra app»: nunca envío su nombre.</string>
+    <string name="add_app_action">Añadir</string>
+    <string name="add_app_action_description">Añadir %1$s</string>
+    <string name="add_app_added">Añadida</string>
+    <string name="add_app_loading">Buscando tus apps…</string>
+    <string name="add_app_no_results">No encuentro ninguna app con ese nombre.</string>
+    <string name="add_app_all_added">Ya añadiste todas las apps que puedo ver.</string>
 
     <!-- About and credits (RF-S07, design system §3.1) -->
     <string name="about_title">Acerca de y créditos</string>

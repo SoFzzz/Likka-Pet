@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import com.likkapet.R
+import com.likkapet.domain.model.AppPermission
 import com.likkapet.presentation.components.LikkaButton
 import com.likkapet.presentation.components.LikkaPose
 import com.likkapet.presentation.components.LikkaPreview
@@ -23,33 +23,21 @@ import com.likkapet.presentation.components.LikkaStage
 import com.likkapet.presentation.components.LikkaThemePreviews
 import com.likkapet.presentation.components.LikkaTopBar
 import com.likkapet.presentation.components.screenInsets
-import com.likkapet.presentation.state.AppPermission
-import com.likkapet.presentation.state.FakeAppState
-import com.likkapet.presentation.state.FakeAppStateStore
-import com.likkapet.presentation.state.PermissionStatus
+import com.likkapet.presentation.system.rememberSystemActions
 import com.likkapet.presentation.theme.LikkaSpacing
 import com.likkapet.presentation.theme.LikkaSpriteSize
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 
+/** Real permission state from [PermissionMonitor], refreshed by MainActivity on every resume. */
 class PermissionsViewModel(
-    private val store: FakeAppStateStore,
+    private val permissionMonitor: PermissionMonitor,
 ) : ViewModel() {
-    val permissions: StateFlow<List<PermissionUi>> =
-        store.state
-            .map(::toPermissionUiList)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), toPermissionUiList(store.state.value))
+    val permissions: StateFlow<List<PermissionUi>> = permissionMonitor.permissions
 
-    fun onGrantPermissionClick(permission: AppPermission) = store.grantPermission(permission)
+    /** The screen opens the system screen or dialog; this only remembers the attempt. */
+    fun onGrantPermissionClick(permission: AppPermission) = permissionMonitor.markRequested(permission)
 
-    private fun toPermissionUiList(state: FakeAppState): List<PermissionUi> =
-        state.permissions.map { (permission, status) -> PermissionUi(permission, status) }
-
-    private companion object {
-        const val STOP_TIMEOUT_MS = 5_000L
-    }
+    fun onPermissionResult() = permissionMonitor.refresh()
 }
 
 /**
@@ -65,10 +53,15 @@ fun PermissionsReviewScreen(
     onContinueClick: () -> Unit,
 ) {
     val permissions by viewModel.permissions.collectAsStateWithLifecycle()
+    val systemActions = rememberSystemActions(onPermissionResult = viewModel::onPermissionResult)
     PermissionsReviewContent(
         permissions = permissions,
         isGate = isGate,
-        onGrantClick = viewModel::onGrantPermissionClick,
+        onGrantClick = { permission ->
+            val status = permissions.first { it.permission == permission }.status
+            viewModel.onGrantPermissionClick(permission)
+            systemActions.requestPermission(permission, status)
+        },
         onBackClick = onBackClick,
         onContinueClick = onContinueClick,
     )
