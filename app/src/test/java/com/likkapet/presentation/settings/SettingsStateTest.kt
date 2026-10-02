@@ -12,9 +12,11 @@ import org.junit.Test
 class SettingsStateTest {
     private val youtube = InstalledApp("com.google.android.youtube", "YouTube")
     private val tiktok = InstalledApp("com.zhiliaoapp.musically", "TikTok")
+    private val instagram = InstalledApp("com.instagram.android", "Instagram")
+    private val facebookLite = InstalledApp("com.facebook.lite", "Facebook Lite")
     private val chrome = InstalledApp("com.android.chrome", "Chrome")
     private val notes = InstalledApp("org.example.notes", "Álbum de notas")
-    private val installed = listOf(youtube, tiktok, chrome, notes)
+    private val installed = listOf(youtube, tiktok, instagram, facebookLite, chrome, notes)
 
     private fun ui(
         watched: Set<String>,
@@ -45,15 +47,41 @@ class SettingsStateTest {
 
     @Test
     fun `an unwatched app can always be switched on`() {
-        val instagram = ui(packagesOf(TargetApp.TIKTOK)).watchedApps.first { it.app == TargetApp.INSTAGRAM }
+        val instagramUi = ui(packagesOf(TargetApp.TIKTOK)).watchedApps.first { it.app == TargetApp.INSTAGRAM }
 
-        assertFalse(instagram.isWatched)
-        assertTrue(instagram.canToggle)
+        assertFalse(instagramUi.isWatched)
+        assertTrue(instagramUi.canToggle)
     }
 
     @Test
-    fun `the four default apps are listed in order, never OTHER`() {
+    fun `installed default apps are listed in order, never OTHER`() {
         assertEquals(TargetApp.DEFAULTS, ui(emptySet()).watchedApps.map { it.app })
+    }
+
+    @Test
+    fun `a default app that is not installed is not listed`() {
+        val state = ui(EscalationDefaults.watched, launcherApps = listOf(youtube, chrome))
+
+        assertEquals(listOf(TargetApp.YOUTUBE), state.watchedApps.map { it.app })
+    }
+
+    @Test
+    fun `a default app shows up with its stored value once installed`() {
+        // Instagram was switched off earlier; installing it later shows it off, not reset.
+        val watched = EscalationDefaults.watched - instagram.packageName
+
+        val before = ui(watched, launcherApps = listOf(youtube))
+        val after = ui(watched, launcherApps = listOf(youtube, instagram)).watchedApps.first { it.app == TargetApp.INSTAGRAM }
+
+        assertFalse(before.watchedApps.any { it.app == TargetApp.INSTAGRAM })
+        assertFalse(after.isWatched)
+    }
+
+    @Test
+    fun `any one installed package is enough to list a two-package app`() {
+        val state = ui(EscalationDefaults.watched, launcherApps = listOf(facebookLite))
+
+        assertEquals(listOf(TargetApp.FACEBOOK), state.watchedApps.map { it.app })
     }
 
     @Test
@@ -81,9 +109,30 @@ class SettingsStateTest {
     }
 
     @Test
-    fun `nothing can be switched off while the installed apps are still loading`() {
-        val state = ui(watched = packagesOf(TargetApp.TIKTOK) + youtube.packageName, launcherApps = null)
+    fun `no rows and no empty notice while the installed apps are still loading`() {
+        val state = ui(watched = packagesOf(TargetApp.TIKTOK) + chrome.packageName, added = setOf(chrome.packageName), launcherApps = null)
 
-        assertTrue(state.watchedApps.filter { it.isWatched }.none { it.canToggle })
+        assertTrue(state.isLoadingApps)
+        assertTrue(state.watchedApps.isEmpty())
+        assertTrue(state.addedApps.isEmpty())
+        assertFalse(state.hasNoVisibleApps)
+    }
+
+    @Test
+    fun `with no watched app installed the list is empty and shows the notice`() {
+        val state = ui(EscalationDefaults.watched, added = setOf("gone.app"), launcherApps = listOf(chrome))
+
+        assertTrue(state.watchedApps.isEmpty())
+        assertTrue(state.addedApps.isEmpty())
+        assertTrue(state.hasNoVisibleApps)
+    }
+
+    @Test
+    fun `the notice does not show while any app is listed`() {
+        assertFalse(ui(EscalationDefaults.watched).hasNoVisibleApps)
+    }
+
+    private object EscalationDefaults {
+        val watched: Set<String> = LikkaSettings().watchedPackages
     }
 }

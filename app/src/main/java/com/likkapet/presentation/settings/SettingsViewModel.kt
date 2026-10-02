@@ -46,9 +46,14 @@ data class SettingsUiState(
     val themeMode: ThemeMode,
     val watchedApps: List<WatchedAppUi>,
     val addedApps: List<AddedAppUi>,
+    // While the installed apps are being read no watched-app row is shown, never a partial list.
+    val isLoadingApps: Boolean,
     val isAiEnabled: Boolean,
     val isDeactivateDialogVisible: Boolean,
 ) {
+    /** Nothing watched is installed: Settings invites the user to "Añadir app". */
+    val hasNoVisibleApps: Boolean get() = !isLoadingApps && watchedApps.isEmpty() && addedApps.isEmpty()
+
     companion object {
         fun preview() =
             buildSettingsUiState(
@@ -62,8 +67,9 @@ data class SettingsUiState(
 }
 
 /**
- * [launcherApps] is null while the installed apps are still being read: until then no watched app
- * can be switched off, since the "at least one installed" rule cannot be checked yet.
+ * [launcherApps] is null while the installed apps are still being read: until then no watched-app
+ * row is listed. Apps that are not installed (default or added) are hidden; their stored value is
+ * kept, so a default app installed later shows up with it.
  */
 fun buildSettingsUiState(
     settings: LikkaSettings,
@@ -75,12 +81,21 @@ fun buildSettingsUiState(
         isLikkaEnabled = settings.likkaEnabled,
         isVibrationEnabled = settings.vibrationEnabled,
         themeMode = settings.themeMode,
-        watchedApps = TargetApp.DEFAULTS.map { defaultAppUi(it, settings.watchedPackages, installed) },
+        watchedApps =
+            TargetApp.DEFAULTS
+                .filter { isInstalled(it, installed) }
+                .map { defaultAppUi(it, settings.watchedPackages, installed) },
         addedApps = addedAppsUi(settings, launcherApps.orEmpty(), installed),
+        isLoadingApps = launcherApps == null,
         isAiEnabled = settings.aiEnabled,
         isDeactivateDialogVisible = isDeactivateDialogVisible,
     )
 }
+
+private fun isInstalled(
+    app: TargetApp,
+    installed: Set<String>,
+): Boolean = WatchedApps.packagesOf(app).any { it in installed }
 
 private fun defaultAppUi(
     app: TargetApp,

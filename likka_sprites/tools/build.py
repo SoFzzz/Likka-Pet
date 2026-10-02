@@ -40,19 +40,36 @@ SHEETS = {
     'curiosity': ('Likka-c-curiosity.png', 5, 5, 25, 2, (0, 0)),
 }
 
-# tag, source sheet, chosen source frame indices (0-based, row-major), fps
+# tag, source sheet, chosen source frame indices (0-based, row-major), timing: either one fps for
+# every frame of the tag, or a list with each frame's duration in ms (holds, uneven pacing)
 TAGS = [
-    ('idle', 'idle', [0, 1, 2, 3, 4, 5, 6, 7], 8),
+    # idle: only the rest frames; source frames 2-5 lift the elytron and every rest <-> lift step
+    # changes >= 1456 px, so they read as a jump. Frame 0 is held so a breath lasts 1.5 s.
+    ('idle', 'idle', [0, 1, 6, 7], [750, 250, 250, 250]),
     ('walk_down', 'walk_down', [0, 1, 2, 3, 4, 5, 6, 7], 10),
     ('walk_up', 'walk_up', [0, 1, 2, 5, 6, 7, 8, 11], 10),
     ('walk_diag_down_right', 'diag', [0, 1, 2, 3, 4], 10),
     ('annoyed', 'angry', [0, 6, 17, 16], 8),
     ('fury', 'angry', [7, 8, 9, 10, 11, 12], 8),
-    ('peek', 'idle', [0, 1, 6, 7], 8),
+    ('peek', 'idle', [0, 1, 6, 7], [750, 250, 250, 250]),  # same breath as idle
     ('sit', 'sit', [0, 4, 16, 23], 6),
     ('sleep', 'sleep', [15, 16, 23, 17], 4),
     ('look_around', 'curiosity', [0, 6, 11, 19], 6),
 ]
+
+# Frames the common palette is computed from. Frozen to the first build's selection so that
+# changing a tag's frames or timing never recolours the sheet.
+PALETTE_FRAMES = {
+    'idle': [0, 1, 2, 3, 4, 5, 6, 7],
+    'walk_down': [0, 1, 2, 3, 4, 5, 6, 7],
+    'walk_up': [0, 1, 2, 5, 6, 7, 8, 11],
+    'diag': [0, 1, 2, 3, 4],
+    'annoyed': ('angry', [0, 6, 17, 16]),
+    'fury': ('angry', [7, 8, 9, 10, 11, 12]),
+    'sit': [0, 4, 16, 23],
+    'sleep': [15, 16, 23, 17],
+    'curiosity': [0, 6, 11, 19],
+}
 
 POSES = {
     "idle": {"tag": "idle", "mode": "loop"},
@@ -211,24 +228,42 @@ def x_offset(frames, peek=False):
     return (CELL - width) // 2 - x0
 
 
+def palette_source(group, spec):
+    """(sheet, frame indices) of a PALETTE_FRAMES entry; the key is the sheet unless given."""
+    return spec if isinstance(spec, tuple) else (group, spec)
+
+
+def frame_durations(timing, count):
+    """Per-frame durations in ms (likka.json `duration`) from a tag's fps or explicit list."""
+    if isinstance(timing, int):
+        return [round(1000 / timing)] * count
+    if len(timing) != count:
+        raise ValueError(f'{len(timing)} durations for {count} frames')
+    return list(timing)
+
+
 def main():
     cache = {}
-    raw = {}
-    for tag, sheet, idx, _ in TAGS:
+
+    def source_frames(sheet, idx):
         if sheet not in cache:
             cache[sheet] = [remove_islands(f) for f in load_frames(sheet)]
-        raw[tag] = [cache[sheet][i] for i in idx]
-    pal = build_palette({t: f for t, f in raw.items() if t != 'peek'})
+        return [cache[sheet][i] for i in idx]
+
+    raw = {tag: source_frames(sheet, idx) for tag, sheet, idx, _ in TAGS}
+    pal = build_palette({group: source_frames(*palette_source(group, spec))
+                         for group, spec in PALETTE_FRAMES.items()})
     outline = pal[0]
 
     cols = max(len(i) for _, _, i, _ in TAGS)
     sheet_img = np.zeros((CELL * len(TAGS), CELL * cols, 4), np.uint8)
     frames_json, tags_json = [], []
     n = 0
-    for row, (tag, sheet, idx, fps) in enumerate(TAGS):
+    for row, (tag, sheet, idx, timing) in enumerate(TAGS):
         clean = [apply_outline(to_palette(f, pal), outline) for f in raw[tag]]
         dx = x_offset(clean, peek=(tag == 'peek'))
         start = n
+        durations = frame_durations(timing, len(clean))
         for col, f in enumerate(clean):
             cell = place(f, dx)
             sheet_img[row * CELL:(row + 1) * CELL, col * CELL:(col + 1) * CELL] = cell
@@ -239,7 +274,7 @@ def main():
                 "trimmed": False,
                 "spriteSourceSize": {"x": 0, "y": 0, "w": CELL, "h": CELL},
                 "sourceSize": {"w": CELL, "h": CELL},
-                "duration": round(1000 / fps),
+                "duration": durations[col],
             })
             n += 1
         tags_json.append({"name": tag, "from": start, "to": n - 1,

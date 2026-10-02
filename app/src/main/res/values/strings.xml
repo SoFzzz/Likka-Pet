@@ -124,7 +124,7 @@
     <string name="onboarding_permissions_title">Permisos</string>
     <string name="onboarding_permissions_intro">Necesito estos permisos para cuidarte. Sin ellos no puedo aparecer ni saber qué app usas.</string>
     <string name="onboarding_permissions_required">Concede todos los permisos para continuar.</string>
-    <string name="onboarding_miui_title">Ajustes de Xiaomi</string>
+    <string name="onboarding_miui_title">Ajustes de tu teléfono</string>
     <string name="onboarding_miui_intro">Tu teléfono cierra las apps en segundo plano. Activa estas tres opciones para que no me apague.</string>
     <string name="onboarding_miui_autostart_title">Inicio automático</string>
     <string name="onboarding_miui_autostart_body">Permite que vuelva a arrancar solo cuando enciendas el teléfono.</string>
@@ -149,6 +149,8 @@
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_group_watched_apps">Apps vigiladas</string>
     <string name="settings_watched_apps_hint">Tiene que quedar al menos una app vigilada.</string>
+    <!-- PROPOSED wording, pending the owner's approval -->
+    <string name="settings_watched_apps_empty">No encuentro en tu teléfono ninguna de las apps que vigilo. Usa «Añadir app» para elegir cuál vigilar.</string>
     <string name="settings_add_app">Añadir app</string>
     <string name="settings_remove_app">Quitar</string>
     <string name="settings_remove_app_description">Quitar %1$s</string>

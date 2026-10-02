@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.likkapet.R
+import com.likkapet.domain.model.LikkaSettings
 import com.likkapet.domain.model.TargetApp
 import com.likkapet.domain.model.ThemeMode
 import com.likkapet.presentation.components.AppIconLoader
@@ -175,6 +176,14 @@ private fun WatchedAppsGroup(
             onRemoveClick = { actions.onRemoveApp(item.packageName) },
         )
     }
+    if (state.hasNoVisibleApps) {
+        Text(
+            text = stringResource(R.string.settings_watched_apps_empty),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(vertical = LikkaSpacing.s),
+        )
+    }
     SettingsLinkRow(stringResource(R.string.settings_add_app), actions.onAddAppClick)
     Text(
         text = stringResource(R.string.settings_watched_apps_hint),
@@ -205,6 +214,17 @@ private fun SettingsWatchedAppsPreview() {
     LikkaPreview {
         Column(modifier = Modifier.padding(horizontal = LikkaSpacing.m)) {
             WatchedAppsGroup(SettingsUiState.preview(), NoAppIcons, SettingsActions())
+        }
+    }
+}
+
+@LikkaThemePreviews
+@Composable
+private fun SettingsNoWatchedAppsPreview() {
+    val empty = buildSettingsUiState(LikkaSettings(likkaEnabled = true), launcherApps = emptyList(), isDeactivateDialogVisible = false)
+    LikkaPreview {
+        Column(modifier = Modifier.padding(horizontal = LikkaSpacing.m)) {
+            WatchedAppsGroup(empty, NoAppIcons, SettingsActions())
         }
     }
 }

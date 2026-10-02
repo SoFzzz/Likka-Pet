@@ -3,7 +3,8 @@
 Same criteria as the unit test of likkapet_design_system.md §1.7 (the 10 sheet tags exist,
 every pose points to an existing tag, every frame is 96x96) plus art-format checks: binary
 alpha, 12-16 colours, feet on y = 92, max height 90 with 2 px free on top, frame count and
-per-frame duration per tag. Prints a per-tag table; exits with code 1 on any failure.
+exact per-frame durations per tag. Prints a per-tag table (with the largest pixel change
+between consecutive frames); exits with code 1 on any failure.
 
 Run from the project root (needs Pillow and numpy):
     python likka_sprites/tools/validate.py
@@ -18,10 +19,21 @@ from PIL import Image
 SPR = Path(__file__).resolve().parents[2] / 'sprites'
 SHEET_TAGS = ['idle', 'walk_down', 'walk_up', 'walk_diag_down_right', 'annoyed', 'fury',
               'peek', 'sit', 'sleep', 'look_around']
-EXPECTED_FRAMES = {'idle': 8, 'walk_down': 8, 'walk_up': 8, 'walk_diag_down_right': 5,
-                   'annoyed': 4, 'fury': 6, 'peek': 4, 'sit': 4, 'sleep': 4, 'look_around': 4}
-EXPECTED_FPS = {'idle': 8, 'walk_down': 10, 'walk_up': 10, 'walk_diag_down_right': 10,
-                'annoyed': 8, 'fury': 8, 'peek': 8, 'sit': 6, 'sleep': 4, 'look_around': 6}
+# Exact per-frame durations in ms (the frame count is the list length). Uniform tags are written
+# from their fps (design system §1.7); idle and peek hold their first frame (a 1.5 s breath).
+BREATH_MS = [750, 250, 250, 250]
+EXPECTED_DURATIONS = {
+    'idle': BREATH_MS,
+    'walk_down': [100] * 8,
+    'walk_up': [100] * 8,
+    'walk_diag_down_right': [100] * 5,
+    'annoyed': [125] * 4,
+    'fury': [125] * 6,
+    'peek': BREATH_MS,
+    'sit': [167] * 4,
+    'sleep': [250] * 4,
+    'look_around': [167] * 4,
+}
 VALID_MODES = {'loop', 'once', 'once_then_idle', 'hold'}
 VALID_EXTRAS = {'z', 'sweat_drop', 'aura', 'sparkles'}
 FEET_Y, MAX_H, TOP_FREE = 92, 90, 2
@@ -67,27 +79,31 @@ rows = []
 for name in SHEET_TAGS:
     t = tags[name]
     n = t['to'] - t['from'] + 1
-    check(n == EXPECTED_FRAMES[name], f'{name}: {n} frames, expected {EXPECTED_FRAMES[name]}')
-    heights, bottoms, tops, centres, durs = [], [], [], [], set()
+    expected = EXPECTED_DURATIONS[name]
+    check(n == len(expected), f'{name}: {n} frames, expected {len(expected)}')
+    heights, bottoms, tops, centres, durs, cells = [], [], [], [], [], []
     for i in range(t['from'], t['to'] + 1):
         fr = frames[i]['frame']
-        durs.add(frames[i]['duration'])
+        durs.append(frames[i]['duration'])
         cell = sheet[fr['y']:fr['y'] + 96, fr['x']:fr['x'] + 96]
+        cells.append(cell)
         ys, xs = np.where(cell[..., 3] > 0)
         heights.append(ys.max() - ys.min() + 1)
         bottoms.append(ys.max())
         tops.append(ys.min())
         centres.append((xs.min() + xs.max()) / 2)
-    check(durs == {round(1000 / EXPECTED_FPS[name])}, f'{name}: durations {durs}')
+    check(durs == expected, f'{name}: durations {durs}, expected {expected}')
+    # informative: pixels changing between consecutive frames, last -> first included
+    jumps = [int((cells[k] != cells[(k + 1) % n]).any(-1).sum()) for k in range(n)]
     check(set(bottoms) == {FEET_Y}, f'{name}: feet rows {sorted(set(bottoms))}')
     check(max(heights) <= MAX_H, f'{name}: max height {max(heights)} > {MAX_H}')
     check(min(tops) >= TOP_FREE, f'{name}: top row {min(tops)} < {TOP_FREE}')
-    rows.append((name, n, sorted(durs)[0], min(heights), max(heights), min(tops),
-                 min(centres), max(centres)))
+    rows.append((name, n, sum(durs), min(heights), max(heights), min(tops),
+                 min(centres), max(centres), max(jumps)))
 
-print(f'{"tag":22} frames  ms   h(min-max)  top  x-centre')
+print(f'{"tag":22} frames cycle-ms h(min-max)  top  x-centre   max-jump-px')
 for r in rows:
-    print(f'{r[0]:22} {r[1]:>4} {r[2]:>6}   {r[3]:>3}-{r[4]:<3}    {r[5]:>3}  {r[6]:.1f}-{r[7]:.1f}')
+    print(f'{r[0]:22} {r[1]:>4} {r[2]:>8}   {r[3]:>3}-{r[4]:<3}    {r[5]:>3}  {r[6]:.1f}-{r[7]:.1f}  {r[8]:>8}')
 print('colours:', len(colours), ' alpha values:', alpha.tolist(), ' poses:', len(poses))
 if failures:
     print('\nFAIL:\n  ' + '\n  '.join(failures))
