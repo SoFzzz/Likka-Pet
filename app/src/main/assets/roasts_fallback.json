@@ -1,0 +1,68 @@
+{
+  "L1": {
+    "POSTURE": [
+      "Psst… tu cuello acaba de pedir asilo en mi bosque.",
+      "Ese ángulo de cuello ya no es postura, es una coreografía.",
+      "Mis cuernos apuntan al cielo. Tu mirada, al ombligo. Curioso.",
+      "Levanta ese teléfono, que mi bosque no tiene seguro médico.",
+      "Tu cuello hizo una pregunta y la respuesta fue: más arriba.",
+      "Detecto una reverencia al teléfono. Qué cortesía. Qué innecesaria.",
+      "Un escarabajo nocturno lo sabe: lo bueno se mira de frente.",
+      "Sube esa pantalla, que el suelo no tiene nada que decirte."
+    ],
+    "USAGE_TIME": [
+      "El algoritmo te manda saludos. Dice que no tiene prisa.",
+      "Llevas un buen rato ahí. Mis élitros ya se aburrieron por ti.",
+      "Psst… el bosque sigue aquí afuera, por si te acuerdas.",
+      "Ese scroll lleva tantas vueltas que ya merece un nombre propio.",
+      "Solo un vistazo, dijiste. Yo ya conté las hojas que cayeron.",
+      "La noche es larga, pero tu pulgar no necesita ganarle.",
+      "Pausa sugerida por un escarabajo con muchísima paciencia.",
+      "Tu pulgar lleva un rato de servicio. Ofrécele un descanso."
+    ]
+  },
+  "L2": {
+    "POSTURE": [
+      "Tu cuello carga como un garrafón de agua colgado. Qué elegante manera de sufrir.",
+      "Sigues en curva. Admiro la constancia, pero mi bosque no da masajes.",
+      "Ese cuello trabaja horas extra y ni se lo agradeces. Súbelo ya.",
+      "Yo cargo cuernos enormes y camino derecho. Tú cargas un celular. Piénsalo.",
+      "Cada grado de inclinación es una vértebra suspirando. Escúchalas, que yo ya no puedo.",
+      "Si encorvarse fuera deporte, ya tendrías medalla. Endereza esa espalda.",
+      "Tu cuello y yo tenemos una queja formal. Se tramita subiendo la pantalla.",
+      "Qué dedicación al suelo. Hasta las hormigas preguntan si te mudas."
+    ],
+    "USAGE_TIME": [
+      "Qué dedicación a la pantalla. Ojalá tu tarea tuviera tanta suerte.",
+      "Ahí sigues, sin despegarte. Mi paciencia tiene élitros, pero también tiene límites.",
+      "El algoritmo te adoptó oficialmente. Felicidades, ya tienes familia.",
+      "Tanto scroll y todavía no llegas a ningún lado. Impresionante.",
+      "Tus ojos llevan rato con la misma luz. Hasta las luciérnagas descansan.",
+      "Esto ya no es un vistazo, es una mudanza. Empaca y sal.",
+      "Mi bosque tiene árboles, ríos y noche. Tú elegiste una pantalla. Valiente.",
+      "Cada video nuevo me quita una antena de paciencia. Me quedan pocas."
+    ]
+  },
+  "L3": {
+    "POSTURE": [
+      "Tu cuello carga 27 kilos. Yo cargo cuernos y aun así camino derecho. Suelta eso.",
+      "Se acabó la función. Tu cuello pidió la renuncia y yo la firmo: te mando al inicio.",
+      "Último aviso del escarabajo: endereza ese cuello o te saco de aquí con un aleteo.",
+      "27 kilos de drama sobre tus vértebras. Yo no negocio más: afuera de la app.",
+      "Mis cuernos tiemblan de indignación. Cuello arriba o te saco de aquí. Tú eliges.",
+      "Esto es una intervención oficial del bosque. Cuello recto o pantalla cerrada.",
+      "Tu cuello llegó al límite y yo también. Cuenta regresiva activada, humano.",
+      "Basta de reverencias al teléfono. Levanta la vista o te mando al inicio."
+    ],
+    "USAGE_TIME": [
+      "Se acabó la función. Te mando al inicio antes de que el algoritmo te adopte.",
+      "El bosque entero te espera afuera. Último aviso, luego yo cierro la puerta.",
+      "Mi paciencia se fue a dormir y dejó una nota: suelta el teléfono.",
+      "Ni mis élitros resisten tanto brillo. Te mando al inicio, con cariño y firmeza.",
+      "Esto no es un maratón, es un secuestro de tiempo. Te rescato al inicio.",
+      "Ultimátum nocturno: sales por tu cuenta o salgo yo por ti, con mucho drama.",
+      "El algoritmo ganó muchas rondas. Hoy pierde esta. Inicio, ahora, humano.",
+      "Cuenta regresiva, escarabajo furioso y una app que ya no debería seguir abierta. Adiós."
+    ]
+  }
+}
