@@ -23,8 +23,8 @@ android {
         applicationId = "com.likkapet"
         minSdk = 29
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.4"
+        versionCode = 8
+        versionName = "1.0.5"
 
         // Worker address and shared token (documentación §7.3). They come from local.properties and are
         // never in the repo; an empty value (a fresh clone) just means the app uses its local roasts.
