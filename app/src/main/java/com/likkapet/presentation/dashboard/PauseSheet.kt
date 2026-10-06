@@ -90,7 +90,7 @@ fun PauseSheetContent(
         LikkaButton(
             text = stringResource(R.string.pause_confirm_button),
             onClick = onConfirm,
-            variant = LikkaButtonVariant.WARNING,
+            variant = LikkaButtonVariant.PRIMARY,
         )
     }
 }
