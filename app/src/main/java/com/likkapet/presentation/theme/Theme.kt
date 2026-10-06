@@ -12,9 +12,9 @@ val LikkaDarkColorScheme =
     darkColorScheme(
         primary = LikkaColors.RaspberryLight,
         onPrimary = LikkaColors.Cocoa,
-        primaryContainer = LikkaColors.Ochre,
+        primaryContainer = LikkaColors.RaspberryLight,
         onPrimaryContainer = LikkaColors.Cocoa,
-        secondary = LikkaColors.Ochre,
+        secondary = LikkaColors.RaspberryLight,
         onSecondary = LikkaColors.Cocoa,
         // secondaryContainer: SegmentedButton's selected-segment fill (design system §2.5), so it
         // needs its own AA-verified pair, not Material's default (purple) tonal derivation.
@@ -60,11 +60,11 @@ val LikkaLightColorScheme =
         // button keeps #FCA30B via LikkaButtonColors, which does not read colorScheme.
         primary = LikkaColors.RaspberryMid,
         onPrimary = LikkaColors.LightSurface,
-        primaryContainer = LikkaColors.Ochre,
+        primaryContainer = LikkaColors.RaspberryLight,
         onPrimaryContainer = LikkaColors.Cocoa,
         // OchreDark, not brand.ochre (#D17B0F): colorScheme.secondary is also used as text/icon
         // color in some components, and #D17B0F doesn't clear AA there either (§1.1).
-        secondary = LikkaColors.OchreDark,
+        secondary = LikkaColors.RaspberryMid,
         onSecondary = LikkaColors.LightSurface,
         secondaryContainer = LikkaColors.LightSurfaceVariant,
         onSecondaryContainer = LikkaColors.RaspberryMid,
