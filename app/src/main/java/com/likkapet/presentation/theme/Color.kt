@@ -102,7 +102,7 @@ val LikkaDefaultButtonColors =
     LikkaButtonColors(
         primaryContainer = LikkaColors.RaspberryLight,
         onPrimaryContainer = LikkaColors.Cocoa,
-        warningContainer = LikkaColors.Ochre,
+        warningContainer = LikkaColors.RaspberryLight,
         onWarningContainer = LikkaColors.Cocoa,
         dangerContainer = LikkaColors.Raspberry,
         onDangerContainer = LikkaColors.Cream,
@@ -132,7 +132,7 @@ data class LikkaExtrasColors(
 val LikkaDefaultExtrasColors =
     LikkaExtrasColors(
         outline = LikkaColors.Cocoa,
-        sparkle = LikkaColors.Amber,
+        sparkle = LikkaColors.RaspberryLight,
         sleepZ = LikkaColors.Plum,
         sweatDrop = LikkaColors.Cream,
         sweatDropShine = LikkaColors.LightSurface,
