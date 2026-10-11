@@ -201,6 +201,8 @@ object EscalationConfig {
     // Posture
     const val POSTURE_DANGER_ANGLE = 45.0 // θ < 45° = text neck
     const val POSTURE_RESET_ANGLE = 55.0 // θ > 55° to forgive (10° hysteresis)
+    const val POSTURE_DANGER_ANGLE_LANDSCAPE = 70.0 // θ < 70° in landscape = text neck (owner decision, 2026-10-11)
+    const val POSTURE_RESET_ANGLE_LANDSCAPE = 80.0 // θ > 80° in landscape to forgive
     const val POSTURE_TRIGGER_SEC = 10 // Continuous bad posture before triggering
     const val POSTURE_RESET_SEC = 15 // Continuous good posture before forgiving
 
@@ -362,6 +364,8 @@ Plano sobre una superficie, $Z \approx 9.81\text{ m/s}^2$ y $\theta \approx 0^\c
 - $Z > 9.0\text{ m/s}^2$ y $|Y| < 2.0\text{ m/s}^2$ (horizontal), **y**
 - la **desviación estándar de la magnitud de la aceleración** en los últimos 2 s (10 muestras de `TYPE_ACCELEROMETER` crudo) es **< 0.05 m/s²**.  
 Un teléfono en la mano siempre tiene microtemblor (típicamente > 0.1 m/s²); uno sobre una mesa está quieto. La varianza se calcula con el acelerómetro **crudo**, porque `TYPE_GRAVITY` ya viene filtrado y ocultaría el temblor.
+
+**Umbrales en horizontal (decisión de la dueña, 2026-10-11).** Con el teléfono sostenido en horizontal (juegos, video) la pantalla queda más erguida, hacia 64°, y los umbrales de vertical nunca dispararían. Si la gravedad va sobre todo por el eje corto del teléfono (`|x| > |y|`, `PostureReading.isLandscape`), la zona mala es $	heta$ < `POSTURE_DANGER_ANGLE_LANDSCAPE` (70°) y la sana $	heta$ > `POSTURE_RESET_ANGLE_LANDSCAPE` (80°); en vertical siguen 45°/55°.
 
 **Opción B — comportamiento de la mesa (decisión de la dueña, 2026-10-05).** `PostureTrack.shownLevel` devuelve `NONE` solo si la pista `POSTURE` **no está activa** (`!track.isActive`). Esto significa que:
 - Si la pista no está activa (Nivel 0), la mesa impide que `POSTURE` se dispare: el overlay de `POSTURE` no aparece mientras el teléfono está plano y quieto.

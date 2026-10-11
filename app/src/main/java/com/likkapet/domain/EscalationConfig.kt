@@ -7,6 +7,11 @@ object EscalationConfig {
     // Posture
     const val POSTURE_DANGER_ANGLE = 45.0 // θ < 45° = text neck
     const val POSTURE_RESET_ANGLE = 55.0 // θ > 55° to forgive (10° hysteresis)
+
+    // Owner decision (2026-10-11): held in landscape (gaming, video) the screen sits more upright,
+    // around 64°, so the same thresholds would never trigger there. Same 10° hysteresis.
+    const val POSTURE_DANGER_ANGLE_LANDSCAPE = 70.0 // θ < 70° in landscape = text neck
+    const val POSTURE_RESET_ANGLE_LANDSCAPE = 80.0 // θ > 80° in landscape to forgive
     const val POSTURE_TRIGGER_SEC = 10 // Continuous bad posture before triggering
     const val POSTURE_RESET_SEC = 15 // Continuous good posture before forgiving
 

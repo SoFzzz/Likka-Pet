@@ -324,12 +324,13 @@ class LikkaService : Service() {
             TAG,
             String.format(
                 Locale.ROOT,
-                "Heartbeat #%d: minutes=%d intervalMs=%d readings=%d rateHz=%.1f",
+                "Heartbeat #%d: minutes=%d intervalMs=%d readings=%d rateHz=%.1f angle(%s)",
                 heartbeatCount,
                 elapsedMinutes,
                 intervalMs,
                 readings,
                 readings * MILLIS_PER_SECOND / intervalMs,
+                running.takeAngleSummary(),
             ),
         )
         lastHeartbeatElapsedMs = now

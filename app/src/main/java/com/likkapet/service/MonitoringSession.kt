@@ -3,6 +3,7 @@ package com.likkapet.service
 import com.likkapet.data.usage.DailyStatsRecorder
 import com.likkapet.domain.EscalationConfig
 import com.likkapet.domain.EscalationCoordinator
+import com.likkapet.domain.PostureZone
 import com.likkapet.domain.model.ForegroundState
 import com.likkapet.domain.model.LikkaOverlayState
 import com.likkapet.domain.model.LikkaState
@@ -39,6 +40,7 @@ import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -69,6 +71,10 @@ class MonitoringSession(
     private val coordinator = EscalationCoordinator(clock)
     private var runJob: Job? = null
     private val readingsSinceLastTake = AtomicInteger()
+    private var angleMin = 0.0
+    private var angleMax = 0.0
+    private var angleLast = 0.0
+    private var angleCount = 0
     private var lastPrefetchedApp: TargetApp? = null
     private var lastLoggedForeground: ForegroundState? = null
     private var shownRoast: ShownRoast? = null
@@ -154,8 +160,25 @@ class MonitoringSession(
     /** Posture readings since the last call, for the service's heartbeat log. */
     fun takeReadingsCount(): Int = readingsSinceLastTake.getAndSet(0)
 
+    /** Min, max and last screen tilt since the last call, for the heartbeat log; "n/a" without readings. */
+    @Synchronized
+    fun takeAngleSummary(): String {
+        val summary = if (angleCount == 0) "n/a" else "min=%.0f max=%.0f last=%.0f".format(Locale.ROOT, angleMin, angleMax, angleLast)
+        angleCount = 0
+        return summary
+    }
+
+    @Synchronized
+    private fun recordAngle(angle: Double) {
+        angleMin = if (angleCount == 0) angle else minOf(angleMin, angle)
+        angleMax = if (angleCount == 0) angle else maxOf(angleMax, angle)
+        angleLast = angle
+        angleCount++
+    }
+
     private fun onPostureReading(reading: PostureReading) {
         readingsSinceLastTake.incrementAndGet()
+        recordAngle(reading.angleDegrees)
         logTableChange(reading.isOnTable)
         updateHunched(reading)
         coordinator.onPostureReading(reading)
@@ -164,9 +187,10 @@ class MonitoringSession(
     // On the table the phone says nothing about the neck, so the last known posture is kept.
     private fun updateHunched(reading: PostureReading) {
         if (reading.isOnTable) return
-        when {
-            reading.angleDegrees < EscalationConfig.POSTURE_DANGER_ANGLE -> isHunched.value = true
-            reading.angleDegrees > EscalationConfig.POSTURE_RESET_ANGLE -> isHunched.value = false
+        when (PostureZone.of(reading.angleDegrees, reading.isLandscape)) {
+            PostureZone.BAD -> isHunched.value = true
+            PostureZone.GOOD -> isHunched.value = false
+            else -> Unit
         }
     }
 

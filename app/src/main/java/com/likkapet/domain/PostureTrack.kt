@@ -34,7 +34,7 @@ internal class PostureTrack(
 
     fun onReading(reading: PostureReading) {
         isOnTable = reading.isOnTable
-        val newZone = if (reading.isOnTable) PostureZone.UNKNOWN else PostureZone.of(reading.angleDegrees)
+        val newZone = if (reading.isOnTable) PostureZone.UNKNOWN else PostureZone.of(reading.angleDegrees, reading.isLandscape)
         if (newZone != zone) resetContinuousCounters()
         zone = newZone
     }
@@ -137,11 +137,17 @@ internal enum class PostureZone {
     ;
 
     companion object {
-        fun of(angleDegrees: Double): PostureZone =
-            when {
-                angleDegrees < EscalationConfig.POSTURE_DANGER_ANGLE -> BAD
-                angleDegrees > EscalationConfig.POSTURE_RESET_ANGLE -> GOOD
+        fun of(
+            angleDegrees: Double,
+            isLandscape: Boolean = false,
+        ): PostureZone {
+            val danger = if (isLandscape) EscalationConfig.POSTURE_DANGER_ANGLE_LANDSCAPE else EscalationConfig.POSTURE_DANGER_ANGLE
+            val reset = if (isLandscape) EscalationConfig.POSTURE_RESET_ANGLE_LANDSCAPE else EscalationConfig.POSTURE_RESET_ANGLE
+            return when {
+                angleDegrees < danger -> BAD
+                angleDegrees > reset -> GOOD
                 else -> NEUTRAL
             }
+        }
     }
 }

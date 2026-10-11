@@ -61,7 +61,11 @@ object BiomechanicsCalculator {
         rawMagnitudes: List<Double>,
     ): PostureReading? =
         screenTiltDegrees(orientation)?.let { angle ->
-            PostureReading(angleDegrees = angle, isOnTable = isOnTable(orientation, rawMagnitudes))
+            PostureReading(
+                angleDegrees = angle,
+                isOnTable = isOnTable(orientation, rawMagnitudes),
+                isLandscape = abs(orientation.x) > abs(orientation.y),
+            )
         }
 
     // Rounding can push the cosine just past ±1 (e.g. with subnormal components); acos would be NaN.

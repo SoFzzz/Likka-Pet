@@ -7,4 +7,6 @@ package com.likkapet.domain.model
 data class PostureReading(
     val angleDegrees: Double,
     val isOnTable: Boolean,
+    // Gravity mostly along the phone's long axis: held sideways (landscape) uses its own thresholds.
+    val isLandscape: Boolean = false,
 )
