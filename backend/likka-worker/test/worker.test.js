@@ -177,6 +177,20 @@ test("angle 44 and 45 both reach the prompt as 45, which the system prompt puts 
   assert.ok(!system.includes("entre 45 y 64"));
 });
 
+test("both prompts forbid stating degrees or an upright phone, and USAGE_TIME ignores the angle", async () => {
+  // The app always sends a constant angle (RF-I11), so a stated number of degrees would be false.
+  await call(VALID);
+  const es = lastDeepseekBody().messages[0].content;
+  assert.ok(es.includes("nunca digas un número de grados ni que el teléfono está recto o derecho"));
+  assert.ok(es.includes("habla solo de los kilos que carga el cuello"));
+  assert.ok(es.includes("menciona los minutos perdidos e ignora el angulo"));
+  await call({ ...VALID, lang: "en" });
+  const en = lastDeepseekBody().messages[0].content;
+  assert.ok(en.includes("never state a number of degrees or say the phone is straight or upright"));
+  assert.ok(en.includes("talk only about the kilos the neck carries"));
+  assert.ok(en.includes("mention the wasted minutes and ignore the angle"));
+});
+
 test("DeepSeek 402 -> 402 {error: no_credit}", async () => {
   deepseekBehavior = async () => new Response("Insufficient Balance", { status: 402 });
   const response = await call(VALID);
