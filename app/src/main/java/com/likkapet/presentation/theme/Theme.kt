@@ -56,14 +56,14 @@ val LikkaLightColorScheme =
     lightColorScheme(
         // RaspberryMid, not the light RaspberryLight button fill: colorScheme.primary is also used as
         // TextButton/OutlinedButton text, the checked Switch track, checkbox fill and the focused
-        // field border — #FCA30B only reaches 1.86:1/2.02:1 there (§1.1). The filled Primary
-        // button keeps #FCA30B via LikkaButtonColors, which does not read colorScheme.
+        // field border — #F07AA0 only reaches 2.42:1/2.63:1 there (§1.1). The filled Primary
+        // button keeps #F07AA0 via LikkaButtonColors, which does not read colorScheme.
         primary = LikkaColors.RaspberryMid,
         onPrimary = LikkaColors.LightSurface,
         primaryContainer = LikkaColors.RaspberryLight,
         onPrimaryContainer = LikkaColors.Cocoa,
-        // OchreDark, not brand.ochre (#D17B0F): colorScheme.secondary is also used as text/icon
-        // color in some components, and #D17B0F doesn't clear AA there either (§1.1).
+        // RaspberryMid too: colorScheme.secondary is also used as text/icon color in some
+        // components, and the light fill #F07AA0 doesn't clear AA there either (§1.1).
         secondary = LikkaColors.RaspberryMid,
         onSecondary = LikkaColors.LightSurface,
         secondaryContainer = LikkaColors.LightSurfaceVariant,

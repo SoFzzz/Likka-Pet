@@ -1,7 +1,7 @@
-# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.18
+# 🎨 Likka-Pet — Design System (Interfaz UI/UX) · v3.19
 
 > Documento **exclusivo de diseño de interfaz**. La lógica, arquitectura e IA viven en [`likkapet_documentacion.md`](likkapet_documentacion.md).  
-> *Paleta: **Bosque** (frambuesa, ámbar, cacao, ocre, ciruela). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
+> *Paleta: **Bosque** (frambuesa, frambuesa claro, cacao, ciruela; el ámbar queda solo en los ojos de Likka). Tema: oscuro por defecto; claro opcional (COULD). Personaje: **Likka, un escarabajo ciervo nocturno** en pixel art (diseño original "Sirv").*
 
 ---
 
@@ -34,7 +34,7 @@
 | **Molestar con cariño** | Los overlays estorban a propósito, pero nunca humillan ni atrapan: siempre hay una salida visible. |
 | **Estorba con cariño y se mueve, pero nunca atrapa** | Desde el Nivel 1, Likka cambia de lugar; en el Nivel 2, camina y persigue. El movimiento es parte de la travesura, no un obstáculo real: nunca tapa la barra de estado/navegación, nunca bloquea los toques fuera de su silueta, y siempre se puede alejar de un arrastre o detener del todo con *Quitar animaciones* (`likkapet_documentacion.md` §9.6). |
 | **Cero fricción fuera del overlay** | La app se abre poco. Cuando se abre, responde en 3 segundos: *¿estoy protegido? ¿cómo voy hoy?* |
-| **Cálido y oscuro** | El tema oscuro (fondo cacao) es el de marca y el que usa el overlay siempre: no deslumbra al usuario, que suele estar en redes de noche. En Ajustes existe además un tema claro opcional (§1.1 "Paleta clara"), pero conserva la misma identidad: el cacao sigue siendo el color de texto principal y el ámbar el del botón primario. El ámbar y la frambuesa son acentos, no fondos, en ambos temas. |
+| **Cálido y oscuro** | El tema oscuro (fondo cacao) es el de marca y el que usa el overlay siempre: no deslumbra al usuario, que suele estar en redes de noche. En Ajustes existe además un tema claro opcional (§1.1 "Paleta clara"), pero conserva la misma identidad: el cacao sigue siendo el color de texto principal y el frambuesa claro (`raspberry.light`) del botón primario. El frambuesa claro y la frambuesa son acentos, no fondos, en ambos temas. |
 
 ---
 
@@ -44,13 +44,13 @@
 
 #### Paleta Bosque (colores de marca)
 
-Los cinco colores vienen de la paleta de referencia de la autora y **coinciden con los colores del diseño de Likka** (capucha ciruela y frambuesa, élitros y ojos ámbar, cuernos crema), así que **el personaje no necesita recolorearse**.
+Los colores de marca vienen de la paleta de referencia de la autora y **coinciden con los colores del diseño de Likka** (capucha ciruela y frambuesa, élitros y ojos ámbar, cuernos crema), así que **el personaje no necesita recolorearse**.
 
 | Token | Hex | Nombre | Rol |
 | :--- | :--- | :--- | :--- |
-| `brand.amber` | `#FCA30B` | Ámbar | **Marca y acción.** Botón primario, estado "protegiendo", racha, Nivel 1. |
-| `brand.ochre` | `#D17B0F` | Ocre | **Advertencia.** Nivel 2, avisos, barras de progreso. |
-| `brand.raspberry` | `#A2315D` | Frambuesa | **Alerta.** Nivel 3, errores, botón "Me rindo". Solo como **relleno** (ver contraste). |
+| `brand.amber` | `#FCA30B` | Ámbar | **Sin uso en la UI** (v3.19: la UI pasó a frambuesa). Se conserva el token porque el ámbar sigue siendo el color de los ojos y élitros de Likka (el sprite no se recolorea) y lo referencia `ColorContrastTest`. |
+| `brand.ochre` | `#D17B0F` | Ocre | **Sin uso en la UI** (v3.19). Token heredado, igual que `brand.amber`. |
+| `brand.raspberry` | `#A2315D` | Frambuesa | **Peligro y alerta.** Botón "Me rindo" / "Desactivar a Likka", interior del aura del Nivel 3, y texto y borde en tema claro (nivel 3, errores). Como **relleno** en oscuro (ver contraste). |
 | `brand.plum` | `#4B1C33` | Ciruela | **Superficie** de tarjetas, hojas y burbujas. |
 | `brand.cocoa` | `#3D1B1C` | Cacao | **Fondo** de todas las pantallas y del panel del Nivel 3. |
 
@@ -65,7 +65,7 @@ La paleta no trae un color claro para texto ni un tono de frambuesa legible sobr
 | `bg.surfaceHigh` | `#5E2A45` | Tarjetas elevadas, estados *pressed*, campos. |
 | `bg.switchTrackInactive` | `#8A6B78` | Pista de los interruptores en estado inactivo (ver nota de contraste abajo; `bg.surfaceHigh` no llegaba a 3:1). |
 | `outline` | `#9C7488` | Bordes de 1dp para separar superficies (cacao y ciruela son muy parecidos) y límites de componente (WCAG 1.4.11). |
-| `raspberry.light` | `#F07AA0` | **Texto, íconos y bordes** "frambuesa" sobre fondos oscuros. |
+| `raspberry.light` | `#F07AA0` | **Marca y acción.** Relleno de los botones Primario y Advertencia (ambos temas, texto cacao); en oscuro, `colorScheme.primary`/`secondary`/`tertiary`/`error` (texto, íconos, bordes, estado "protegiendo", dato héroe), halo/borde/burbuja de los Niveles 1–3, destellos (`sparkles`) y exterior del aura. |
 
 > **Corrección de contraste (v3):** en v2, `outline` (`#6B3552`) medía **1.64:1** sobre cacao y **1.49:1** sobre ciruela — WCAG 1.4.11 exige **3:1** para límites de componentes no decorativos (bordes de tarjetas, pista de interruptores inactiva), y ninguno de los dos llegaba. Se aclaró `outline` a `#9C7488`: contraste relativo a `#3D1B1C` (cacao) = **(0.208 + 0.05) / (0.032 + 0.05) = 3.15:1** ✅, y relativo a `#4B1C33` (ciruela) = **(0.208 + 0.05) / (0.028 + 0.05) = 3.31:1** ✅ (luminancias relativas WCAG: cacao 0.032, ciruela 0.028, `#9C7488` 0.208). La pista inactiva de los interruptores usa el mismo criterio con `bg.switchTrackInactive` (`#8A6B78`: **3.25:1 sobre cacao** y **2.94:1 sobre ciruela**, no "≈3.0 sobre ambos fondos" como decía v3.8; ver la fila de la tabla de contraste y la regla de dónde puede ir un interruptor) en vez de `bg.surfaceHigh` (que se queda como color de superficie elevada, sin ninguna obligación de contraste de "límite").
 
@@ -79,13 +79,9 @@ AA exige **4.5:1** para texto normal, y **3:1** para texto grande — la definic
 | Crema sobre Ciruela | **12.8** | ✅ Cualquier texto |
 | Crema sobre Superficie alta | **10.2** | ✅ Cualquier texto |
 | Crema apagado sobre Cacao / Ciruela | **9.8 / 8.9** | ✅ Cualquier texto |
-| Ámbar sobre Cacao / Ciruela | **7.6 / 6.9** | ✅ Cualquier texto |
-| **Cacao sobre Ámbar** (botón primario) | **7.6** | ✅ Cualquier texto |
-| Ocre sobre Cacao | **4.8** | ✅ Texto normal |
-| Ocre sobre Ciruela | **4.3** | ⚠️ No llega a 4.5:1: **solo texto ≥24sp regular o ≥18.7sp en peso 700** (`display`, `headline`, o `title`/`label` si se usan en negrita a ese tamaño). No usar en `bodyMedium`, `label` (14sp) ni `caption` (12sp) sobre ciruela. |
-| **Cacao sobre Ocre** (botón de advertencia) | **4.8** | ✅ Cualquier texto |
+| `raspberry.light` sobre Cacao / Ciruela | **5.8 / 5.3** | ✅ Cualquier texto (calculado con luminancia relativa WCAG: `#F07AA0` = 0.3498, cacao = 0.0186, ciruela = 0.0257; (0.3498 + 0.05) / (0.0186 + 0.05) = 5.83 y (0.3498 + 0.05) / (0.0257 + 0.05) = 5.28) |
+| **Cacao sobre `raspberry.light`** (botones primario y advertencia) | **5.83** | ✅ Cualquier texto |
 | **Crema sobre Frambuesa** (botón de peligro) | **6.2** | ✅ Cualquier texto |
-| Frambuesa claro sobre Cacao / Ciruela | **5.8 / 5.3** | ✅ Cualquier texto |
 | **Frambuesa sobre Cacao / Ciruela** | **2.3 / 2.1** | ❌ **Ni texto ni bordes**: usar `raspberry.light` |
 | Cacao vs. Ciruela (entre superficies) | **1.1** | ⚠️ No se distinguen solas: usar borde `outline` |
 | `outline` sobre Cacao / Ciruela (límite de componente) | **3.15 / 3.31** | ✅ Cumple WCAG 1.4.11 (≥3:1); corregido en v3, ver nota debajo de la paleta |
@@ -93,9 +89,9 @@ AA exige **4.5:1** para texto normal, y **3:1** para texto grande — la definic
 
 #### Reglas de uso
 
-1. **60 / 30 / 10**: 60% cacao, 30% ciruela, 10% acentos (ámbar, ocre, frambuesa).
-2. **Un color = un significado.** Ámbar significa "Likka te habla / acción", ocre significa "cuidado" y frambuesa significa "alerta". La frambuesa nunca es decoración.
-3. **El color nunca va solo**: todo estado se refuerza con un ícono, texto o la pose de Likka (daltonismo: ámbar y ocre se parecen para algunas personas).
+1. **60 / 30 / 10**: 60% cacao, 30% ciruela, 10% acentos (frambuesa claro y frambuesa).
+2. **Un color = un significado.** `raspberry.light` significa "Likka te habla / acción / cuidado" y la frambuesa pura (`brand.raspberry`) significa "peligro". La frambuesa nunca es decoración.
+3. **El color nunca va solo**: todo estado se refuerza con un ícono, texto o la pose de Likka. En oscuro los tres niveles comparten el mismo color (`raspberry.light`), así que el nivel se distingue por tamaño, pose y vibración, no por el color.
 4. **Frambuesa sobre oscuro = `raspberry.light`.** La frambuesa pura solo se usa como relleno con texto crema encima.
 5. Degradados permitidos únicamente en el aura del Nivel 3 (`brand.raspberry → raspberry.light`).
 
@@ -106,11 +102,11 @@ Como el sprite conserva sus colores originales, **el nivel se comunica con el ha
 | Nivel | Halo de Likka (overlay N1–N2) / borde del escenario (3dp, círculo) | Borde de la burbuja | Sensación |
 | :--- | :--- | :--- | :--- |
 | Reposo / Feliz | `neutral.cream` | — | Calma |
-| 1 — Susurro | `brand.amber` | `brand.amber` | Aviso amable |
-| 2 — Molesto | `brand.ochre` | `brand.ochre` | Cuidado |
+| 1 — Susurro | `raspberry.light` | `raspberry.light` | Aviso amable |
+| 2 — Molesto | `raspberry.light` | `raspberry.light` | Cuidado |
 | 3 — Furia | `raspberry.light` + aura pulsante | `raspberry.light` | Alerta |
 
-La progresión **claro → oscuro → rojo** (ámbar → ocre → frambuesa) comunica el escalamiento sin leer texto.
+Los tres niveles usan el mismo color en oscuro (`raspberry.light`); el escalamiento se comunica con el tamaño del sprite, la pose, la vibración y, en el Nivel 3, el aura pulsante, sin leer texto.
 
 #### Paleta clara
 
@@ -124,31 +120,30 @@ Tema opcional (COULD), elegible en Ajustes (§2.5). Se aplica **solo a las panta
 | Texto principal | `#3D1B1C` | 14.09 sobre fondo |
 | Texto secundario | `#6B4A55` | 7.07 sobre fondo / 6.33 sobre chip |
 | Borde `outline` | `#9C7488` | 3.67 sobre fondo / 3.99 sobre tarjeta |
-| Acento de texto "ámbar" (también `colorScheme.primary` en claro, ver más abajo) | `#8F5600` | 5.53 sobre fondo / 4.95 sobre chip / 6.00 sobre tarjeta |
-| Acento de texto "ocre" (también `colorScheme.secondary` en claro, ver más abajo) | `#9A4A00` | 5.77 sobre fondo / 5.16 sobre chip / 6.26 sobre tarjeta |
+| Acento `colorScheme.primary` / `secondary` en claro (`LikkaColors.RaspberryMid`, `raspberry.mid`; también halo y borde de los Niveles 1–2) | `#AA3C66` | 5.45 sobre fondo / 4.88 sobre chip / 5.92 sobre tarjeta |
+| Texto sobre `colorScheme.primary` (`onPrimary`, blanco) | `#FFFFFF` | 5.92 sobre `#AA3C66` |
 | Frambuesa (texto y borde) | `#A2315D` | 6.17 sobre fondo / 6.70 sobre tarjeta / 5.52 sobre chip |
-| Botón primario (relleno, sin cambios en ningún tema) | `#FCA30B` + texto `#3D1B1C` | 7.57 |
-| Botón de advertencia (relleno, sin cambios en ningún tema) | `#D17B0F` + texto `#3D1B1C` | 4.78 |
+| Botón primario (relleno, sin cambios en ningún tema) | `#F07AA0` + texto `#3D1B1C` | 5.83 |
+| Botón de advertencia (relleno, sin cambios en ningún tema) | `#F07AA0` + texto `#3D1B1C` | 5.83 |
 | Botón de peligro (relleno, sin cambios en ningún tema) | `#A2315D` + texto `#FFF4E6` | 6.17 |
 
-Contraste verificado (WCAG 2.1, luminancia relativa con linealización sRGB): todas las combinaciones de arriba cumplen **4.5:1** para texto normal y **3:1** para bordes; ninguna necesita la excepción de "texto grande" que sí hace falta en el tema oscuro (§1.1 arriba, fila del ocre sobre ciruela).
+Contraste verificado (WCAG 2.1, luminancia relativa con linealización sRGB): todas las combinaciones de arriba cumplen **4.5:1** para texto normal y **3:1** para bordes; ninguna necesita la excepción de "texto grande" (desde v3.19 el tema oscuro tampoco la necesita).
 
 | Combinación | Ratio | Uso permitido |
 | :--- | :---: | :--- |
 | Cacao sobre Fondo / Tarjeta | **14.1 / 15.3** | ✅ Cualquier texto |
 | Texto secundario sobre Fondo / Chip | **7.1 / 6.3** | ✅ Cualquier texto |
 | `outline` sobre Fondo / Tarjeta | **3.7 / 4.0** | ✅ Cumple WCAG 1.4.11 (≥3:1) para bordes |
-| Ámbar de texto (`#8F5600`) sobre Fondo / Chip / Tarjeta | **5.5 / 4.9 / 6.0** | ✅ Cualquier texto |
-| Ocre de texto (`#9A4A00`) sobre Fondo / Chip / Tarjeta | **5.8 / 5.2 / 6.3** | ✅ Cualquier texto |
+| `raspberry.mid` (`#AA3C66`) sobre Fondo / Chip / Tarjeta | **5.45 / 4.88 / 5.92** | ✅ Cualquier texto y bordes (calculado: luminancia relativa de `#AA3C66` = 0.1274; sobre tarjeta blanca (1.0 + 0.05) / (0.1274 + 0.05) = 5.92; fondo `#FFF4E6` = 0.9167 → 5.45; chip `#F7E6DC` = 0.8154 → 4.88) |
+| Blanco (`onPrimary`) sobre `raspberry.mid` | **5.92** | ✅ Cualquier texto |
 | Frambuesa (`#A2315D`) sobre Fondo / Tarjeta / Chip | **6.2 / 6.7 / 5.5** | ✅ Cualquier texto y bordes (a diferencia del tema oscuro, en claro la frambuesa pura sí cumple AA) |
-| Cacao sobre Ámbar / Ocre (botones primario/advertencia) | **7.6 / 4.8** | ✅ Cualquier texto |
+| Cacao sobre `raspberry.light` (botones primario y advertencia) | **5.83** | ✅ Cualquier texto |
 | Crema sobre Frambuesa (botón de peligro) | **6.2** | ✅ Cualquier texto |
-| `#FCA30B` como texto o borde sobre Fondo / Tarjeta | **1.86 / 2.02** | ❌ **Nunca como texto ni como borde**: no llegan a 3:1. Solo como relleno de botón con texto cacao. |
-| `#D17B0F` como texto o borde sobre Fondo / Tarjeta | **2.95 / 3.21** | ❌ **Nunca como texto ni como borde**: 2.95 no llega a 3:1 sobre fondo (y 3.21 sobre tarjeta no llega a 4.5:1 de texto normal). Solo como relleno de botón con texto cacao. |
+| `raspberry.light` (`#F07AA0`) como texto o borde sobre Fondo / Tarjeta | **2.42 / 2.63** | ❌ **Nunca como texto ni como borde en claro**: no llega a 3:1. Solo como relleno de botón con texto cacao. |
 
 Reglas de uso en claro:
-1. `brand.amber` (`#FCA30B`) y `brand.ochre` (`#D17B0F`) **nunca** se usan como texto ni como borde en el tema claro. Solo como relleno de botón, siempre con texto cacao encima. Esto incluye `colorScheme.primary` **y** `colorScheme.secondary`: Material usa `primary` como texto de `TextButton`/`OutlinedButton`, pista de `Switch` activo, casillas y borde de campo con foco, y `secondary` en otros componentes, así que en claro `primary = AmberDark (#8F5600)` y `secondary = OchreDark (#9A4A00)` (no `#FCA30B`/`#D17B0F`) — ver "Botones" en §1.8 y las filas de "Ámbar/Ocre de texto... sobre Tarjeta" arriba (6.00:1 / 6.26:1). Los botones de relleno Primario/Advertencia/Peligro siguen siendo ámbar/ocre/frambuesa + texto cacao (o crema) en **ambos** temas, pero a través de `LikkaButtonColors` (§5), no de `colorScheme.primary`/`secondary`.
-2. Donde el tema oscuro usa `neutral.cream`/`raspberry.light` como color de texto o acento, el tema claro usa los tonos oscurecidos de esta tabla (`#8F5600`, `#9A4A00`, `#A2315D`) para mantener el mismo contraste AA sobre un fondo claro.
+1. `raspberry.light` (`#F07AA0`) **nunca** se usa como texto ni como borde en el tema claro (2.42:1 sobre el fondo, 2.63:1 sobre la tarjeta). Solo como relleno de botón, siempre con texto cacao encima. Esto incluye `colorScheme.primary` **y** `colorScheme.secondary`: Material usa `primary` como texto de `TextButton`/`OutlinedButton`, pista de `Switch` activo, casillas y borde de campo con foco, y `secondary` en otros componentes, así que en claro `primary = secondary = RaspberryMid (#AA3C66)` (no `#F07AA0`) — ver "Botones" en §1.8 y las filas de `raspberry.mid` arriba (5.92:1 sobre tarjeta). Los botones de relleno Primario/Advertencia/Peligro siguen siendo `raspberry.light` / `raspberry.light` / frambuesa + texto cacao (o crema) en **ambos** temas, pero a través de `LikkaButtonColors` (§5), no de `colorScheme.primary`/`secondary`.
+2. Donde el tema oscuro usa `neutral.cream`/`raspberry.light` como color de texto o acento, el tema claro usa los tonos oscurecidos de esta tabla (`#AA3C66` para acento y niveles 1–2, `#A2315D` para nivel 3 y errores) para mantener el mismo contraste AA sobre un fondo claro.
 3. El círculo de escenario de Likka (§1.7; dashboard y onboarding) usa relleno `#FFFFFF` en claro en vez de `neutral.cream`, con el mismo borde de 3dp del color de nivel.
 4. En claro, los iconos de la barra de estado del sistema pasan a oscuros (`isAppearanceLightStatusBars = isLight`) — sobre el fondo crema, los iconos claros por defecto no se verían.
 
@@ -157,11 +152,11 @@ Reglas de uso en claro:
 | Nivel | Borde del escenario (3dp) / burbuja | Sensación |
 | :--- | :--- | :--- |
 | Reposo / Feliz | `outline` `#9C7488` (el borde crema del tema oscuro sería invisible sobre fondo crema) | Calma |
-| 1 — Susurro | `#8F5600` | Aviso amable |
-| 2 — Molesto | `#9A4A00` | Cuidado |
+| 1 — Susurro | `#AA3C66` | Aviso amable |
+| 2 — Molesto | `#AA3C66` | Cuidado |
 | 3 — Furia | `#A2315D` | Alerta |
 
-Los colores de Nivel 1 (`#8F5600`) y Nivel 2 (`#9A4A00`) se parecen entre sí en claro (como ya pasa con ámbar/ocre en oscuro): el nivel se refuerza con tamaño y pose, nunca solo con el color, siguiendo la regla "el color nunca va solo" de más arriba.
+Los colores de Nivel 1 y Nivel 2 son el mismo en claro (`#AA3C66`), como en oscuro (`raspberry.light`): el nivel se refuerza con tamaño y pose, nunca solo con el color, siguiendo la regla "el color nunca va solo" de más arriba.
 
 ---
 
@@ -393,7 +388,7 @@ Las "z" de dormir, la gota de sudor de `worried`, el aura pulsante de `fury`, lo
 - **Gota de sudor (`sweat_drop`)**: gota pixelada junto a la capucha; desciende `SWEAT_DROP_FALL_PX = 2` px del sprite, avanzando 1 px por paso antes de reiniciar.
 - **Aura pulsante (`aura`)**: anillo redondeado sobre la silueta de Likka; su grosor cambia en radio `[2, 3, 4, 3]` px del sprite (`AURA_RADII`) a lo largo de 1 s (`LikkaMotion.AURA_PULSE_MS = 1000L`). Gradiente: `auraInner` (frambuesa) junto a Likka y `auraOuter` (frambuesa claro) hacia afuera.
 - **Sombra de pies (`footShadow`)**: **solo en el overlay** (no en pantallas con escenario circular). Se proyecta debajo de la línea fija de pies (y = 92) abarcando el ancho de los pies más márgenes laterales de `FOOT_SHADOW_MARGINS = listOf(2, 4, 4, 2)` px en 4 filas hacia abajo, formando una elipse pixelada en negro translúcido (`LikkaColors.FootShadow = Color(0x59000000)`).
-- **Colores de los extras (`LikkaExtrasColors`):** agrupados en `LikkaExtrasColors` y provistos por `LocalLikkaExtrasColors` (iguales en ambos temas, §5), usando `outline` (cacao), `sparkle` (ámbar), `sleepZ` (ciruela), `sweatDrop` (crema), `sweatDropShine` (blanco), `auraInner` (frambuesa), `auraOuter` (frambuesa claro) y `footShadow` (`LikkaColors.FootShadow`).
+- **Colores de los extras (`LikkaExtrasColors`):** agrupados en `LikkaExtrasColors` y provistos por `LocalLikkaExtrasColors` (iguales en ambos temas, §5), usando `outline` (cacao), `sparkle` (frambuesa claro), `sleepZ` (ciruela), `sweatDrop` (crema), `sweatDropShine` (blanco), `auraInner` (frambuesa), `auraOuter` (frambuesa claro) y `footShadow` (`LikkaColors.FootShadow`).
 
 `halo` (v3.7) es un halo del color del nivel (`levelColor`) alrededor de la silueta de Likka, solo en el overlay de los Niveles 1 y 2. Su grosor es de **2 píxeles del sprite** (`2 × escala` px físicos: 4 px ≈ 1.5dp en N1 y 8 px ≈ 2.9dp en N2 en el Redmi 9), así que sigue la rejilla del pixel art y crece con el tamaño. Se dibuja en Compose a partir de la silueta (alfa binaria) del cuadro actual: la silueta teñida del color del nivel se dibuja debajo del cuadro, desplazada a cada posición dentro del radio del halo, lo que da un anillo redondeado sobre la rejilla del sprite (v3.17). El grosor es la constante `SpriteMetrics.HALO_PX = 2` (en `presentation/components/LikkaSprite.kt`, junto a `FRAME_PX` y `FEET_LINE_Y`; §5), y `LikkaSprite` agranda su área de dibujo `HALO_PX` píxeles del sprite por lado cuando recibe `halo`. Como depende del nivel y no de la pose, el código lo aplica a toda pose mostrada en ese overlay y **no se lista por pose** en `likka_poses.json`.
 
@@ -548,13 +543,13 @@ Una prueba JVM (§12.1 de `likkapet_documentacion.md`) valida:
 
 | Variante | Relleno | Texto | Uso |
 | :--- | :--- | :--- | :--- |
-| **Primario** | `brand.amber` (`#FCA30B`, igual en ambos temas — `LikkaButtonColors`, §5) | Cacao, `label` | Una acción principal por pantalla ("Comenzar a cuidar mi cuello", "Conceder permiso") |
-| **Advertencia** | `brand.ochre` (`#D17B0F`, igual en ambos temas) | Cacao, `label` | Acciones con consecuencia leve ("Pausar a Likka") |
+| **Primario** | `raspberry.light` (`#F07AA0`, igual en ambos temas — `LikkaButtonColors`, §5) | Cacao, `label` | Una acción principal por pantalla ("Comenzar a cuidar mi cuello", "Conceder permiso") |
+| **Advertencia** | `raspberry.light` (`#F07AA0`, igual en ambos temas; mismo relleno que Primario) | Cacao, `label` | Acciones con consecuencia leve ("Pausar a Likka") |
 | **Peligro** | `brand.raspberry` (`#A2315D`, igual en ambos temas) | Crema, `label` | "Me rindo (ir al inicio)" en el Nivel 3, "Desactivar a Likka" |
 | **Secundario** | Transparente, borde 1.5dp `colorScheme.primary` | `colorScheme.primary` | Acciones alternativas ("Ahora no") |
 | **Texto** | Ninguno | `colorScheme.primary` | Enlaces ("¿Por qué pedimos esto?") |
 
-**Secundario** y **Texto** leen `colorScheme.primary`, que cambia por tema: `brand.amber` (`#FCA30B`) en oscuro, `AmberDark` (`#8F5600`) en claro — sobre fondo claro, el ámbar de marca no llega a 3:1 como borde ni texto (§1.1 "Paleta clara"). **Primario**, **Advertencia** y **Peligro** son botones de relleno y no cambian con el tema: sus colores vienen de `LikkaButtonColors` (§5), no de `colorScheme`, precisamente para no heredar el cambio de `primary`/`secondary`/`tertiary` en claro.
+**Secundario** y **Texto** leen `colorScheme.primary`, que cambia por tema: `raspberry.light` (`#F07AA0`) en oscuro, `RaspberryMid` (`#AA3C66`) en claro — sobre fondo claro, el frambuesa claro de marca no llega a 3:1 como borde ni texto (§1.1 "Paleta clara"). **Primario**, **Advertencia** y **Peligro** son botones de relleno y no cambian con el tema: sus colores vienen de `LikkaButtonColors` (§5), no de `colorScheme`, precisamente para no heredar el cambio de `primary`/`secondary`/`tertiary` en claro.
 
 Alto de 52dp (token `LikkaComponentSize.buttonHeight`, `presentation/theme/ComponentSize.kt`, §5), forma de píldora y ancho completo en el onboarding. En estado deshabilitado: 38% de opacidad **más** un texto explicativo debajo (nunca un botón gris sin explicación).
 
@@ -568,13 +563,13 @@ Alto de 52dp (token `LikkaComponentSize.buttonHeight`, `presentation/theme/Compo
 └─────────────────────────────────────────────┘
 ```
 Estados:
-- **Pendiente**: borde ámbar y botón "Conceder".
-- **Concedido**: check ámbar y texto secundario.
+- **Pendiente**: borde `colorScheme.primary` y botón "Conceder".
+- **Concedido**: check `colorScheme.primary` y texto secundario.
 - **Denegado**: borde `raspberry.light`, botón "Reintentar" y Likka `worried`.
 
 #### Tarjeta de estadística (dashboard)
 
-Número en `display` o `headline`, etiqueta en `caption` debajo e ícono opcional arriba. Superficie ciruela con borde `outline`, radio `shape.m` y padding `space.m`. El número héroe va en **ámbar**; el resto, en crema.
+Número en `display` o `headline`, etiqueta en `caption` debajo e ícono opcional arriba. Superficie ciruela con borde `outline`, radio `shape.m` y padding `space.m`. El número héroe va en el color primario (`colorScheme.primary`); el resto, en crema.
 
 #### Burbuja de diálogo (roast)
 
@@ -675,11 +670,11 @@ Al arrastrarlo o tocarlo repetido (`likkapet_documentacion.md` RF-O12, `assets/r
 En cada pantalla, el ojo debe recorrer este orden:
 
 1. **Likka**: su pose dice el estado general.
-2. **Dato o mensaje principal**: un solo número o frase en `display`/`headline`, en ámbar.
+2. **Dato o mensaje principal**: un solo número o frase en `display`/`headline`, en el color primario (`colorScheme.primary`).
 3. **Acción principal**: un único botón primario.
 4. **Información de apoyo**: tarjetas secundarias y texto en `bodyMedium`/`caption`.
 
-Herramientas para construirla, en orden de preferencia: **tamaño → posición → color → peso**. Si todo es ámbar, nada destaca: el acento se gana.
+Herramientas para construirla, en orden de preferencia: **tamaño → posición → color → peso**. Si todo lleva el color primario, nada destaca: el acento se gana.
 
 ### 2.2 Jerarquía de la información (qué es más importante)
 
@@ -708,10 +703,10 @@ El overlay sigue la regla de **mínima interrupción necesaria**: cada nivel ocu
 │ Likka-Pet                 ⚙️  │  ← barra superior (título + Ajustes)
 │                               │
 │        [ Likka idle ]         │  ← 1. Personaje (`LikkaSpriteSize.dashboard`, escenario crema)
-│   ● Protegiendo tu cuello     │  ← estado (chip ámbar / frambuesa claro)
+│   ● Protegiendo tu cuello     │  ← estado (chip primario / frambuesa)
 │                               │
 │  ┌─────────────────────────┐  │
-│  │        23 min           │  │  ← 2. Dato héroe (display, ámbar)
+│  │        23 min           │  │  ← 2. Dato héroe (display, color primario)
 │  │   de redes hoy          │  │
 │  └─────────────────────────┘  │
 │  ┌──────────┐ ┌──────────┐    │
@@ -736,7 +731,7 @@ El overlay sigue la regla de **mínima interrupción necesaria**: cada nivel ocu
 │  ¿Cuánto descanso, humano?    │  ← title
 │  [15 min] [30 min] [60 min]   │  ← chips; 30 min preseleccionado
 │  Te quedan 3 pausas hoy       │  ← caption; mismo conteo que el dashboard (baja a 2 recién al confirmar)
-│  [       Pausar a Likka     ] │  ← botón de advertencia (ocre)
+│  [       Pausar a Likka     ] │  ← botón de advertencia (mismo relleno que el primario)
 └───────────────────────────────┘
 ```
 
@@ -779,7 +774,7 @@ Si ya no quedan pausas o Likka está en el Nivel 3, el botón "Pausar" del dashb
 Reglas de la pantalla:
 - Los grupos llevan un encabezado `caption` en mayúsculas cortas.
 - Cada fila mide 56dp de alto.
-- Interruptores: pista `colorScheme.primary` cuando están activos (`brand.amber` en oscuro, `AmberDark` en claro) y `bg.switchTrackInactive` cuando están inactivos (`likkaSwitchColors()`, §5). Contraste ≥ 3:1 **solo sobre el fondo de la pantalla** (3.25:1 sobre cacao): los interruptores van en filas sobre el fondo, nunca sobre una tarjeta ciruela, donde la pista inactiva mide 2.94:1 (§1.1).
+- Interruptores: pista `colorScheme.primary` cuando están activos (`raspberry.light` en oscuro, `RaspberryMid` en claro) y `bg.switchTrackInactive` cuando están inactivos (`likkaSwitchColors()`, §5). Contraste ≥ 3:1 **solo sobre el fondo de la pantalla** (3.25:1 sobre cacao): los interruptores van en filas sobre el fondo, nunca sobre una tarjeta ciruela, donde la pista inactiva mide 2.94:1 (§1.1).
 - No se puede apagar la última app vigilada, y esa cuenta incluye las apps añadidas y solo cuenta las que siguen instaladas (RF-S02 y RF-S06 de `likkapet_documentacion.md`); tampoco se puede quitar la última activa: su "Quitar" queda deshabilitado. Debajo del grupo, el texto de apoyo `settings_watched_apps_hint` ("Tiene que quedar al menos una app vigilada.") lo explica.
 - **Qué filas se muestran (v3.13):** solo las apps vigiladas **instaladas**. Una app por defecto que no está instalada no tiene fila; cuando se instale aparece con el valor (activada o no) que tenía guardado. Una app añadida que se desinstala deja de listarse, aunque su valor sigue guardado. Mientras se leen las apps instaladas no se muestra ninguna fila de apps (nunca una lista parcial). Si no hay ninguna app vigilada instalada, el grupo muestra el texto de apoyo `settings_watched_apps_empty` ("No encuentro en tu teléfono ninguna de las redes que vigilo. Usa «Añadir app» para elegir cuál vigilar.") encima de la fila "Añadir app →".
 - **Apps añadidas (v3.12):** van en el grupo APPS VIGILADAS, debajo de las 4 por defecto y en orden alfabético, cada una con el **ícono de la app** (40dp, el del launcher) a la izquierda del nombre, el interruptor a la derecha y, debajo del nombre, el botón de texto "Quitar" (variante Texto, §1.8, objetivo ≥48dp). La fila crece con la fuente al 200% (RNF-U03): el nombre puede ocupar dos líneas y la altura de 56dp es un mínimo. "Quitar" no pide confirmación (es reversible: se vuelve a añadir desde "Añadir app"). La fila "Añadir app →" cierra el grupo y abre la pantalla de abajo.
@@ -902,7 +897,7 @@ Nota de tono (§1.9): "Protegiendo", "En pausa" y "Desactivado" usan la voz de L
 ## 4. Accesibilidad
 
 - Contraste AA verificado (ver [1.1](#11-color)) en **ambos temas**, oscuro y claro. **Nunca se usa frambuesa pura para texto o bordes sobre fondos oscuros**; en claro sí cumple AA (§1.1 "Paleta clara").
-- Ámbar y ocre pueden confundirse con algunos tipos de daltonismo, así que el nivel siempre se refuerza con el tamaño, la pose y la vibración.
+- En oscuro los tres niveles comparten color, así que el nivel siempre se refuerza con el tamaño, la pose y la vibración.
 - Todas las imágenes de Likka llevan un `contentDescription` con su estado: *"Likka molesto, nivel 2"*.
 - TalkBack anuncia el texto del roast al aparecer (`liveRegion = Polite` en los Niveles 1–2 y `Assertive` en el Nivel 3).
 - Soporte de fuente grande hasta 200%: las tarjetas crecen en alto y nunca cortan texto.
@@ -922,8 +917,8 @@ import androidx.compose.ui.graphics.Color
 
 object LikkaColors {
     // Forest palette (brand)
-    val Amber = Color(0xFFFCA30B)
-    val Ochre = Color(0xFFD17B0F)
+    val Amber = Color(0xFFFCA30B)       // legacy: unused by the UI (v3.19); sprite eyes stay amber
+    val Ochre = Color(0xFFD17B0F)       // legacy: unused by the UI (v3.19)
     val Raspberry = Color(0xFFA2315D)
     val Plum = Color(0xFF4B1C33)
     val Cocoa = Color(0xFF3D1B1C)
@@ -960,8 +955,9 @@ object LikkaColors {
     val LightSurface = Color(0xFFFFFFFF)
     val LightSurfaceVariant = Color(0xFFF7E6DC)
     val LightOnSurfaceVariant = Color(0xFF6B4A55)
-    val AmberDark = Color(0xFF8F5600)   // level 1 border / amber text accent in light; also colorScheme.primary in light
-    val OchreDark = Color(0xFF9A4A00)   // level 2 border / ochre text accent in light
+    val AmberDark = Color(0xFF8F5600)   // legacy: unused by the UI (v3.19)
+    val OchreDark = Color(0xFF9A4A00)   // legacy: unused by the UI (v3.19)
+    val RaspberryMid = Color(0xFFAA3C66) // light-theme primary: text, icons, switch track (AA on background and surfaceVariant)
 }
 
 /** True in the light theme, false in dark; set by [LikkaTheme]. The overlay always sees `false`, since it always renders inside `LikkaTheme(ThemeMode.DARK)` (§9.1 of `likkapet_documentacion.md`). */
@@ -971,16 +967,13 @@ val LocalLikkaIsLightTheme = compositionLocalOf { false }
 @Composable
 fun levelColor(level: Int): Color = if (LocalLikkaIsLightTheme.current) {
     when (level) {
-        1 -> LikkaColors.AmberDark
-        2 -> LikkaColors.OchreDark
+        1, 2 -> LikkaColors.RaspberryMid
         3 -> LikkaColors.Raspberry
         else -> LikkaColors.Outline
     }
 } else {
     when (level) {
-        1 -> LikkaColors.Amber
-        2 -> LikkaColors.Ochre
-        3 -> LikkaColors.RaspberryLight
+        1, 2, 3 -> LikkaColors.RaspberryLight
         else -> LikkaColors.Cream
     }
 }
@@ -1003,8 +996,8 @@ data class LikkaButtonColors(
 )
 
 val LikkaDefaultButtonColors = LikkaButtonColors(
-    primaryContainer = LikkaColors.Amber, onPrimaryContainer = LikkaColors.Cocoa,
-    warningContainer = LikkaColors.Ochre, onWarningContainer = LikkaColors.Cocoa,
+    primaryContainer = LikkaColors.RaspberryLight, onPrimaryContainer = LikkaColors.Cocoa,
+    warningContainer = LikkaColors.RaspberryLight, onWarningContainer = LikkaColors.Cocoa,
     dangerContainer = LikkaColors.Raspberry, onDangerContainer = LikkaColors.Cream,
 )
 
@@ -1031,7 +1024,7 @@ data class LikkaExtrasColors(
 
 val LikkaDefaultExtrasColors = LikkaExtrasColors(
     outline = LikkaColors.Cocoa,
-    sparkle = LikkaColors.Amber,
+    sparkle = LikkaColors.RaspberryLight,
     sleepZ = LikkaColors.Plum,
     sweatDrop = LikkaColors.Cream,
     sweatDropShine = LikkaColors.LightSurface,
@@ -1046,9 +1039,9 @@ val LocalLikkaExtrasColors = compositionLocalOf { LikkaDefaultExtrasColors }
 ```kotlin
 // presentation/theme/Theme.kt — Material 3 schemes
 val LikkaDarkColorScheme = darkColorScheme(
-    primary = LikkaColors.Amber, onPrimary = LikkaColors.Cocoa,
-    primaryContainer = LikkaColors.Ochre, onPrimaryContainer = LikkaColors.Cocoa,
-    secondary = LikkaColors.Ochre, onSecondary = LikkaColors.Cocoa,
+    primary = LikkaColors.RaspberryLight, onPrimary = LikkaColors.Cocoa,
+    primaryContainer = LikkaColors.RaspberryLight, onPrimaryContainer = LikkaColors.Cocoa,
+    secondary = LikkaColors.RaspberryLight, onSecondary = LikkaColors.Cocoa,
     // secondaryContainer: SegmentedButton's selected-segment fill (§2.5 "Apariencia"), so it needs
     // its own AA-verified pair, not Material's default (purple) tonal derivation.
     secondaryContainer = LikkaColors.SurfaceHigh, onSecondaryContainer = LikkaColors.Cream, // 10.21:1
@@ -1076,16 +1069,16 @@ val LikkaDarkColorScheme = darkColorScheme(
 // never falls back to its own purples (same reasoning as LikkaDarkColorScheme's extra roles).
 // Only used by app screens; the overlay always applies LikkaDarkColorScheme (§1.1).
 val LikkaLightColorScheme = lightColorScheme(
-    // AmberDark, not the brand.amber (#FCA30B) button fill: colorScheme.primary is also used as
+    // RaspberryMid, not the light RaspberryLight button fill: colorScheme.primary is also used as
     // TextButton/OutlinedButton text, the checked Switch track, checkbox fill and the focused
-    // field border — #FCA30B only reaches 1.86:1/2.02:1 there (§1.1). The filled Primary button
-    // keeps #FCA30B via LikkaButtonColors below, which does not read colorScheme.
-    primary = LikkaColors.AmberDark, onPrimary = LikkaColors.LightSurface, // 6.00:1
-    primaryContainer = LikkaColors.Ochre, onPrimaryContainer = LikkaColors.Cocoa,
-    // OchreDark, not brand.ochre (#D17B0F): colorScheme.secondary is also used as text/icon color
-    // in some components, and #D17B0F doesn't clear AA there either (§1.1 "Paleta clara", regla 1).
-    secondary = LikkaColors.OchreDark, onSecondary = LikkaColors.LightSurface, // 6.26:1
-    secondaryContainer = LikkaColors.LightSurfaceVariant, onSecondaryContainer = LikkaColors.OchreDark, // 5.16:1
+    // field border — #F07AA0 only reaches 2.42:1/2.63:1 there (§1.1). The filled Primary button
+    // keeps #F07AA0 via LikkaButtonColors below, which does not read colorScheme.
+    primary = LikkaColors.RaspberryMid, onPrimary = LikkaColors.LightSurface, // 5.92:1
+    primaryContainer = LikkaColors.RaspberryLight, onPrimaryContainer = LikkaColors.Cocoa,
+    // colorScheme.secondary is also used as text/icon color in some components, so it uses
+    // RaspberryMid too, not the light fill (§1.1 "Paleta clara", regla 1).
+    secondary = LikkaColors.RaspberryMid, onSecondary = LikkaColors.LightSurface, // 5.92:1
+    secondaryContainer = LikkaColors.LightSurfaceVariant, onSecondaryContainer = LikkaColors.RaspberryMid, // 4.88:1
     tertiary = LikkaColors.Raspberry, onTertiary = LikkaColors.LightBackground,
     tertiaryContainer = LikkaColors.LightSurfaceVariant, onTertiaryContainer = LikkaColors.Raspberry, // 5.52:1
     // Pure Raspberry text/borders are AA-compliant in light (§1.1), unlike in dark.
@@ -1509,3 +1502,4 @@ object LikkaMotion {
 | **v3.18** | Tokens de `LikkaMotion` completados (§1.6, §5, `Motion.kt`): `shakeSpritePx = listOf(1, -1, 1, -1, 0)`, cadencia de extras `EXTRAS_STEP_MS = 250L`, pulso del aura `AURA_PULSE_MS = 1000L` | Fase 4b: sincronización de movimiento, sacudida y animaciones de extras. |
 | **v3.18** | Interacción en overlay (§1.8): silueta de Likka como objetivo táctil (≥48dp); toques en N1/N2 sin ripple (`indication = null`) para no romper el pixel art sobre apps ajenas; los toques cuentan para la reacción de toque repetido (§1.9) | Fase 4b: soporte táctil y de arrastre refinado en el overlay. |
 | **v3.18** | Contraste de `SwitchColors.kt` (§1.1, §5): documentada la relación exacta (3.25:1 sobre cacao, 4.34:1 sobre crema, 2.94:1 sobre ciruela) | Precisión documental con la verificación de `ColorContrastTest`. |
+| **v3.19** | Paleta documentada = paleta real del código (frambuesa, no ámbar): §1.1 (tabla de marca, reglas de uso 1–3, colores por nivel oscuro y claro, tablas de contraste), §1.8 (Botones), §1.6, §2, §4 y §5 (textos y fragmentos de `Color.kt`/`Theme.kt`). Primario y Advertencia usan `raspberry.light` `#F07AA0` + cacao (5.83:1) en ambos temas; en claro `colorScheme.primary`/`secondary` = nuevo `RaspberryMid` `#AA3C66` (5.92:1 sobre tarjeta, 5.45 sobre fondo); Niveles 1–3 en oscuro = `raspberry.light`; Niveles 1–2 en claro = `#AA3C66`; `sparkle` = `raspberry.light`. `brand.amber`/`brand.ochre`/`AmberDark`/`OchreDark` quedan como tokens heredados sin uso en la UI (el ámbar sigue en los ojos del sprite). Ratios nuevos recalculados con la fórmula WCAG 2.1 | Los commits `fa7a5f5`, `f6aef78` y `69fca79` ya habían pasado la UI a frambuesa; el documento seguía describiendo ámbar/ocre. |
