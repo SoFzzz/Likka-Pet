@@ -34,7 +34,7 @@ Autora: **Paula Sofia Gonzalez Zambrano**.
 
 ## Recorrido por la app
 
-Capturas tomadas en un emulador Android 15 (API 35) con la versión 1.0.5, en español y tema oscuro. Las frases de Likka de los niveles 1–3 son reales: las generó la IA durante la prueba.
+Capturas tomadas en un emulador Android 15 (API 35), en español y tema oscuro. El onboarding, el overlay, la notificación y "Acerca de" son de la versión 1.0.6; el resto de las pantallas no cambió desde la 1.0.5. Las frases de Likka de los niveles 1–3 son reales: las generó la IA durante la prueba.
 
 ### 1. Onboarding
 La primera vez, Likka se presenta, explica los tres niveles y qué datos usa, y pide los permisos. En teléfonos Xiaomi aparece un paso extra ("Ajustes de tu teléfono") con la guía de inicio automático y batería; en el emulador no aparece.
@@ -73,7 +73,7 @@ Pantalla principal: estado de Likka, minutos en redes de hoy, avisos y racha de 
 </table>
 
 ### 3. Likka sobre otras apps
-Likka aparece encima de la app vigilada (aquí YouTube) cuando inclinas el cuello o pasas mucho tiempo en redes, y sube de nivel si no le haces caso. En el nivel 3 hay una cuenta regresiva y luego te manda a la pantalla de inicio.
+Likka aparece encima de la app vigilada cuando inclinas el cuello o pasas mucho tiempo en redes, y sube de nivel si no le haces caso: nivel 1 a los 10 segundos de mala postura (o 15 minutos en redes), nivel 2 dos minutos después y nivel 3 tres minutos después. En el nivel 3 hay una cuenta regresiva de 20 segundos y luego te manda a la pantalla de inicio. Si vuelves a la app en menos de 5 minutos, Likka regresa directamente en el nivel 2. En estas capturas la app vigilada es Chrome, añadida desde Ajustes → "Añadir app" (para la IA solo cuenta como "otra app").
 
 <table>
   <tr>
@@ -86,7 +86,7 @@ Likka aparece encima de la app vigilada (aquí YouTube) cuando inclinas el cuell
     <td align="center"><img src="docs/screenshots/33-overlay-reaction-annoyed.png" width="200"><br><sub>Reacción: lo tocas varias veces</sub></td>
     <td align="center"><img src="docs/screenshots/34-overlay-drag.png" width="200"><br><sub>Reacción: lo arrastras</sub></td>
     <td align="center"><img src="docs/screenshots/36-overlay-resting-sit.png" width="200"><br><sub>En pausa: Likka sentado</sub></td>
-    <td></td>
+    <td align="center"><img src="docs/screenshots/37-overlay-ejected-home.png" width="200"><br><sub>Tras el nivel 3: de vuelta al inicio</sub></td>
   </tr>
 </table>
 
@@ -104,7 +104,7 @@ Activar o desactivar a Likka, vibración, tema, idioma, apps vigiladas, mensajes
     <td align="center"><img src="docs/screenshots/45-review-permissions.png" width="200"><br><sub>Revisar permisos</sub></td>
     <td align="center"><img src="docs/screenshots/46-about-credits.png" width="200"><br><sub>Acerca de y créditos</sub></td>
     <td align="center"><img src="docs/screenshots/47-license-dialog.png" width="200"><br><sub>Licencia de tipografía</sub></td>
-    <td align="center"><img src="docs/screenshots/41-settings-bottom.png" width="200"><br><sub>Ajustes (final)</sub></td>
+    <td align="center"><img src="docs/screenshots/48-license-dialog-scrolled.png" width="200"><br><sub>Licencia, más abajo</sub></td>
   </tr>
 </table>
 
@@ -118,6 +118,16 @@ Activar o desactivar a Likka, vibración, tema, idioma, apps vigiladas, mensajes
     <td align="center"><img src="docs/screenshots/52-settings-english.png" width="200"><br><sub>Settings en inglés</sub></td>
   </tr>
 </table>
+
+## Novedades de la versión 1.0.6
+Correcciones encontradas al recorrer la app para tomar estas capturas:
+- **Likka no se mueve al abrir su frase.** Al tocarlo en el nivel 1, la burbuja crece hacia arriba y Likka se queda en su sitio (antes bajaba unos 250 px y era difícil volver a tocarlo).
+- **Contador de avisos exacto.** Reanudar una pausa ya no suma un aviso de más.
+- **Frases de la IA más honestas.** La IA ya no menciona grados ni dice que el teléfono está "recto": habla solo del peso que carga el cuello.
+- **Onboarding.** Al desplazar el texto ya no queda pegado a la barra de estado.
+- **Licencias de tipografías.** El texto se muestra en párrafos limpios con separadores, sin modificar la licencia original.
+- **Ventana flotante.** Se ajustó la opacidad cuando Likka está oculto, para respetar las reglas de Android 12 sobre ventanas superpuestas.
+- **Design system** actualizado a la paleta frambuesa que usa la app.
 
 ## Privacidad
 - Al servidor intermedio solo se envía: la app en uso (o "otra app" si la añadiste tú), los minutos, el ángulo, el nivel, el motivo del aviso y el idioma. Nunca nombres de paquetes, cuenta ni ubicación.
