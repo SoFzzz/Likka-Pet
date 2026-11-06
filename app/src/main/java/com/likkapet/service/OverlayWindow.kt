@@ -143,6 +143,9 @@ class OverlayWindow(
         return null
     }
 
+    // Every caller hides the view (INVISIBLE) together with making it untouchable. Android 12+ caps an
+    // untouchable overlay at the untrusted-touch obscuring opacity (0.8) and logs it on every update;
+    // alpha 0 while hidden stays under that cap without changing what is seen.
     private fun setTouchable(isTouchable: Boolean) {
         params.flags =
             if (isTouchable) {
@@ -150,6 +153,7 @@ class OverlayWindow(
             } else {
                 params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
             }
+        params.alpha = if (isTouchable) VISIBLE_ALPHA else HIDDEN_ALPHA
     }
 
     private fun currentScreenBounds(): ScreenBounds {
@@ -214,6 +218,8 @@ class OverlayWindow(
 
     companion object {
         private const val TAG = "LikkaOverlay"
+        private const val VISIBLE_ALPHA = 1f
+        private const val HIDDEN_ALPHA = 0f
 
         /**
          * A context for overlay windows: on API 30+ a window context for TYPE_APPLICATION_OVERLAY, so

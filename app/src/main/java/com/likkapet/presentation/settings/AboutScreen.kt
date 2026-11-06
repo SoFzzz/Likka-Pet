@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,6 +17,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -171,15 +173,33 @@ private fun LicenseDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         title = { Text(stringResource(license.nameRes), style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-            )
-        },
+        text = { LicenseBody(blocks = remember(text) { reflowLicense(text) }) },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_close)) } },
     )
+}
+
+/** The reflowed license: paragraphs wrap to the dialog width, dash lines become dividers. */
+@Composable
+private fun LicenseBody(blocks: List<LicenseBlock>) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(LikkaSpacing.s),
+    ) {
+        blocks.forEach { block ->
+            when (block) {
+                is LicenseBlock.Paragraph -> {
+                    Text(text = block.text, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                LicenseBlock.Separator -> {
+                    HorizontalDivider(
+                        thickness = LikkaComponentSize.borderThin,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
+        }
+    }
 }
 
 @LikkaThemePreviews

@@ -77,6 +77,9 @@ class DailyStatsRecorderTest {
 
     private fun levelState(level: Int) = LikkaOverlayState.NOTHING_TO_SHOW.copy(level = level)
 
+    // While paused the coordinator reports level 0 even though the tracks keep their levels.
+    private val pausedState = LikkaOverlayState.NOTHING_TO_SHOW.copy(level = 0, isPaused = true)
+
     @Test
     fun `three minutes in a watched app write at most four times and all three minutes arrive`() =
         runTest {
@@ -207,6 +210,50 @@ class DailyStatsRecorderTest {
             runCurrent()
             recorder.stop()
 
+            assertEquals(1, today().interventions)
+        }
+
+    @Test
+    fun `resuming a pause at the same level is not a new intervention`() =
+        runTest {
+            val recorder = recorder()
+
+            overlay.tryEmit(levelState(1))
+            overlay.tryEmit(pausedState)
+            overlay.tryEmit(levelState(1))
+            runCurrent()
+            recorder.stop()
+
+            assertEquals(1, today().interventions)
+        }
+
+    @Test
+    fun `a new appearance after a pause that ended with no level is counted`() =
+        runTest {
+            val recorder = recorder()
+
+            overlay.tryEmit(levelState(1))
+            overlay.tryEmit(pausedState)
+            overlay.tryEmit(levelState(0))
+            overlay.tryEmit(levelState(1))
+            runCurrent()
+            recorder.stop()
+
+            assertEquals(2, today().interventions)
+        }
+
+    @Test
+    fun `a pause does not count level 3 again`() =
+        runTest {
+            val recorder = recorder()
+
+            overlay.tryEmit(levelState(3))
+            overlay.tryEmit(pausedState)
+            overlay.tryEmit(levelState(3))
+            runCurrent()
+            recorder.stop()
+
+            assertEquals(1, today().level3Count)
             assertEquals(1, today().interventions)
         }
 

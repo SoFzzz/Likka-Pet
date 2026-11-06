@@ -150,6 +150,99 @@ class OverlayMotionLevel1Test {
         assertFlushOnItsEdge(harness, harness.motion)
     }
 
+    // Redmi 9 bug (2026-11): a tap unfolded the roast above Likka, the window grew downward and he
+    // jumped ~250 px down, then back up when it folded, so the next tap missed him.
+    @Test
+    fun `unfolding the roast on a side edge keeps Likka's feet in place`() {
+        harness.showLevel(1)
+        harness.dragTo(x = 0, y = 600)
+        val folded = harness.motion
+        val feetY = folded.y + harness.geometry.windowHeightPx
+
+        harness.changeGeometry(PlannerHarness.PHONE.copy(windowHeightPx = PlannerHarness.PHONE.windowHeightPx + 252))
+
+        assertEquals(OverlayEdge.LEFT, harness.motion.edge)
+        assertEquals(feetY, harness.motion.y + harness.geometry.windowHeightPx)
+        harness.changeGeometry(PlannerHarness.PHONE)
+        assertEquals(folded, harness.motion)
+    }
+
+    @Test
+    fun `repeated unfolds off the sprite-pixel grid never drift`() {
+        harness.showLevel(1)
+        harness.dragTo(x = 0, y = 600)
+        val folded = harness.motion
+        val feetY = folded.y + harness.geometry.windowHeightPx
+        val unfolded = PlannerHarness.PHONE.copy(windowHeightPx = PlannerHarness.PHONE.windowHeightPx + 250)
+
+        repeat(5) {
+            harness.changeGeometry(unfolded)
+            val unfoldedFeetY = harness.motion.y + unfolded.windowHeightPx
+            assertTrue("feet moved to $unfoldedFeetY from $feetY", abs(unfoldedFeetY - feetY) < unfolded.spritePixelPx)
+            harness.changeGeometry(PlannerHarness.PHONE)
+            assertEquals(folded, harness.motion)
+        }
+    }
+
+    // The safe-area clamp near the top eats part of the upward shift; the fold must give it back.
+    @Test
+    fun `unfolding near the top clamps, and the fold returns to the original spot`() {
+        harness.showLevel(1)
+        harness.dragTo(x = 0, y = harness.area.minY + 100)
+        val folded = harness.motion
+        val unfolded = PlannerHarness.PHONE.copy(windowHeightPx = PlannerHarness.PHONE.windowHeightPx + 252)
+
+        harness.changeGeometry(unfolded)
+        assertEquals(harness.area.minY, harness.motion.y)
+        harness.changeGeometry(PlannerHarness.PHONE)
+        assertEquals(folded, harness.motion)
+
+        harness.changeGeometry(unfolded)
+        harness.changeGeometry(PlannerHarness.PHONE)
+        assertEquals(folded, harness.motion)
+    }
+
+    @Test
+    fun `a screen change does not apply the feet shift`() {
+        harness.showLevel(1)
+        harness.dragTo(x = 0, y = 600)
+        val before = harness.motion
+        val insetsChanged =
+            PlannerHarness.PHONE.copy(
+                insets = PlannerHarness.PHONE.insets.copy(bottom = 100),
+                windowHeightPx = PlannerHarness.PHONE.windowHeightPx + 252,
+            )
+
+        harness.changeGeometry(insetsChanged)
+
+        assertEquals(before.y, harness.motion.y)
+    }
+
+    @Test
+    fun `the bottom edge stays pinned to the bottom of the safe area`() {
+        harness.showLevel(1)
+        harness.dragTo(x = 300, y = 1500)
+        assertEquals(OverlayEdge.BOTTOM, harness.motion.edge)
+        val unfolded = PlannerHarness.PHONE.copy(windowHeightPx = PlannerHarness.PHONE.windowHeightPx + 252)
+
+        harness.changeGeometry(unfolded)
+        assertEquals(harness.area.maxY, harness.motion.y)
+        harness.changeGeometry(PlannerHarness.PHONE)
+        assertEquals(harness.area.maxY, harness.motion.y)
+    }
+
+    @Test
+    fun `a taller window while dragged leaves the window under the finger`() {
+        harness.showLevel(1)
+        harness.dragTo(x = 0, y = 600)
+        harness.planner.onDragStarted()
+        val grabbed = harness.motion
+
+        harness.changeGeometry(PlannerHarness.PHONE.copy(windowHeightPx = PlannerHarness.PHONE.windowHeightPx + 252))
+
+        assertEquals(grabbed, harness.motion)
+    }
+
     // Written independently of EdgePlacement: a visible move is at least one window on either axis.
     private fun isDistinct(
         run: PlannerHarness,

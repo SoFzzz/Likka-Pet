@@ -81,10 +81,11 @@ fun OnboardingContent(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    // Outside the scroll: a fixed gap above the step dots at any scroll position.
-                    .padding(bottom = LikkaSpacing.l)
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = LikkaSpacing.l),
+                    // Outside the scroll: fixed gaps below the status bar (onboarding has no top bar)
+                    // and above the step dots, so scrolled text is clipped there and never flush
+                    // against either edge.
+                    .padding(vertical = LikkaSpacing.l)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
         ) {
             StepBody(state, actions)

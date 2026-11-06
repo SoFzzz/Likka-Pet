@@ -13,6 +13,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -25,7 +26,9 @@ import java.util.concurrent.TimeUnit
  * call going on, and reaches the store through [UsageMinutesAccumulator] only every
  * `USAGE_FLUSH_SEC` and when the screen goes off or monitoring stops. A pause does not stop it:
  * the minutes still count for the day (§3.3). An *intervention* is one appearance of Likka (the
- * shown level going from 0 to at least 1), and a level 3 is counted once per reaching it.
+ * shown level going from 0 to at least 1), and a level 3 is counted once per reaching it. A pause
+ * hides the level (the overlay reports 0 while paused) but does not end the appearance, so paused
+ * states are skipped: resuming at the same level is not a new intervention.
  *
  * Every write goes through one channel and one writer coroutine, so [stop] can wait until
  * everything, including the last flushed minutes, is in the store.
@@ -54,7 +57,14 @@ class DailyStatsRecorder(
     ) {
         collectors += scope.launch { screenOn.distinctUntilChanged().collect(::onScreenChanged) }
         collectors += scope.launch { foreground.collect(::onPoll) }
-        collectors += scope.launch { overlay.map { it.level }.distinctUntilChanged().collect(::onShownLevel) }
+        collectors +=
+            scope.launch {
+                overlay
+                    .filterNot { it.isPaused }
+                    .map { it.level }
+                    .distinctUntilChanged()
+                    .collect(::onShownLevel)
+            }
     }
 
     /** Stops listening and writes whatever whole minutes are still in memory. Idempotent. */

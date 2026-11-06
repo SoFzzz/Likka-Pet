@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.abs
+import kotlin.math.sign
 import kotlin.random.Random
 
 /**
@@ -61,6 +62,7 @@ class OverlayMotionPlanner(
     private var phaseElapsedMs = 0L
     private var stepElapsedMs = 0L
     private var lastUpdateMs = clock.nowMillis()
+    private var clampedShift: ClampedShift? = null
 
     private val mutableMotion = MutableStateFlow<OverlayMotion?>(null)
 
@@ -86,8 +88,12 @@ class OverlayMotionPlanner(
         update {
             // The same geometry again is not a change: re-fitting would abandon the walk under way.
             if (geometry == this.geometry) return@update
+            val previous = this.geometry
             this.geometry = geometry
+            val idealY = previous?.let { idealYKeepingFeet(it, geometry) }
+            if (idealY != null) position = position?.copy(y = idealY)
             refit()
+            rememberClampedShift(idealY)
         }
 
     /** false when `ANIMATOR_DURATION_SCALE == 0` (*Quitar animaciones*, RF-O14). */
@@ -413,6 +419,53 @@ class OverlayMotionPlanner(
             if (isReturning) startReturnWalk() else startNormalTramo()
         }
     }
+
+    // The roast bubble sits above Likka and the window grows and shrinks from its top-left corner, so
+    // a taller window (a Level 1 tap unfolding the roast) would push Likka down and back up when it
+    // folds. Moving the corner by the height change keeps his feet still. Under the finger the
+    // controller already compensates; a new screen or insets is a re-layout, not a resize.
+    // Returns the y before the safe-area clamp, or null when the shift does not apply.
+    private fun idealYKeepingFeet(
+        previous: OverlayGeometry,
+        next: OverlayGeometry,
+    ): Int? {
+        val current = position ?: return null
+        if (mode == MotionMode.DRAGGED || !isSameScreen(previous, next)) return null
+        // A sprite-size change is a level change, not a bubble unfolding: let refit re-place Likka.
+        if (previous.spritePixelPx != next.spritePixelPx) return null
+        val heightDeltaPx = roundToGrid(next.windowHeightPx - previous.windowHeightPx, next.spritePixelPx)
+        return (unclampedYOf(current) ?: current.y) - heightDeltaPx
+    }
+
+    // The unfold shift the clamp ate near the top is still owed: the ideal y it left behind keeps
+    // the fold coming back to the original spot. Valid only while Likka has not moved since.
+    private fun unclampedYOf(current: ScreenPoint): Int? = clampedShift?.takeIf { it.restingAt == current }?.idealY
+
+    private fun rememberClampedShift(idealY: Int?) {
+        val current = position
+        clampedShift =
+            if (idealY != null && current != null && current.y != idealY) ClampedShift(idealY, current) else null
+    }
+
+    private data class ClampedShift(
+        val idealY: Int,
+        val restingAt: ScreenPoint,
+    )
+
+    private fun isSameScreen(
+        previous: OverlayGeometry,
+        next: OverlayGeometry,
+    ): Boolean =
+        previous.screenWidthPx == next.screenWidthPx &&
+            previous.screenHeightPx == next.screenHeightPx &&
+            previous.insets == next.insets
+
+    // Rounds half away from zero, the same for growing and shrinking: an unfold followed by a fold
+    // moves the corner back exactly, so repeated taps never drift on the floored sprite-pixel grid.
+    private fun roundToGrid(
+        deltaPx: Int,
+        gridPx: Int,
+    ): Int = deltaPx.sign * ((abs(deltaPx) + gridPx / 2) / gridPx) * gridPx
 
     private fun currentEdgePosition(): EdgePosition? {
         val currentEdge = edge ?: return null
