@@ -37,7 +37,7 @@ Autora: **Paula Sofia Gonzalez Zambrano**.
 Capturas tomadas en un emulador Android 15 (API 35), en español y tema oscuro. El onboarding, el overlay, la notificación y "Acerca de" son de la versión 1.0.6; el resto de las pantallas no cambió desde la 1.0.5. Las frases de Likka de los niveles 1–3 son reales: las generó la IA durante la prueba.
 
 ### 1. Onboarding
-La primera vez, Likka se presenta, explica los tres niveles y qué datos usa, y pide los permisos. En teléfonos Xiaomi aparece un paso extra ("Ajustes de tu teléfono") con la guía de inicio automático y batería; en el emulador no aparece.
+La primera vez, Likka se presenta, explica los tres niveles y qué datos usa, y pide los permisos. En teléfonos Xiaomi, Redmi y POCO aparece un paso extra ("Ajustes de tu teléfono") para activar el inicio automático, la batería sin restricciones y las ventanas emergentes en segundo plano, sin los que MIUI cerraría a Likka (capturas de un Redmi 9 con MIUI 13; las demás son del emulador).
 
 <table>
   <tr>
@@ -49,7 +49,13 @@ La primera vez, Likka se presenta, explica los tres niveles y qué datos usa, y 
   <tr>
     <td align="center"><img src="docs/screenshots/05-onboarding-permissions-pending.png" width="200"><br><sub>Permisos pendientes</sub></td>
     <td align="center"><img src="docs/screenshots/06-onboarding-permissions-granted.png" width="200"><br><sub>Permisos concedidos</sub></td>
+    <td align="center"><img src="docs/screenshots/08-onboarding-xiaomi.png" width="200"><br><sub>Solo Xiaomi: ajustes de tu teléfono</sub></td>
+    <td align="center"><img src="docs/screenshots/09-onboarding-xiaomi-scrolled.png" width="200"><br><sub>Solo Xiaomi: ventanas en segundo plano</sub></td>
+  </tr>
+  <tr>
     <td align="center"><img src="docs/screenshots/07-onboarding-done.png" width="200"><br><sub>¡Listo!</sub></td>
+    <td></td>
+    <td></td>
     <td></td>
   </tr>
 </table>
