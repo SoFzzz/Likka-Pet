@@ -5,6 +5,9 @@ App Android en la que **Likka**, un escarabajo ciervo nocturno en pixel art, vig
 Proyecto académico de la materia **Diseño de Interfaces**, Universidad Cooperativa de Colombia (UCC).
 Autora: **Paula Sofia Gonzalez Zambrano**.
 
+## Video de demostración
+Mira a Likka en acción: [ver el video en YouTube](https://youtu.be/VdSqh8IrsV4).
+
 ## Funciones
 
 ### Vigilancia
